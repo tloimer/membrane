@@ -28,3 +28,15 @@ matlab30623.tar.bz2:
  ps.m, Ts.m, dpsdT.m: range of validity corrected
  psnew.m added: ps from Perry (1997)
  version as used for publication ijts03; figs. 3 -- 10
+
+
+matlab40113.tar.bz2:
+
+ capillary pressure added
+ pcap.m new.
+ flowback.m: pcap added at evap. front
+   possibility of meniscus added
+   warning 'calculating film thickness...': values added
+ intp.m: pcap added at termination condition
+ mback: TolX to mguess/1e4
+ version as used for extended summary ICTAM04

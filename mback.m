@@ -40,10 +40,13 @@ while (mult*pres>0)
   pres = m2ph(mb,Te,pe,L,p0);
 end
 
+%disp(' - - start iteration') %debug
 % Display: none iter final notify
-options =optimset(optimset('fzero'),'TolX',mguess/1000,'Display','none');
+options =optimset(optimset('fzero'),'TolX',mguess/1e4,'Display','none');
 m = fzero(@m2ph,[mb/fac mb],options,Te,pe,L,p0);
-warning backtrace;
+% warning backtrace; % flowbach is called again anyway
+%disp(' - - last call to FLOWBACK') %debug
+warning on;
 flowstruct=flowback(m,Te,pe,L);
 flowstruct.info.T0 = T0;
 flowstruct.info.p0 = p0;

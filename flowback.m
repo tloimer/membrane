@@ -11,10 +11,11 @@ function flowstruct = flowback(m,Te,pe,L)
 %  is for the vapor region, FLOW(2).X for the liquid flow within the
 %  membrane and FLOW(3).X for the liquid film in front of the membrane.
 %
-%  Calls INTG, INT2PH, INTP, TEMP, Q_M, X, R, PS, TS, CPL, K.
+%  Calls CPL, INT2PH, INTG, INTP, K, PCAP, PS, Q_M, R, TEMP, TS, X.
 %  Called from MBACK.
 %  See also FLOWSTRUCT.
 
+% disp(sprintf('m=%.9g',m)); %debug
 info = struct('kap',kappa,'m',m,'L',L,'T0',[],'p0',[],'dp',[],'ph',fmodel);
 sol = struct('len',{},'a3',{},'q3',{},'T0',{},'Te',{},'p0',{},'pe',{},...
   'de',{},'df',{});
@@ -44,17 +45,17 @@ if isempty(fg.ie)
 
   % add the vapor flow in front of the membrane?
 
+  % write the solution
   sol.len = -i;
   sol.a3 = 1;
   sol.T0 = fg.y(1,end);
   sol.p0 = fg.y(2,end);
   sol.q3 = fg.y(3,end);
   sol.df = 0;
-
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return
-else
 
+else
   %--------- vapor flow to evaporation front
   % position of the evaporation front
   zvap = fg.xe(end);
@@ -78,15 +79,6 @@ try
   % (check of crit. heat flux in int2ph - therefore 'try'
   f2ph=int2ph(m,yvap(1),1,yvap(3),[zvap 0]);
 
-  %garbage
-  %flow(i).z',{[fg.x(1:end-1) zvap],f2ph.x},...
-    %'T',{[fg.y(1,1:end-1) yvap(1)],f2ph.y(1,:)},...
-    %'p',{[fg.y(2,1:end-1) yvap(2)],ps(f2ph.y(1,:))},...
-    %'q',{[fg.y(3,1:end-1) yvap(3)],m*q_m(f2ph.y(1,:),f2ph.y(2,:))},...
-    %'a',{ones(size(fg.x)),f2ph.y(2,:)},...
-    %'x',{ones(size(fg.x)),x(f2ph.y(1,:),f2ph.y(2,:))},...
-    %'color',{'r','g'});
-
   % add to the result struct
   i = i + 1;
   flow(i).z = f2ph.x;
@@ -97,6 +89,7 @@ try
   flow(i).x = x(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).color = 'g';
 
+  % write the solution
   sol.len = -i;
   sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
@@ -104,10 +97,10 @@ try
   sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
-
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return
 %catch
+
 end %2ph-flow
 
 %----------------------------- liquid flow
@@ -116,7 +109,7 @@ end %2ph-flow
 % 3 -- 2
 T3 = yvap(1);
 q3 = yvap(3)+m*r(yvap(1)); % jump condition!
-p3 = yvap(2);
+p3 = yvap(2)-pcap(T3); % subtract cap. pressure
 z3 = zvap;
 
 % calculate the temperature distribution
@@ -130,7 +123,7 @@ k23 = 0.5*(k(T3,0)+k(T2,0));
 fp = intp(m,T3,p3,q3,[z3 0],c23,k23);
 
 if isempty(fp.ie)
-  %--------- liquid flow with liquid film
+  %--------- liquid flow all through
   % temperature distribution in the liquid flow
   [tp,qp] = temp(fp.x,m,T3,q3,z3,c23,k23);
   % add liquid flow to the result struct
@@ -143,11 +136,28 @@ if isempty(fp.ie)
   flow(i).x = zeros(size(fp.x));
   flow(i).color = 'b';
 
-  %--------- liquid film
   p2 = fp.y(1,end);
   q2 = qp(end);
-  T1 = Ts(p2);
 
+  if p2<=ps(T2)
+    %--------- just a meniscus
+
+    % write the solution
+    sol.len = -i;
+    sol.a3 = 0;
+    sol.T0 = T2;
+    sol.p0 = ps(T2);
+    sol.q3 = qp(end);
+    sol.de = zvap;
+    sol.df = 0;
+    flowstruct = struct('info',info,'sol',sol,'flow',flow);
+    return
+
+  end
+  % else % p2<ps(T2)
+  %--------- liquid film
+
+  T1 = Ts(p2);
   % mean material properties
   c12 = 0.5*(cpl(T1)+cpl(T2)); % mean
   k12 = 0.5*(kl(T1)+kl(T2));
@@ -157,7 +167,8 @@ if isempty(fp.ie)
   [T01,q01] = temp(z01,m,T2,q2,0,c12,k12);
   % strange test
   if ( (T01(end)-T1)/T1>1e-6 ) | z1>0 
-    warning('calculating film thickness and/or T1');
+    warning(sprintf(['calculating film thickness and/or T1\n'...
+    '  z1/L = %g, (T-T1)/T1 = %g'],z1/L,(T01(end)-T1)/T1));
   end
   % film part of the result struct
   %z01=z1/2;
@@ -173,6 +184,7 @@ if isempty(fp.ie)
   flow(i).x = [0 0 0];
   flow(i).color = 'b';
 
+  % write the solution
   sol.len = -i;
   sol.a3 = 0;
   sol.T0 = T01(end);
@@ -180,9 +192,9 @@ if isempty(fp.ie)
   sol.q3 = q01(end);
   sol.de = zvap;
   sol.df = z1;
-
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return
+
 else
   %--------- liquid flow with 2ph flow
   % condensation front within the membrane
@@ -199,7 +211,7 @@ else
       'condensation front, then it vanishes.']);
   end
   z2 = fp.xe(end);
-  p2 = fp.ye(1,end);
+  p2 = fp.ye(1,end); % do not add cap. pressure here; done in INTP
   ind = find(fp.x>fp.xe(end));
   zp = [fp.x(ind) z2];
   [tp,qp] = temp(zp,m,T3,q3,z3,c23,k23);
@@ -237,6 +249,7 @@ else
   flow(i).x = x(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).color = 'g';
 
+  % write the solution
   sol.len = -i;
   sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
@@ -244,9 +257,9 @@ else
   sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
-
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return
+
 end %~isempty(fp.ie)
 
 %-----------------------------------------------------------------------

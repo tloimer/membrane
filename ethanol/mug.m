@@ -3,7 +3,7 @@ function mu=mug(T)
 %
 %  Ethanol.
 %  Valid for T/Tc < 1.5 (0.6?).
-%  Prediction method from Perry (1997), p 2-363.
+%  Prediction method from Perry (1997), p 2-363, eqs. (2-97), (2-98).
 
 %  Perry (1997), Table 2-365: mu=8.35e-6 at 20C;
 %  muold(293) = 9.9e-6, mu=7.4e-6 -> 10% deviation.

@@ -6,11 +6,12 @@ function fp = intp(m,T0,p0,q0,zrange,cp,k)
 %  The temperature distribution is obtained by calling TEMP with
 %  material properties CP and K. INTP returns the pressure distribution
 %  in a structure FP that can be used with DEVAL to evaluate the
-%  solution. INTP does not terminate if the pressure drops below the
-%  saturation pressure.
-%% INTP terminates if the pressure drops below the saturation pressure.
+%  solution. INTP terminates if the pressure plus a pressure difference
+%  due to capillary pressure drops below the saturation pressure.
+%% INTP does not terminate if the pressure drops below the
+%% saturation pressure but detects such an event.
 %
-%  Calls TEMP, NUL, KAPPA, K, PS, ODE45.
+%  Calls KAPPA, K, NUL, ODE45, PCAP, PS, TEMP.
 %  Called from FLOWBACK.
 %
 %  See also DEVAL.
@@ -24,10 +25,12 @@ dp=-m*nul(temp(z,m,T0,q0,z0,cp,k))/kappa;
 
 %-----------------------------------------------------------------------
 function [val,isterm,direction] = termd(z,p,m,T0,q0,z0,cp,k)
-%isterm=1; %terminate
-isterm=0; %do not terminate
+isterm=1; %terminate
+%isterm=0; %do not terminate
 direction=1;
 % OK: ps(T)-p < 0
 % Termination: ps(T)-p>=0, only when increasing
 %  without direction, integration already terminates at start
-val=ps(temp(z,m,T0,q0,z0,cp,k))-p;
+%val=ps(temp(z,m,T0,q0,z0,cp,k))-p;
+T = temp(z,m,T0,q0,z0,cp,k);
+val = ps(T)-p-pcap(T); % also pcap subtracted
