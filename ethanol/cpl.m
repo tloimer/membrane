@@ -4,7 +4,7 @@ function cp=cpl(T)
 %  Calls MOLM.
 %
 %  Ethanol.
-%  Valid for 159 < T < 390.
+%  Valid for 159K < T < 390K.
 %  From Perry (1997), Table 2-196.
 
 [R M]=molm;

@@ -7,7 +7,7 @@ function kg = kg(T)
 %  Data taken from CRC Handbook.
 %  Data is extrapolated (250) and linear (not prop sqrt(T) )
 %  interpolation is used.
-%  Perry (1997) gives an estimation technique.
+%  Perry (1997), p2-367 gives an estimation technique.
 
 t = [250;300;400];
 k= [8.7;14.4;25.8]*1e-3;

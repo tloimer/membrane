@@ -4,6 +4,7 @@ function kl = kl(T)
 %  Ethanol.
 %  Valid for 223.15K < T < 450K.
 %  From Perry (1997), Table 2-256 and Table 2-370.
+%  Perry also gives an estimation technique, p2-368
 
 %  Data merged at [363.15,410].
 

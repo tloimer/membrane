@@ -1,10 +1,13 @@
 function flowstruct = mback(deltap,T0,L)
 %MBACK      Backward integration.
-%  MBACK(DELTAP,T0,L) calculates the mass flux M for given
-%  pressure difference DELTAP.
+%  MBACK(DELTAP,T0,L) calculates the solution for the flow through a
+%  membrane for given pressure difference DELTAP, initial temperature T0
+%  and thickness of the membrane L. Returns the solution in a struct
+%  FLOWSTRUCT.
 %
-%  [M FLOWSTRUCT] = MFLOW(DELTAP,T0,L) returns m and the solution
-%  flowstruct.
+%  See FLOWSTRUCT.
+%
+%  Calls MLIN, FLOWBACK.
 
 % input check
 p0=ps(T0);

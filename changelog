@@ -5,6 +5,7 @@ to use a new substance, do, e.g.,
 > ln -s  ethanol/* .
 
 new version archives are created by
+> vi ~/matlab/changelog  # edit and note the changes!
 > cd ~/matlab
 > tar -cjf ../matlab30425.tar.bz2 *
 
@@ -20,3 +21,10 @@ matlab30425.tar.bz2:
 
  version as used for gamm 2003
  some modifications to mlin, flowback
+
+
+matlab30623.tar.bz2:
+
+ ps.m, Ts.m, dpsdT.m: range of validity corrected
+ psnew.m added: ps from Perry (1997)
+ version as used for publication ijts03; figs. 3 -- 10
