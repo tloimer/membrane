@@ -13,7 +13,7 @@ function f2ph = int2ph(m,T0,a0,q0,zrange)
 
 % initial enthalpie (flux - canceled)
 % for gas-2ph this is: q0=0,a0=1,xdot(T0,1)=1
-h0 = q0/m + xdot(T0,a0)*r(T0);
+h0 = q0/m + xdot(T0,a0)*rkelv(T0);
 
 % calculate initial vapor content a3
 a3=fzero(@ares,[0 1],optimset('fzero'),T0,T0,h0);
@@ -31,13 +31,13 @@ f2ph = ode23t(@ode2ph,zrange,[T0 a3],options,m,T0,h0);
 function ar = ares(a,T,T0,h0)
 
 % ar= h'dT+xdot*r(T)*q/m-h0;
-ar=intcpl(T0,T) + xdot(T,a)*r(T) + q_m(T,a) - h0
+ar=intcpl(T0,T) + xdot(T,a)*rkelv(T) + q_m(T,a) - h0;
 
 %-----------------------------------------------------------------------
 function dy = ode2ph(z,y,m,T0,h0)
 T=y(1);
 a=y(2);
-dT=-m*nu(T,a)/(dpsdT(T)*kappa);
+dT=-m*nu(T,a)/(dpkdT(T)*kappa);
 da=ares(a,T,T0,h0);
 dy=[dT;da];
 

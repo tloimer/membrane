@@ -64,14 +64,13 @@ if isempty(fg.ie)
     sol.df = 0;
     flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return
-
   end
+  % p2-curv*sig(T2)>=ps2
   %--------------- vapor and liquid film
-
   % calculate the film thickness by solving heat conduction eq, see TEMP
   % it is assumed z2=0
   % evaporation enthalpy is increased!
-  q2 = fg.y(3,end)+m*r(T2) + dhdp(Te)*(ps2-p2);
+  q2 = fg.y(3,end)+m*rkelv(T2); % + dhdp(Te)*(ps2-p2);
   c12 = cpl(T2);
   k12 = kl(T2);
   T1 = T2;
@@ -109,7 +108,7 @@ if isempty(fg.ie)
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
   return 
 
-else
+else % ~isempty(fg.ie)
   %--------- vapor flow to evaporation front
   % position of the evaporation front
   zvap = fg.xe(end);
@@ -137,17 +136,73 @@ try
   i = i + 1;
   flow(i).z = f2ph.x;
   flow(i).T = f2ph.y(1,:);
-  flow(i).p = ps(f2ph.y(1,:));
+  flow(i).p = kelv(f2ph.y(1,:)).*ps(f2ph.y(1,:));
   flow(i).q = m*q_m(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).a = f2ph.y(2,:);
   flow(i).x = x(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).color = 'g';
 
+  % and add a liquid film for a nonwetting fluid, costheta<=0
+  if ps(flow(i).T(end))<flow(i).p(end)
+    %disp('liq. film!')
+    % not necessary
+    if costheta<=0
+
+  p2 = flow(i).p(end);
+  T2 = flow(i).T(end);
+  q2 = flow(i).q(end)+xdot(T2,flow(i).a(end))*m*rkelv(T2);
+      
+  %--------- liquid film
+
+  T1 = Ts(p2);
+  % mean material properties
+  c12 = 0.5*(cpl(T1)+cpl(T2)); % mean
+  k12 = 0.5*(kl(T1)+kl(T2));
+  % calculate the film thickness (for z2=0)
+  z1 = k12/(m*c12)*log(1-(T1-T2)*c12*m/q2);
+  z01 = [0 z1/2 z1];
+  [T01,q01] = temp(z01,m,T2,q2,0,c12,k12);
+  % strange test
+  if ( (T01(end)-T1)/T1>1e-6 ) | z1>0 
+    warning(sprintf(['calculating film thickness and/or T1\n'...
+    '  z1/L = %g, (T-T1)/T1 = %g'],z1/L,(T01(end)-T1)/T1));
+  end
+  % film part of the result struct
+  %z01=z1/2;
+  %[t01,q01] = temp(z01,m,T2,q2,0,c12,k12);
+
+  % add liquid film to the result struct
+  i = i + 1;
+  flow(i).z = z01;
+  flow(i).T = T01;
+  flow(i).p = [p2 p2 p2];
+  flow(i).q = q01;
+  flow(i).a = [0 0 0];
+  flow(i).x = [0 0 0];
+  flow(i).color = 'b';
+
+  % write the solution
+  sol.len = -i;
+  sol.a3 = 0;
+  sol.T0 = T01(end);
+  sol.p0 = p2;
+  sol.q3 = q01(end);
+  sol.de = zvap;
+  sol.df = z1;
+  flowstruct = struct('info',info,'sol',sol,'flow',flow);
+  return
+    else % costheta<0
+      %during iteration, that may happen
+      disp(sprintf('strange, ps(T3)<p3: ps(T3)-p3 = %g',...
+        ps(flow(i).T(end))-flow(i).p(end)));
+    end
+  end
+  
   % write the solution
   sol.len = -i;
   sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
-  sol.p0 = ps(f2ph.y(1,end));
+  sol.p0 = flow(i).p(end); % not ps(f2ph.y(1,end));
   sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
@@ -162,7 +217,7 @@ end %2ph-flow
 
 % 3 -- 2
 T3 = yvap(1);
-q3 = yvap(3)+m*r(yvap(1)); % jump condition!
+q3 = yvap(3)+m*rkelv(yvap(1)); % jump condition!
 p3 = yvap(2)-curv*sig(T3); % subtract cap. pressure
 z3 = zvap;
 
@@ -208,7 +263,7 @@ if isempty(fp.ie)
     return
 
   end
-  % else % p2<ps(T2)
+  % else % p2>ps(T2)
   %--------- liquid film
 
   T1 = Ts(p2);
@@ -292,8 +347,8 @@ else
       error('Now this is funny!');
     end
   catch
-    disp('I increase the heat flux q.');
-    f2ph=int2ph(m,T2,0,1.2*q2,[z2 0]);
+    disp('I increase the heat flux by 6%.');
+    f2ph=int2ph(m,T2,0,1.01*q2,[z2 0]);
     %error('Now what?');
   end
 
@@ -301,17 +356,74 @@ else
   i = i + 1;
   flow(i).z = f2ph.x;
   flow(i).T = f2ph.y(1,:);
-  flow(i).p = ps(f2ph.y(1,:));
+  flow(i).p = kelv(f2ph.y(1,:)).*ps(f2ph.y(1,:));
   flow(i).q = m*q_m(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).a = f2ph.y(2,:);
   flow(i).x = x(f2ph.y(1,:),f2ph.y(2,:));
   flow(i).color = 'g';
 
+  % and add a liquid film for a nonwetting fluid, costheta<=0
+  if ps(flow(i).T(end))<flow(i).p(end)
+    %disp('liq. film!')
+    % not necessary
+    if costheta<=0
+
+  p2 = flow(i).p(end);
+  T2 = flow(i).T(end);
+  q2 = flow(i).q(end)+xdot(T2,flow(i).a(end))*m*rkelv(T2);
+      
+  %--------- liquid film
+
+  T1 = Ts(p2);
+  % mean material properties
+  c12 = 0.5*(cpl(T1)+cpl(T2)); % mean
+  k12 = 0.5*(kl(T1)+kl(T2));
+  % calculate the film thickness (for z2=0)
+  z1 = k12/(m*c12)*log(1-(T1-T2)*c12*m/q2);
+  z01 = [0 z1/2 z1];
+  [T01,q01] = temp(z01,m,T2,q2,0,c12,k12);
+  % strange test
+  if ( (T01(end)-T1)/T1>1e-6 ) | z1>0 
+    warning(sprintf(['calculating film thickness and/or T1\n'...
+    '  z1/L = %g, (T-T1)/T1 = %g'],z1/L,(T01(end)-T1)/T1));
+  end
+  % film part of the result struct
+  %z01=z1/2;
+  %[t01,q01] = temp(z01,m,T2,q2,0,c12,k12);
+
+  % add liquid film to the result struct
+  i = i + 1;
+  flow(i).z = z01;
+  flow(i).T = T01;
+  flow(i).p = [p2 p2 p2];
+  flow(i).q = q01;
+  flow(i).a = [0 0 0];
+  flow(i).x = [0 0 0];
+  flow(i).color = 'b';
+
+  % write the solution
+  sol.len = -i;
+  sol.a3 = 0;
+  sol.T0 = T01(end);
+  sol.p0 = p2;
+  sol.q3 = q01(end);
+  sol.de = zvap;
+  sol.df = z1;
+  flowstruct = struct('info',info,'sol',sol,'flow',flow);
+  return
+    else % costheta<0
+      %during iteration, that may happen
+      disp(sprintf('strange, ps(T3)<p3: ps(T3)-p3 = %g',...
+        ps(flow(i).T(end))-flow(i).p(end)));
+    end
+  end
+  
+
   % write the solution
   sol.len = -i;
   sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
-  sol.p0 = ps(f2ph.y(1,end));
+  sol.p0 = flow(i).p(end); % not ps(f2ph.y(1,end));
   sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
@@ -319,8 +431,3 @@ else
   return
 
 end %~isempty(fp.ie)
-
-%-----------------------------------------------------------------------
-%function pres=pvap(z,fg)
-%y = deval(fg,z);
-%pres = ps(y(1))-y(2);

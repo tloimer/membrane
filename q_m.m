@@ -3,4 +3,4 @@ function q = q_m(T,a)
 %
 %  Calls K, NU, DPSDT, KAPPA.
 
-q = k(T,a).*nu(T,a)./(dpsdT(T)*kappa);
+q = k(T,a).*nu(T,a)./(dpkdT(T)*kappa);

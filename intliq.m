@@ -6,7 +6,7 @@ function fliq = intliq(m,T0,p0,q0,zrange)
 %  FL that can be used with DEVAL to evaluate the solution. INTLIQ
 %  terminates if the pressure drops below the saturation pressure.
 %
-%  Calls KAPPA, KL, CPL, PS, ODE45.
+%  Calls KAPPA, KELV, KL, CPL, PS, ODE45.
 %  Called from ADDINT.
 %
 %  See also DEVAL.
@@ -31,4 +31,4 @@ direction=1;
 % OK: ps(T)-p < 0
 % Termination: ps(T)-p>=0, only when increasing
 %  without direction, integration already terminates at start
-val=ps(y(1))-y(2);
+val=kelv(y(1)).*ps(y(1))-y(2);

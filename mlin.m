@@ -17,6 +17,7 @@ nueff = (nug(T0,p0) + nug(Te,p0-deltap))/2;
 % originally: 
 %nueff = nu(T0,1);
 kapc = kappac(T0);
+kapf = [];
 kap = kappa;
 dps = dpsdT(T0).*(T0-Te);
 if costheta==0
@@ -175,6 +176,7 @@ else % kappa<=kappac
         y = [kap 0 -nuliq 0; 0 kap nueff -nueff*L;...
           0 0 r(T0) 0; 0 1 0 0] \ [0; 0; kml*(T0-Te); deltap-dps];
         [pl pv mde m] = deal(y(1),y(2),y(3),y(4));
+
         % write solution; return
         fl(i) = temp;
         fl(i).info.m = m;
@@ -192,7 +194,7 @@ else % kappa<=kappac
         fl(i).lin.x3 = 0;
         [fl(i).flow(1:2).z] = deal([0 fl(i).sol.de],[fl(i).sol.de L]);
         [fl(i).flow(1:2).T] = deal([T0 Te],[Te Te]);
-        [fl(i).flow(1:2).p] = deal([p0-curv*sig(T0) p0-curv*sig(T0)-pl],...
+        [fl(i).flow(1:2).p] = deal([fl(i).sol.pe+pv+pl-curv*sig(T0) p0-curv*sig(T0)-pl],...
 	  [fl(i).sol.pe+pv fl(i).sol.pe]);
         [fl(i).flow(1:2).q] = deal([fl(i).sol.q3 fl(i).sol.q3],[0 0]);
         [fl(i).flow(1:2).a] = deal([0 0],[1 1]);

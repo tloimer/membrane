@@ -8,13 +8,14 @@ function fp = intp(m,T0,p0,q0,zrange,cp,k)
 %  in a structure FP that can be used with DEVAL to evaluate the
 %  solution. INTP terminates if the pressure plus a pressure difference
 %  due to capillary pressure drops below the saturation pressure.
-%% INTP does not terminate if the pressure drops below the
-%% saturation pressure but detects such an event.
 %
 %  Calls KAPPA, K, NUL, ODE45, PCAP, PS, TEMP.
 %  Called from FLOWBACK.
 %
 %  See also DEVAL.
+
+%% INTP does not terminate if the pressure drops below the
+%% saturation pressure but detects such an event.
 
 options=odeset('InitialStep',5e-7,'Events',@termd);
 fp = ode45(@darcy,zrange,p0,options,m,T0,q0,zrange(1),cp,k);
@@ -33,4 +34,4 @@ direction=1;
 %  without direction, integration already terminates at start
 %val=ps(temp(z,m,T0,q0,z0,cp,k))-p;
 T = temp(z,m,T0,q0,z0,cp,k);
-val = ps(T)-p-curv*sig(T);% - 1e0; % also pcap subtracted
+val = kelv(T).*ps(T)-p-curv.*sig(T);% - 1e0; % also pcap subtracted

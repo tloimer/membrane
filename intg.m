@@ -6,7 +6,7 @@ function fg = intg(m,T0,p0,q0,zrange)
 %  FL that can be used with DEVAL to evaluate the solution. INTG
 %  terminates if the pressure rises above the saturation pressure.
 %
-%  Calls NUG, KAPPA, K, CPG, DHDP, PS, ODE45.
+%  Calls NUG, KAPPA, K, CPG, DHDP, PS, KELV, ODE45.
 %  Called from FLOWBACK.
 %
 %  See also DEVAL.
@@ -31,4 +31,4 @@ direction=-1;
 % OK: ps(T)-p > 0
 % Termination: ps(T)-p<=0, only when falling
 %  without direction, integration already terminates at start
-val=ps(y(1))-y(2);
+val=kelv(y(1)).*ps(y(1))-y(2);

@@ -68,4 +68,14 @@ matlab40718.tar.bz2
  Works, but fails to find a solution in small range of kappa>kappac, if
  a finite capillary pressure with a wetting liquid is assumed.
  
- 
+
+matlab40910.tar.bz2
+
+ new files: Tk.m, mkelv.m
+ serious errors for wetting liquid remain! (Jump in pressure from
+ saturation pressure to pressure in equilibrium at a curved interface.)
+ See also previous version.
+ version as used for proceeding stamm04
+
+
+matlab4*.tar.bz2
