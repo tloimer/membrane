@@ -1,7 +1,9 @@
 function fi = addint(fs)
 %ADDINT     Add numerically integrated solution.
-%  ADDLIN(FS) Add the solution from linear theory to the flowstruct FS.
+%  ADDINT(FS) Add the solution from linear theory to the flowstruct FS.
 %  ADDINT returns a new flowstruct and leaves the old one unchanged.
+%
+%  See also ADDLIN.
 
 %we write a new flowstruct
 fi = fs;

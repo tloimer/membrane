@@ -5,7 +5,7 @@ function flowstruct = flowback(m,Te,pe,L)
 %  and the liquid film upstream of the membrane are solved analytically,
 %  where constant material properties are assumed. Returns a structure
 %  FLOWSTRUCT that consists of three parts, FLOWSTRUCT.INFO, .SOL and
-%  FLOWSTRUCT.FLOW.
+%  FLOWSTRUCT.FLOW. Writes very incomplete .INFO.
 %  For 2-ph flow, FLOW(1).X contains the solution for the vapor region,
 %  FLOW(2).X the 2-ph  region. For a flow with a liquid film, FLOW(1).X
 %  is for the vapor region, FLOW(2).X for the liquid flow within the
@@ -16,7 +16,8 @@ function flowstruct = flowback(m,Te,pe,L)
 %  See also FLOWSTRUCT.
 
 % disp(sprintf('m=%.9g',m)); %debug
-info = struct('kap',kappa,'m',m,'L',L,'T0',[],'p0',[],'dp',[],'ph',fmodel);
+info = struct('kap',kappa,'m',m,'Ca',[],'kapc',[],'kapf',[],'L',L,...
+  'T0',[],'p0',[],'dp',[],'ph',fmodel);
 sol = struct('len',{},'a3',{},'q3',{},'T0',{},'Te',{},'p0',{},'pe',{},...
   'de',{},'df',{});
 
@@ -30,10 +31,13 @@ zrange = [L 0];
 % start to integrate from the end
 %----------------------------- vapor flow
 fg = intg(m,Te,pe,0,zrange);
+%fg.xe %debug
+%fg.ye %debug
 
 if isempty(fg.ie)
-  %--------- vapor flow all through
-  % got through, write the solution
+  %disp('got through') %debug
+  %------------------- vapor flow all through
+  % got through, write this part of the flow solution
   % construct the result struct
   flow = struct('z',{fg.x},...
     'T',{fg.y(1,:)},...
@@ -43,17 +47,67 @@ if isempty(fg.ie)
     'x',{ones(size(fg.x))},...
     'color',{'r'});
 
-  % add the vapor flow in front of the membrane?
+  % 2 - z=0
+  T2 = fg.y(1,end);
+  p2 = fg.y(2,end);
+  ps2 = ps(T2);
+
+  if p2-curv*sig(T2)<ps2
+    %----------------- vapor flow in front of the membrane
+    %disp('Vapor flow in front of the membrane not supported.')
+    % but write the solution
+    sol.len = -i;
+    sol.a3 = 1;
+    sol.T0 = fg.y(1,end);
+    sol.p0 = fg.y(2,end);
+    sol.q3 = fg.y(3,end);
+    sol.df = 0;
+    flowstruct = struct('info',info,'sol',sol,'flow',flow);
+  return
+
+  end
+  %--------------- vapor and liquid film
+
+  % calculate the film thickness by solving heat conduction eq, see TEMP
+  % it is assumed z2=0
+  % evaporation enthalpy is increased!
+  q2 = fg.y(3,end)+m*r(T2) + dhdp(Te)*(ps2-p2);
+  c12 = cpl(T2);
+  k12 = kl(T2);
+  T1 = T2;
+  zold = 0;
+  z1 = L;
+  while 1-zold/z1>0.001
+    zold = z1;
+    c12 = 0.5*(cpl(T1)+cpl(T2));
+    k12 = 0.5*(kl(T1)+kl(T2));
+    z1 = k12/(m*c12)*log(m*r(T1)/q2);
+    T1 = temp(z1,m,T2,q2,0,c12,k12);
+  end
+  % and the result is
+  z01 = [0 z1/2 z1];
+  [T01,q01] = temp(z01,m,T2,q2,0,c12,k12);
+
+  % add liquid film to the result struct
+  i = i + 1;
+  flow(i).z = z01;
+  flow(i).T = T01;
+  flow(i).p = ps(T1)*ones(1,3);
+  flow(i).q = q01;
+  flow(i).a = zeros(1,3);
+  flow(i).x = zeros(1,3);
+  flow(i).color = 'b';
 
   % write the solution
   sol.len = -i;
-  sol.a3 = 1;
-  sol.T0 = fg.y(1,end);
-  sol.p0 = fg.y(2,end);
-  sol.q3 = fg.y(3,end);
-  sol.df = 0;
+  sol.a3 = 0;
+  sol.T0 = T01(3);
+  sol.p0 = flow(i).p(3);
+  sol.q3 = q01(3);
+  sol.de = 0;
+  sol.df = z1;
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
-  return
+  return 
 
 else
   %--------- vapor flow to evaporation front
@@ -109,7 +163,7 @@ end %2ph-flow
 % 3 -- 2
 T3 = yvap(1);
 q3 = yvap(3)+m*r(yvap(1)); % jump condition!
-p3 = yvap(2)-pcap(T3); % subtract cap. pressure
+p3 = yvap(2)-curv*sig(T3); % subtract cap. pressure
 z3 = zvap;
 
 % calculate the temperature distribution
@@ -220,6 +274,8 @@ else
 
   % add liquid flow to the result struct
   i = i + 1;
+  %zp
+  %zp(1) - zp(2)
   flow(i).z = zp;
   flow(i).T = tp;
   flow(i).p = [fp.y(1,ind) p2];
@@ -236,7 +292,9 @@ else
       error('Now this is funny!');
     end
   catch
-    error('Now what?');
+    disp('I increase the heat flux q.');
+    f2ph=int2ph(m,T2,0,1.2*q2,[z2 0]);
+    %error('Now what?');
   end
 
   % add to the result struct

@@ -6,6 +6,8 @@ function dhdp = dhdp(T)
 %  Calls TDBDT -> VIRIAL, MOLM.
 %  See also V.
 
+% From (dh/dp),T = v - T(dv/dT),p
+
 [B TdBdT] = TdbdT(T);
 [R M] = molm;
 

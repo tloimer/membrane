@@ -7,7 +7,8 @@ function ps = ps(T)
 %  Antoine equation.
 %  Range 341K < T < 514K, error < 0.1% for 341.2K < T < 358K.
 %  From Landolt-Börnstein: Group IV, vol. 20A (2000).
-%  An equation with larger range of validity is given by Perry (1997).
+%  An equation with larger range of validity is given by Perry (1997),
+%  see PSNEW(T).
 
 Aa= 6.92365 + 3; % convert to Pa, not kPa
 Ab=1410.46;

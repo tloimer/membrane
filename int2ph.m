@@ -31,7 +31,7 @@ f2ph = ode23t(@ode2ph,zrange,[T0 a3],options,m,T0,h0);
 function ar = ares(a,T,T0,h0)
 
 % ar= h'dT+xdot*r(T)*q/m-h0;
-ar=intcpl(T0,T) + xdot(T,a)*r(T) + q_m(T,a) - h0;
+ar=intcpl(T0,T) + xdot(T,a)*r(T) + q_m(T,a) - h0
 
 %-----------------------------------------------------------------------
 function dy = ode2ph(z,y,m,T0,h0)

@@ -40,3 +40,32 @@ matlab40113.tar.bz2:
  intp.m: pcap added at termination condition
  mback: TolX to mguess/1e4
  version as used for extended summary ICTAM04
+
+
+matlab40718.tar.bz2
+
+ new directory: membrane,
+   contains membrane material properties: costheta.m, curv.m, epsilon.m, k.m
+ pcap, mmod.m removed
+ new files: costheta.m, curv, dpkdT, dsigdT, epsilon.m, join, kelv.m, rkelv
+ todo created
+ flowstruct: lin.p6 and lin.T4 removed
+ pTplot moved to obsolete
+ resplot.m: q made dimensionless with m*cp*Delta T, latent heat subtracted
+ mback.m: modified to account for costheta<0 and for multiple solutions
+ flowback: possibility for liquid film - vapor added
+ join: utility to join two flowstructs
+ kelv.m: vapor pressure reduction, pk/ps
+ dpkdT: derivative of vapor pressure at a curved interface
+ pcap removed, use curv*sig(T) instead
+ rkelv: evaporation enthalpy at a curved interface
+ sig: interpolation replace by polynomial
+ dsigdT: derivative of sig
+
+ An intermediate save of a version that accounts for capillary pressure,
+ but not for vapor pressure reduction or changes in the evaporation
+ enthaly.
+ Works, but fails to find a solution in small range of kappa>kappac, if
+ a finite capillary pressure with a wetting liquid is assumed.
+ 
+ 

@@ -2,6 +2,8 @@ function flowstruct = addlin(fstruct)
 %ADDLIN     Add solution from linear theory.
 %  ADDLIN(FS) Add the solution from linear theory to the flowstruct FS.
 %  ADDLIN returns a new flowstruct and leaves the old one unchanged.
+%
+%  See also ADDINT.
 
 %we write a new flowstruct
 flowstruct = fstruct;

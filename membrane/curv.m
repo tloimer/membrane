@@ -1,7 +1,7 @@
-function pcap=pcap(T)
-%PCAP(T)    Capillary pressure [Pa].
+function curv=curv()
+%CURV       Curvature [1/m].
 %
-%  Calls SIG.
+%  Calls COSTHETA, EPSILON, KAPPA.
 
 % parallel plate: kap = eps*b^2/12,
 %   pcap = sig/(b/2) = 2*sig/b.
@@ -10,11 +10,11 @@ function pcap=pcap(T)
 % capillary bundle: kap = eps*R^2/6,
 %   pcap = 2*sig/R.
 % capillary bundle
-% pcap = sig(380)/sqrt(1.5*kappa/epsilon);
+% pcap = sig(380)*costheta/sqrt(1.5*kappa/epsilon);
 
-%pcap=0;return
 % epsilon: Lückengrad - volume fraction of pores
-epsilon=0.6;
 
+% capillary bundle
+%curv = costheta/sqrt(1.5*kappa/epsilon);
 % parallel plates
-pcap = sig(380)/sqrt(3*kappa/epsilon);
+curv = costheta/sqrt(3*kappa/epsilon);

@@ -33,4 +33,4 @@ direction=1;
 %  without direction, integration already terminates at start
 %val=ps(temp(z,m,T0,q0,z0,cp,k))-p;
 T = temp(z,m,T0,q0,z0,cp,k);
-val = ps(T)-p-pcap(T); % also pcap subtracted
+val = ps(T)-p-curv*sig(T);% - 1e0; % also pcap subtracted

@@ -1,9 +1,12 @@
-%FLOWSTRUCT Structure containing the solution.
+%FLOWSTRUCT Constructs the structure containing the solution.
 %  FLOWSTRUCT includes four fields, FLOWSTRUCT.INFO, FLOWSTRUCT.SOL,
 %  FLOWSTRUCT.FLOW and FLOWSTRUCT.LIN which are also structures.
 %  FLOWSTRUCT.INFO includes
 %    .kap   permeability of the membrane [m2]
 %    .m     mass flux [kg/m2s]
+%    .Ca    Capillary number dp/pcap, empty for theta = 90°
+%    .kapc  critical permeability [m2]
+%    .kapf  film permeability [m2], empty for theta >= 90°
 %    .L     thickness of the membrane [m]
 %    .T0    given temperature in front of the membrane [K]
 %    .p0    given pressure in front of the membrane [Pa]
@@ -11,7 +14,7 @@
 %    .ph    string denoting the 2-phase flow model
 %
 %  FLOWSTRUCT.SOL includes
-%    .len   length of the structure FLOW
+%    .len   length of the structure FLOW and direction of integration
 %    .a3    vapor volume fraction behind the condensation front
 %    .q3    heat flux behind the condensation front [W/m2]
 %    .T0    temperature in front of the membrane [K]
@@ -34,8 +37,6 @@
 %  FLOWSTRUCT.LIN gives the solution according to the linear theory,
 %    .m     mass flux [kg/m2s]
 %    .Te    temperature at the evaporation front [K]
-%    .T4    temperature at the front of the membrane [K]
-%    .p6    pressure at the evaporation front [Pa]
 %    .deL   relative position of the evaporation front [-]
 %    .dfL   relative position of the film [-]
 %    .a3    vapor volume fraction behind the condensation front

@@ -4,7 +4,7 @@ function fg = intg(m,T0,p0,q0,zrange)
 %  gas-flow region in the membrane from Z0 to Z1 for given mass flux M
 %  and initial conditions T0, P0 and heat flux Q0. Returns a structure
 %  FL that can be used with DEVAL to evaluate the solution. INTG
-%  terminates it the pressure rises above the saturation pressure.
+%  terminates if the pressure rises above the saturation pressure.
 %
 %  Calls NUG, KAPPA, K, CPG, DHDP, PS, ODE45.
 %  Called from FLOWBACK.

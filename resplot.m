@@ -21,13 +21,14 @@ deltap = flowstruct.info.dp;
 T0s = flowstruct.sol.T0;
 Te = flowstruct.sol.Te;
 a3 = flowstruct.sol.a3;
-x3 = x(T0s,a3);
+x3 = x(T0s,a3); % X is independent of the flow model
 %p0s = flowstruct.sol.p0;
 %pe = flowstruct.sol.pe;
+labelline = ['z/L'];
 
 if isempty(T0)
   if ~isempty(p0) | ~isempty(deltap)
-    warning('strange flowstruct: empty T0, but p0 or deltap exist');
+    warning('strange FLOWSTRUCT: empty T0, but p0 or deltap exist');
   end
   T0 = T0s;
   p0 = flowstruct.sol.p0;
@@ -36,34 +37,28 @@ end
 
 flow = flowstruct.flow;
 
-% nondimensionalize
-for i=1:length(flow)
-  flow(i).z = flow(i).z/L;
-  flow(i).q = flow(i).q./(m*r(flow(i).T));
-end
-
 % set to flowstruct values
 kapold = kappa;
 kappa(flowstruct.info.kap);
-% some function  calls, e.g. mlin, depend on the 2ph-model
+% some function  calls, e.g. xdot, depend on the 2ph-model
 if ( ~strcmp(fmodel,flowstruct.info.ph) )
   oldmodel = fmodel;
   phmodel(flowstruct.info.ph);
 end
 
-[mdot dedlin tmplin pelin] = mlin(T0,p0,deltap,L);
+% nondimensionalize
+for i=1:length(flow)
+  flow(i).z = flow(i).z/L;
+  %flow(i).q = flow(i).q./(m*r(flow(i).T));
+  % q made dimensionless by (i) subtracting latent heat, m(1-xdot)r, and
+  % (ii) dividing the remainder by m*cp*deltaT.
+  flow(i).q = (flow(i).q./m - (1-xdot(flow(i).T,flow(i).a)).*r(flow(i).T))...
+    /(cpg(T0,ps(T0))*(T0-Te));
+end
 
 % some diagnostics
-kkc = kappa/kappac(T0);
-if ( kkc>1 ) %2ph
-  tmplmsg = ', x_3 = %.3g';
-  tmplin = x(T0s,tmplin);
-%  tmplmsg = ', \\alpha_1 = %.3g';
-else
-  tmplmsg = ', d_f/L = %.3g';
-  tmplin = -tmplin;
-end
-if ( a3>0 ) %2ph
+% a variable title line: x for 2ph-flow, else the film thickness
+if a3>0 %2ph
   tmpsmsg = ', x_3 = %.3g';
   tmpsol = x3;
 %  tmpsmsg = ', \\alpha_1 = %.3g';
@@ -73,18 +68,41 @@ else
   tmpsol = -flowstruct.sol.df/L;
 end
 
+% compare with linear theory
+if isfield(flowstruct,'lin') & ~isempty(flowstruct.lin.m)
+  mdot = flowstruct.lin.m;
+  dedlin = flowstruct.lin.deL;
+  if flowstruct.lin.a3>0 %2ph
+    tmplmsg = ', x_3 = %.3g';
+    %tmplin = x(T0s,tmplin);
+    tmplin = flowstruct.lin.x3;
+  %  tmplmsg = ', \\alpha_1 = %.3g';
+  else
+    tmplmsg = ', d_f/L = %.3g';
+    tmplin = -flowstruct.lin.dfL;
+  end
+  % now the linear theory line
+  labelline = sprintf(['z/L\nlinear theory: \\DeltaT = %.3gK, '...
+  'm = %.3gkg/m^2s, d_e/L = %.3g' tmplmsg '.'], ...
+  T0-flowstruct.lin.Te,flowstruct.lin.m,flowstruct.lin.deL,tmplin);
+
+  % and set the left limit on the x-axis
+  xl = floor(min(flowstruct.sol.df/L,flowstruct.lin.dfL)*10)/10;
+else
+  xl = floor(flowstruct.sol.df*10/L)/10;
+end
+
 %begin the plots
 subplot(3,1,1);
-xl = floor(flowstruct.sol.df*10/L)/10;
 memplot(flow,'T');
 
 title(sprintf(...
   ['\\kappa/\\kappa_c = %.3g, \\Deltap = %.3gbar, \\DeltaT = %.3gK, ' ph ...
   ': m = %.3gkg/m^2s, d_e/L = %.3g' tmpsmsg ';\n'...
-  '\\Deltap_{err} = %.3gPa, \\DeltaT_{err} = %.3gK, q_0/(mr) = %.3g.'],...
-  kkc, deltap/1e5, T0-Te, m, flowstruct.sol.de/L, tmpsol,...
+  '\\Deltap_{err} = %.3gPa, \\DeltaT_{err} = %.3gK, q_0/(mcp\\DeltaT) = %.3g.'],...
+  kappa/kappac(T0), deltap/1e5, T0-Te, m, flowstruct.sol.de/L, tmpsol,...
   flowstruct.sol.p0-p0,T0s-T0,...
-  (flowstruct.sol.q3/(m*(1-xdot(T0s,a3))*r(T0s))-1) ));
+  (flowstruct.sol.q3/m-(1-xdot(T0s,a3))*r(T0s))/(cpg(T0,p0)*(T0-Te)) ));
 ylabel('T [K]');
 xlim([xl 1]);
 ylim([floor(Te) ceil(T0s)]);
@@ -115,19 +133,18 @@ switch var
 %    ylim([0 1]);
   case 'q'
     memplot(flow,'q');
-    ylabel('q/(m*r(T))');
+    ylabel('(q-(1-xdot)mr)/mcp\DeltaT')
+    %ylabel('q/(m*r(T))');
 %  ylim([0.95 1.05]);
   otherwise
     error('unsupported variable VAR given.');
 end
 
-xlabel(sprintf( ['z/L\nlinear theory: \\DeltaT = %.3gK, '...
-  'm = %.3gkg/m^2s, d_e/L = %.3g' tmplmsg '.'], ...
-  jt(T0,p0)*deltap, mdot, dedlin, tmplin ));
+xlabel(labelline);
 xlim([xl 1]);
 
 % reset old values
 kappa(kapold);
-if ( exist('oldmodel','var') )
+if exist('oldmodel','var')
   phmodel(oldmodel);
 end
