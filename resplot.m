@@ -1,9 +1,12 @@
-function resplot(flowstruct)
+function resplot(flowstruct,var)
 %RESPLOT    Pretty print the flow result.
 %  RESPLOT(FLOWSTRUCT) prints the temperature, pressure and mass
 %  fraction distribution (for 2ph-flow) or heat flux (for fully
 %  condensed flow) across the membrane. RESPLOT also calculates some
 %  values from linear theory.
+%
+%  RESPLOT(FLOWSTRUCT,VAR) prints temperature, pressure and variable
+%  VAR distribution, where VAR is one of 'x', 'a' or 'q'.
 %
 %  Calls MEMPLOT, PHMODEL, MLIN, KAPPA, KAPPAC.
 
@@ -17,7 +20,8 @@ deltap = flowstruct.info.dp;
 
 T0s = flowstruct.sol.T0;
 Te = flowstruct.sol.Te;
-a1 = flowstruct.sol.a1;
+a3 = flowstruct.sol.a3;
+x3 = x(T0s,a3);
 %p0s = flowstruct.sol.p0;
 %pe = flowstruct.sol.pe;
 
@@ -47,19 +51,23 @@ if ( ~strcmp(fmodel,flowstruct.info.ph) )
   phmodel(flowstruct.info.ph);
 end
 
-[mlin dedlin tmplin pelin] = mlin(T0,p0,deltap,L);
+[mdot dedlin tmplin pelin] = mlin(T0,p0,deltap,L);
 
 % some diagnostics
 kkc = kappa/kappac(T0);
 if ( kkc>1 ) %2ph
-  tmplmsg = ', \\alpha_1 = %.3g';
+  tmplmsg = ', x_3 = %.3g';
+  tmplin = x(T0s,tmplin);
+%  tmplmsg = ', \\alpha_1 = %.3g';
 else
   tmplmsg = ', d_f/L = %.3g';
   tmplin = -tmplin;
 end
-if ( a1>0 ) %2ph
-  tmpsmsg = ', \\alpha_1 = %.3g';
-  tmpsol = a1;
+if ( a3>0 ) %2ph
+  tmpsmsg = ', x_3 = %.3g';
+  tmpsol = x3;
+%  tmpsmsg = ', \\alpha_1 = %.3g';
+%  tmpsol = a3;
 else
   tmpsmsg = ', d_f/L = %.3g';
   tmpsol = -flowstruct.sol.df/L;
@@ -73,10 +81,10 @@ memplot(flow,'T');
 title(sprintf(...
   ['\\kappa/\\kappa_c = %.3g, \\Deltap = %.3gbar, \\DeltaT = %.3gK, ' ph ...
   ': m = %.3gkg/m^2s, d_e/L = %.3g' tmpsmsg ';\n'...
-  '\\Deltap_{err} = %.3gPa, \\DeltaT_{err} = %.3gK, q_0/q_1 = %.3g.'],...
+  '\\Deltap_{err} = %.3gPa, \\DeltaT_{err} = %.3gK, q_0/(mr) = %.3g.'],...
   kkc, deltap/1e5, T0-Te, m, flowstruct.sol.de/L, tmpsol,...
   flowstruct.sol.p0-p0,T0s-T0,...
-  (flowstruct.sol.q1/(m*(1-xdot(T0s,a1))*r(T0s))-1) ));
+  (flowstruct.sol.q3/(m*(1-xdot(T0s,a3))*r(T0s))-1) ));
 ylabel('T [K]');
 xlim([xl 1]);
 ylim([floor(Te) ceil(T0s)]);
@@ -87,20 +95,35 @@ ylabel('p [Pa]');
 xlim([xl 1]);
 
 subplot(3,1,3);
-if (a1>0)
-  % 2ph-flow initially
-  memplot(flow,'a')
-  ylabel('\alpha');
-%  ylim([0 1]);
-else
-  % complete condensation
-  memplot(flow,'q')
-  ylabel('q/(m*r(T))');
-  ylim([0.95 1.05]);
+if nargin==1
+  if (a3>0)
+    % 2ph flow
+    var = 'x';
+  else
+    % complete condensation
+    var = 'q';
+  end
 end
+
+switch var
+  case 'x'
+    memplot(flow,'x');
+    ylabel('x');
+  case 'a'
+    memplot(flow,'a');
+    ylabel('\alpha');
+%    ylim([0 1]);
+  case 'q'
+    memplot(flow,'q');
+    ylabel('q/(m*r(T))');
+%  ylim([0.95 1.05]);
+  otherwise
+    error('unsupported variable VAR given.');
+end
+
 xlabel(sprintf( ['z/L\nlinear theory: \\DeltaT = %.3gK, '...
   'm = %.3gkg/m^2s, d_e/L = %.3g' tmplmsg '.'], ...
-  jt(T0,p0)*deltap, mlin, dedlin, tmplin ));
+  jt(T0,p0)*deltap, mdot, dedlin, tmplin ));
 xlim([xl 1]);
 
 % reset old values

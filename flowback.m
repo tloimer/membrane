@@ -16,7 +16,7 @@ function flowstruct = flowback(m,Te,pe,L)
 %  See also FLOWSTRUCT.
 
 info = struct('kap',kappa,'m',m,'L',L,'T0',[],'p0',[],'dp',[],'ph',fmodel);
-sol = struct('len',{},'a1',{},'q1',{},'T0',{},'Te',{},'p0',{},'pe',{},...
+sol = struct('len',{},'a3',{},'q3',{},'T0',{},'Te',{},'p0',{},'pe',{},...
   'de',{},'df',{});
 
 % flow struct count
@@ -45,10 +45,10 @@ if isempty(fg.ie)
   % add the vapor flow in front of the membrane?
 
   sol.len = -i;
-  sol.a1 = 1;
+  sol.a3 = 1;
   sol.T0 = fg.y(1,end);
   sol.p0 = fg.y(2,end);
-  sol.q1 = fg.y(3,end);
+  sol.q3 = fg.y(3,end);
   sol.df = 0;
 
   flowstruct = struct('info',info,'sol',sol,'flow',flow);
@@ -98,10 +98,10 @@ try
   flow(i).color = 'g';
 
   sol.len = -i;
-  sol.a1 = f2ph.y(2,end);
+  sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
   sol.p0 = ps(f2ph.y(1,end));
-  sol.q1 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
+  sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
 
@@ -157,7 +157,7 @@ if isempty(fp.ie)
   [T01,q01] = temp(z01,m,T2,q2,0,c12,k12);
   % strange test
   if ( (T01(end)-T1)/T1>1e-6 ) | z1>0 
-    error('calculating film thickness and/or T1');
+    warning('calculating film thickness and/or T1');
   end
   % film part of the result struct
   %z01=z1/2;
@@ -174,10 +174,10 @@ if isempty(fp.ie)
   flow(i).color = 'b';
 
   sol.len = -i;
-  sol.a1 = 0;
+  sol.a3 = 0;
   sol.T0 = T01(end);
   sol.p0 = p2;
-  sol.q1 = q01(end);
+  sol.q3 = q01(end);
   sol.de = zvap;
   sol.df = z1;
 
@@ -238,10 +238,10 @@ else
   flow(i).color = 'g';
 
   sol.len = -i;
-  sol.a1 = f2ph.y(2,end);
+  sol.a3 = f2ph.y(2,end);
   sol.T0 = f2ph.y(1,end);
   sol.p0 = ps(f2ph.y(1,end));
-  sol.q1 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
+  sol.q3 = m*q_m(f2ph.y(1,end),f2ph.y(2,end));
   sol.de = zvap;
   sol.df = 0;
 

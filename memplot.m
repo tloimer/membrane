@@ -6,7 +6,8 @@ function h = memplot(flowstruct,fieldname)
 %  Called from RESPLOT.
 
 com = 'plot(';
-for i=1:length(flowstruct)
+for i=length(flowstruct):-1:1
+%for i=1:length(flowstruct)
   ffi=sprintf('flowstruct(%d).',i);
   com = [com ffi 'z,' ffi fieldname ',' ffi 'color,'];
 end

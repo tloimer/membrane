@@ -15,17 +15,17 @@ function f2ph = int2ph(m,T0,a0,q0,zrange)
 % for gas-2ph this is: q0=0,a0=1,xdot(T0,1)=1
 h0 = q0/m + xdot(T0,a0)*r(T0);
 
-% calculate initial vapor content a1
-a1=fzero(@ares,[0 1],optimset('fzero'),T0,T0,h0);
+% calculate initial vapor content a3
+a3=fzero(@ares,[0 1],optimset('fzero'),T0,T0,h0);
   
 % and initial temperature gradient
-dTdz1=-m*q_m(T0,a1)/k(T0,a1);
+dTdz1=-m*q_m(T0,a3)/k(T0,a3);
 
 % ode15s  stiff, low to medium accuracy
 % ode23t  moderately stiff, low accuracy, solution without numerical damping
 options=odeset('Events',@term2ph,'Mass',[1 0;0 0],'MStateDependence','none',...
   'MassSingular','yes','InitialSlope',[dTdz1;0],'InitialStep',5e-7);
-f2ph = ode23t(@ode2ph,zrange,[T0 a1],options,m,T0,h0);
+f2ph = ode23t(@ode2ph,zrange,[T0 a3],options,m,T0,h0);
 
 %-----------------------------------------------------------------------
 function ar = ares(a,T,T0,h0)

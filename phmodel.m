@@ -8,6 +8,8 @@ function pmout = phmodel(model)
 if (nargin==0)
   pmout = fmodel;
 else
-  arg = [model '/nu.m ' model '/xdot.m ' model '/fmodel.m .'];
+  workdir = fileparts(which('phmodel.m'));
+  modir = [workdir filesep model];
+  arg = [modir '/nu.m ' modir '/xdot.m ' modir '/fmodel.m ' workdir filesep];
   stat = unix(['ln -sf ' arg]);
 end

@@ -27,31 +27,31 @@ i = length(flowstruct.flow) + 1;
 
 % from the front
 Telin = T0 - jt(T0,p0)*deltap;
-[mlin dedlin tmp pelin] = mlin(T0,p0,deltap,L);
+[mdot dedlin tmp pelin] = mlin(T0,p0,deltap,L);
 %disp('linear theory:');
 %disp(sprintf('  forward: k/kc = %.3g; m = %.3gkg/m2s, DeltaT = %.3gK.',...
 %disp(sprintf(' linear theory: k/kc = %.3g; m = %.3gkg/m2s, DeltaT = %.3gK.',...
-%  kappa/kappac(T0),mlin,T0-Telin));
+%  kappa/kappac(T0),mdot,T0-Telin));
 
 if (tmp>0) % 2ph-flow
-  alin=tmp;
-  xlin=x(T0,alin);
-  q1 = mlin*(1-xdot(T0,alin))*r(T0);
+  a3=tmp;
+  x3=x(T0,a3);
+  q1 = mdot*(1-xdot(T0,a3))*r(T0);
   zlin1 = [0 dedlin]*L;
   zlin2 = [dedlin 1]*L;
   Tlin1 = [T0 Telin];
   Tlin2 = [Telin Telin];
   plin1 = [p0 pelin];
   plin2 = [pelin p0-deltap];
-  qlin1 = [q1 q1]; %/(mlin*r(T0));
-  qlin2 = [0 0]; %/(mlin*r(T0));
-  alin1 = [alin alin];
+  qlin1 = [q1 q1]; %/(mdot*r(T0));
+  qlin2 = [0 0]; %/(mdot*r(T0));
+  alin1 = [a3 x3/( (1-x3)/(v(Telin,pelin)*rho(Telin)) + x3 )];
   alin2 = [1 1];
-  xlin1 = [xlin xlin];
+  xlin1 = [x3 x3];
   xlin2 = [1 1];
 else % liq. film
   dfd=tmp;
-  q1 = mlin*r(T0);
+  q1 = mdot*r(T0);
   % kliq*(T0-T2)/dfd = k*(T2-Telin)/ded.  Achtung: dfd neg.
   kldf=kl(T0)/dfd;
   kmde=k(T0,0)/dedlin;
@@ -76,7 +76,7 @@ flowstruct.flow(i).p = plin1;
 flowstruct.flow(i).q = qlin1;
 flowstruct.flow(i).a = alin1;
 flowstruct.flow(i).x = xlin1;
-flowstruct.flow(i).color = 'y-';
+flowstruct.flow(i).color = 'y';
 flowstruct.flow(i+1).z = zlin2;
 flowstruct.flow(i+1).T = Tlin2;
 flowstruct.flow(i+1).p = plin2;
@@ -91,24 +91,24 @@ flowstruct.flow(i+1).color = 'y';
 %  inline('T0-(te+jt(te,p0-deltap)*deltap)','te','T0','p0','deltap'),...
 %  Telin,optimset('fzero'),T0,p0,deltap);
 %
-%[mlin dedlin tmp pelin] = mlambda(Telin,p0,p0-deltap,deltap,L);
+%[mdot dedlin tmp pelin] = mlambda(Telin,p0,p0-deltap,deltap,L);
 %% now nearly the same as above
 %disp(sprintf('  back - : k/kc = %.3g: m = %.3gkg/m2s, DeltaT = %.3gK.',...
-%  kappa/kappac(Telin),mlin,T0-Telin));
+%  kappa/kappac(Telin),mdot,T0-Telin));
 %
 %if (tmp>0) % 2ph-flow
 %  alin=tmp;
 %  xlin=x(Telin,alin);
-%  q1 = mlin*(1-lambda(Telin,alin))*r(Telin);
+%  q1 = mdot*(1-lambda(Telin,alin))*r(Telin);
 %  zlin = [0 dedlin 1]*L;
 %  Tlin = [T0 Telin Telin];
 %  plin = [p0 pelin p0-deltap];
-%  qlin = [q1 q1 0];% /(mlin*r(Telin));
+%  qlin = [q1 q1 0];% /(mdot*r(Telin));
 %  alin = [alin alin 0];
 %  xlin = [xlin xlin 0];
 %else
 %  dfd=tmp;
-%  q1 = mlin*r(Telin);
+%  q1 = mdot*r(Telin);
 %  % kliq*(T0-T2)/dfd = k*(T2-Telin)/ded.  Achtung: dfd neg.
 %  kldf=kl(Telin)/dfd;
 %  kmde=k(Telin,0)/dedlin;

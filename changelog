@@ -1,0 +1,22 @@
+README:
+
+to use a new substance, do, e.g.,
+> cd ~/matlab
+> ln -s  ethanol/* .
+
+new version archives are created by
+> cd ~/matlab
+> tar -cjf ../matlab30425.tar.bz2 *
+
+
+CHANGELOG:
+
+matlab30211.tar.bz2:
+
+ first version.
+
+
+matlab30425.tar.bz2:
+
+ version as used for gamm 2003
+ some modifications to mlin, flowback

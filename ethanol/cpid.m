@@ -21,7 +21,7 @@ c3=1.6628e3;
 c4=0.939e5;
 c5=744.7;
 
-c3t=c3/T;
-c5t=c5/T;
+c3t=c3./T;
+c5t=c5./T;
 
-cp = ( c1 + c2*(c3t/sinh(c3t))^2 + c4*(c5t/cosh(c5t))^2 )/M;
+cp = ( c1 + c2*(c3t./sinh(c3t)).^2 + c4*(c5t./cosh(c5t)).^2 )/M;

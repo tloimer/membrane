@@ -1,25 +1,23 @@
-function [m,ded,a,pe] = mlin(T,p0,deltap,L)
-%MLIN       Mass flux from linear theory [kg/m2s].
-%  MLIN(T,P0,DELTAP,L) calculates the mass flux for initial state T and
-%  p0 for the applied pressure drop DELTAP and membrane thickness L.
+function [m,ded,a,pe] = mlambda(T,p0,pr,deltap,L)
+%MLAMBDA(T,deltap,L) Mass flow from linear theory.
+%function [m,me,Te,ded,a,pe,Tee,dede,ae,pee] = mlambda(T,deltap,L)
+%MLAMBDA(T,deltap,L) Mass flow from linear theory.
+%  The mass flow is calculated for initial state T and  ps(T), for
+%  applied pressure drop deltap and membrane thickness L.
 %
-%  [M,DED,A,PE] = MLIN(...) gives, for initial 2ph-flow, the location of
+%  [M,DED,A,PE] = MLAMBDA(...) gives, for initial 2ph-flow, the location of
 %  the evaporation front de/L, the pressure at this point and the inital
 %  vapor content a.
 %
-%  [M,DED,DFD,PE] = MLIN(...) gives the location of the evaporation front
+%  [M,DED,DFD,PE] = MLAMBDA(...) gives the location of the evaporation front
 %  de/L and the thickness of the liquid film df/L.
 
-n = jt(T,p0).*dpsdT(T);
+%Te = T-jt(T,p0).*deltap;
+
+n = jt(T,pr).*dpsdT(T);
 if ( n>=1 )
   n=1;
 end
-
-Te = T-jt(T,p0).*deltap;
-% modified viscosity
-%nueff = (nu(T,1) + nug(Te,p0-deltap))/2;
-% originally: 
-nueff = nu(T,1);
 
 if (kappa>kappac(T))
   % supercritical permeability
@@ -31,31 +29,25 @@ if (kappa>kappac(T))
   a=fzero(@ares,[0 1],optimset('fzero'),T,kkc);
 
   % calculate m
-  nn = 1-n+n.*nueff./nu(T,a);
-  m = nn.*deltap.*kappa./(L.*nueff);
+  nn = 1-n+n.*nu(T,1)./nu(T,a);
+  m = nn.*deltap.*kappa./(L.*nu(T,1));
   % de
-  ded = n.*nueff./(nu(T,a).*nn);
+  ded = n.*nu(T,1)./(nu(T,a).*nn);
   pe = p0 - m.*nu(T,a).*ded*L/kappa;
 
 else
 % subcritical permeability
 
-  nn = 1-n+n.*nueff./nu(T,0);
-  m = nn.*deltap.*kappa./(L.*nueff);
+  nn = 1-n+n.*nu(T,1)./nu(T,0);
+  m = nn.*deltap.*kappa./(L.*nu(T,1));
   % de
-  ded = n.*nueff./(nu(T,0).*nn);
-  dfd = -n.*nueff.*kl(T).*(kappac(T)/kappa-1)./(nn.*nu(T,0).*k(T,0));
+  ded = n.*nu(T,1)./(nu(T,0).*nn);
+  dfd = -n.*nu(T,1).*kl(T).*(kappac(T)/kappa-1)./(nn.*nu(T,0).*k(T,0));
   pe = p0 - m.*nu(T,0).*ded*L/kappa;
   % dirty outpt:
   a=dfd;
 
 end
-
-function ar = ares(a,T,kkc)
-ar = (1-xdot(T,a)) - nu(T,a).*k(T,a).*kkc;
-% Schneider:
-% xr = (1-x) - nu(T,x).*k(T,x).*kkc;
-
 %%%%
 %mb=m;
 %dedb=ded;
@@ -115,3 +107,9 @@ ar = (1-xdot(T,a)) - nu(T,a).*k(T,a).*kkc;
 %ded=dedb;
 %a=ab;
 %pe=peb;
+
+function ar = ares(a,T,kkc)
+
+ar = (1-xdot(T,a)) - nu(T,a).*k(T,a).*kkc;
+% Schneider:
+% xr = (1-x) - nu(T,x).*k(T,x).*kkc;
