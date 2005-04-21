@@ -4,7 +4,7 @@
 %  FLOWSTRUCT.INFO includes
 %    .kap   permeability of the membrane [m2]
 %    .m     mass flux [kg/m2s]
-%    .Ca    Capillary number dp/pcap, empty for theta = 90°
+%    .Ca    Capillary coefficient dp../pcap, empty for theta = 90°
 %    .kapc  critical permeability [m2]
 %    .kapf  film permeability [m2], empty for theta >= 90°
 %    .L     thickness of the membrane [m]

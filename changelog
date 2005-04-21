@@ -7,7 +7,7 @@ to use a new substance, do, e.g.,
 new version archives are created by
 > vi ~/matlab/changelog  # edit and note the changes!
 > cd ~/matlab
-> tar -cjf ../matlab30425.tar.bz2 *
+> tar -cjf ../marchiv/matlab30425.tar.bz2 *
 
 
 CHANGELOG:
@@ -78,4 +78,21 @@ matlab40910.tar.bz2
  version as used for proceeding stamm04
 
 
-matlab4*.tar.bz2
+matlab50421.tar.bz2
+
+ new files:  properties.m, mcuss.m, munsat.m, substance.m, map.m
+ new directories:  membrane, nitrogen
+ matlab versions now stored in marchiv
+
+ properties.m:  prints the actual material properties
+ substance.m:  returns string of the name of the fluid substance
+ mcuss.m:  calculates the mass flow according to one case of an isothermal
+  description (Sidhu & Cussler, J. Membr. Sci., 2001)
+ munsat.m:  calculates the mass flow for one case of unsaturated vapor
+  upstream of the membrane
+ mkelv.m:  corrected, now the linear description correctly accounts for
+  capillary condensation
+ map.m:  print the flow map
+ iso.m:  calculation of mass flow for Schneider's (1983) example
+
+ version used for Prag, 11.04.2005

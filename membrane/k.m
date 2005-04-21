@@ -5,7 +5,8 @@ function k=k(T,a)
 
 % epsilon: Lückengrad - volume fraction of pores
 % epsilon=0.6;
-km=23; % ceramic
+km=1.38; % Vycor glass (Elmer,1992)
+%km=23; % ceramic
 %km = 0.22; % Celgard
 
 k = (1-epsilon)*km + epsilon*(a.*kg(T)+(1-a).*kl(T));

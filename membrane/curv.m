@@ -15,6 +15,6 @@ function curv=curv()
 % epsilon: Lückengrad - volume fraction of pores
 
 % capillary bundle
-%curv = costheta/sqrt(1.5*kappa/epsilon);
+curv = costheta/sqrt(1.5*kappa/epsilon);
 % parallel plates
-curv = costheta/sqrt(3*kappa/epsilon);
+%curv = costheta/sqrt(3*kappa/epsilon);

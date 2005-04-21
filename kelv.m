@@ -1,10 +1,10 @@
 function kelv=kelv(T)
-%KELV(T)    Vapor pressure reduction, p/ps.
+%KELV(T)    Vapor pressure reduction, KELV = pk/ps.
 %
-%  Returns the vapor pressure reduction, KELV = P/PS, where P is the
+%  Returns the vapor pressure reduction, KELV = PK/PS, where PK is the
 %  reduced vapor pressure.
 %
-%  Calls MOLM, PCAP, RHO.
+%  Calls MOLM, CURV, SIG, RHO.
 
 % to disable this:
 %kelv=1;

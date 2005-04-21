@@ -1,4 +1,4 @@
-function fl = mkelv(p12,T1,L)
+function fl = mkelv(p12)
 %MKELV      Mass flux from linear theory [kg/m2s].
 %  MKELV(P12,T,L) calculates the mass flux for the upstream state T and
 %  PS(T), the applied pressure drop (Delta-) P12 and the membrane
@@ -10,24 +10,26 @@ function fl = mkelv(p12,T1,L)
 % also kapc=kappac, instead of definition with dpkdT and rkelv.
 
 % some variables
-p1 = ps(T1);
+L=25e-6;
+T1=293;
+p1 = 3e5; %ps(T1);
 p2 = p1-p12;
-T12 = jt(T1,p1)*p12; % = T1-T2 = mu_jt*p12
+T12 = 2.8e-5*p12; % = T1-T2 = mu_jt*p12
 T2 = T1-T12;
-kapc = kappac(T1);
+kapc = 1.7e-17; %kappac(T1);
 % should be:
 % kapc = nu(T,0).*k(T,0)./(dpkdT(T).*rkelv(T));
-kap = kappa;
+kap = 1.6e-17;
 kkc = kap/kapc;
 %dps = dpsdT(T1)*T12;
 
 % n indicates the downstream state
-n = jt(T1,p1)*dpsdT(T1);
+n = 0.26;%jt(T1,p1)*dpsdT(T1);
 
-p1pk = (1-kelv(T1))*p1; % = p1 - pk
+p1pk = 0.126e5; %(1-kelv(T1))*p1; % = p1 - pk
 
 % now the vapor viscosity
-nuvap = (nug(T2,p1-n*p12-p1pk)+nug(T2,p2))/2;
+nuvap = 4.3e-7; %(nug(T2,p1-n*p12-p1pk)+nug(T2,p2))/2;
 % p1-n*p12 = p2+p12*(n-1)
 %nuvap = (nug(T1,p1) + nug(T2,p1-p12))/2;
 % this should have been better, but for liq.film it seems worse
@@ -36,7 +38,7 @@ nuvap = (nug(T2,p1-n*p12-p1pk)+nug(T2,p2))/2;
 %nuvap = nu(T1,1);
 
 if costheta~=0
-  pcap = curv*sig(T1);
+  pcap = 1e6; %curv*sig(T1);
   Ccap = (n*p12 + p1pk)/pcap;
 end
 
@@ -113,9 +115,9 @@ else % Ccap~=0
 end  % costheta==0
 
 % some abbreviations
-nuliq = nul(T1); % = nu(T1,0)
-kliq = kl(T1);
-kml = k(T1,0);
+nuliq = 3.2e-7; %nul(T1); % = nu(T1,0)
+kliq = 0.104;
+kml = 0.17; %k(T1,0);
  
 switch id
   case 's2'
@@ -237,7 +239,8 @@ switch id
 
   case 'w2'
     disp('liq. flow - vapor');
-    rk = r(T1);
+    %rk = r(T1);
+    rk = 340e3;
 
     pv = p12*(1-n)-p1pk;
     mde = (pcap+p12*n*(1+pcap/p1pk)+p1pk)...

@@ -35,6 +35,11 @@ if isempty(T0)
   deltap = p0 - flowstruct.sol.pe;
 end
 
+% a quick'dirty repair
+if T0==Te
+  Te = Te-1;
+end
+  
 flow = flowstruct.flow;
 
 % set to flowstruct values

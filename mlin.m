@@ -1,6 +1,6 @@
 function fl = mlin(deltap,T0,L)
 %MLIN       Mass flux from linear theory [kg/m2s].
-%  MLIN(T,DELTAP,L) calculates the mass flux for initial state T and
+%  MLIN(DELTAP,T,L) calculates the mass flux for initial state T and
 %  ps(T) for the applied pressure drop DELTAP and membrane thickness L.
 %  Returns the solution in a FLOWSTRUCT. Multiple solutions are
 %  returned in a FLOWSTRUCT array.
@@ -57,7 +57,7 @@ temp = struct('info',struct('kap',kap,'m',[],'Ca',Ca,'kapc',kapc,...
 %  kap<=kapc,  Ca<-1, nonwetting    liq.film - liq.flow - meniscus - vapor
 %
 
-if Ca<0 & Ca>=-1 & n<=1
+if Ca<0 & Ca>=-1 & n<1
   % ----------------- liq. film - meniscus - vapor
   disp('liq. film - meniscus - vapor');
   y = [kap 0 -nueff*L; 0 r(T0) 0; 1 0 0] \...
