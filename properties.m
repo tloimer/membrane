@@ -27,7 +27,7 @@ disp(sprintf(['liquid viscosity: %g mPas\nvapor viscosity: %g muPas\n'...
 % membrane properties
 disp(sprintf('\nwetting angle: %g°, cos(theta)=%g',...
   acos(costheta)*180/pi,costheta));
-if costheta/sqrt(1.5*kappa/epsilon)==curv
+if costheta/sqrt(6*kappa/epsilon)==curv
   por = 'cylindrical pores';
 else
   por = 'slit pores';

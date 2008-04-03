@@ -1,6 +1,6 @@
 function k = kappa(kin,T)
 %KAPPA      Permeability of the membrane [m2].
-%  KAPPA without arguments returns the permabbility of the membrane.
+%  KAPPA without arguments returns the permeability of the membrane.
 %
 %  KAPPA(VAL) sets the permeability to VAL.
 %

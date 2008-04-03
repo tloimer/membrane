@@ -96,3 +96,9 @@ matlab50421.tar.bz2
  iso.m:  calculation of mass flow for Schneider's (1983) example
 
  version used for Prag, 11.04.2005
+
+
+matlab80403.tar.bz2
+
+ version just for backup
+ curv.m:  radius korrigiert (Faktor 2)

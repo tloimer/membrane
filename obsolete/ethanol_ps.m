@@ -5,7 +5,7 @@ function ps = ps(T)
 %
 %  Ethanol.
 %  Antoine equation.
-%  Range 341K < T < 514K, error < 0.1% for 341.2K < T < 358K.
+%  Valid for 341 < T < 358, error < 0.1% for 341.2K < T < 358K.
 %  From Landolt-Börnstein: Group IV, vol. 20A (2000).
 %  An equation with larger range of validity is given by Perry (1997),
 %  see PSNEW(T).

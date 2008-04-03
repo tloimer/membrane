@@ -5,4 +5,4 @@ function epsilon=epsilon()
 % epsilon: Lückengrad - volume fraction of pores
 %epsilon=0.6;
 % porous glass, Elmer (1992)
-epsilon=0.3;
+epsilon=0.28;
