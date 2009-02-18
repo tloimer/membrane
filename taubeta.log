@@ -1,0 +1,31 @@
+>> readdata 
+>> calctaubeta 
+Membrane 11A: tau = 262.5924, beta = 55.4452.
+No nitrogen data found for membrane 33A.
+Membrane 33B: tau = 0.9366, beta = 7.2941.
+Membrane 55A: tau = 1.0545, beta = 8.4460.
+No nitrogen data found for membrane HP11A.
+Membrane HP20A: tau = 1.4378, beta = 7.3118.
+Membrane HP55B: min(T1) = 24.00 C, max(T1) = 24.00 C.
+Room temperature set to 24.00 C.
+Membrane HP55B: tau = -2.7348, beta = -23.1677.
+Membrane HP55C: min(T1) = 24.00 C, max(T1) = 24.00 C.
+Room temperature set to 24.00 C.
+Membrane HP55C: tau = 1.0125, beta = 8.1325.
+Membrane HP95A: min(T1) = 24.00 C, max(T1) = 24.00 C.
+Room temperature set to 24.00 C.
+Membrane HP95A: tau = 0.8122, beta = 5.8995.
+Membrane DTN05K14: tau = 0.7693, beta = 3.8308.
+Membrane DTN05K15: min(T1) = 25.70 C, max(T1) = 25.70 C.
+Room temperature set to 25.70 C.
+Membrane DTN05K15: tau = 1.2512, beta = 5.1545.
+Membrane DTU05K14: tau = 0.9011, beta = 4.6601.
+Membrane DTU05K15: min(T1) = 25.50 C, max(T1) = 25.50 C.
+Room temperature set to 25.50 C.
+Membrane DTU05K15: tau = 1.6601, beta = 5.8852.
+Membrane K151: tau = 0.7438, beta = 5.0278.
+Membrane K20: tau = 1.2887, beta = 5.8980.
+Membrane K55: tau = 1.3330, beta = 8.8507.
+Membrane K95: tau = 1.1673, beta = 9.6214.
+Membrane KHP20: tau = 1.0764, beta = 6.2460.
+>> 
