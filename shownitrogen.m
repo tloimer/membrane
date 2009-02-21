@@ -84,12 +84,12 @@ for m = 1:size(memname,1)
   %kn_nu = 3*sqrt(pi/(8*s.R)) / (sqrt(T)*mem.dia);
   kn_nu = 3*sqrt(pi/(8*s.R)) / mem.dia;
   %mem2 = membrane(poredia(m),eps(m),1.38,model{m},1,beta(m),L(m));
-  if beta(m) >= 8.1
-    beta2 = 0.9*beta(m);
-  else
-    beta2 = 1.1*beta(m);
-  end
-  mem3 = membrane(poredia(m),eps(m),1.38,model{m},tau(m),beta2,L(m));
+  %if beta(m) >= 8.1
+  %  beta2 = 0.9*beta(m);
+  %else
+  %  beta2 = 1.1*beta(m);
+  %end
+  %mem3 = membrane(poredia(m),eps(m),1.38,model{m},tau(m),beta2,L(m));
   flow_flux = area(m)*60*1e6; % mass flow [mg/min] over mass flux [kg/m2s]
   %L_kappa = L(m)/mem.kappa;
   % delete old calc1, preallocate array of correct length
@@ -106,7 +106,7 @@ for m = 1:size(memname,1)
     data(k) = Vflow(ind) * L(m) / (flow_flux*vol*delp);
     %mflux = mnum(T1(ind),p1(ind),p2(ind),0,s,mem,f);
     %calc1(k) = mflux*one_mflux;
-    calc1(k) = mnum(T1(ind),p1(ind),p2(ind),0,s,mem,f)*L(m)/delp;
+  %  calc1(k) = mnum(T1(ind),p1(ind),p2(ind),0,s,mem,f)*L(m)/delp;
     idgas(k) = mem.kappa * ( 1/s.nug(T1(ind),pmean(k)) ...
       + mem.beta*kn_nu/sqrt(T1(ind)) );
     %calc2(k) = mnum(T1(ind),p1(ind),p2(ind),0,s,mem2,f)*L(m)/delp;
@@ -117,7 +117,7 @@ for m = 1:size(memname,1)
   end
 
   % Plot
-  plots = mod(plots,8);
+  plots = mod(plots,1);
   if plots == 0
     cfig = figure;
     set(cfig,'PaperPosition',[0.6345 0.6345 19.7150 28.408],...
@@ -127,9 +127,9 @@ for m = 1:size(memname,1)
     %  'DefaultAxesPosition',[0 0 1 1]);
   end
   plots = plots + 1;
-  set(0,'CurrentFigure',cfig); subplot(4,2,plots);
+  set(0,'CurrentFigure',cfig); %subplot(4,2,plots);
   %plot(pred,data,'k*',pred,calc1,'k+-',pred,calc2,'k--',pred,calc3,'k:');
-  plot(pred,data./idgas,'k*',pred,calc1./idgas,'k+-');
+  plot(pred,data./idgas,'k*'); %,pred,calc1./idgas,'k+-');
   title(sprintf('{\\bf%s}. \\tau = %0.2f; \\beta = %0.2f.',...
     memname{m},tau(m),beta(m)));
   xlabel(xlabelstr);

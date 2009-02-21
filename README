@@ -1,50 +1,35 @@
-fig2.m: m/mgas vs kappa/kappa_c fpr delta p approx 0.5 bar
-fig3m: m/mgas vs p1/psat für kappa/kappa_c = 0.08
+Daten wurden aus 09eurotherm/calc übernommen; Insbesondere,
+ membranesguessed, data0902.tsv, results0902.tsv, results0902.mat.
 
-___data0902.tsv:
+siehe 09eurotherm/calc/README
 
+data0902.tsv:
 Kopiert von 08jsm/data/dataroman.tsv sowie  08jsm/data/datakatka.tsv, wiederum
 von 06uchytil/KaterinaDaten/*xls und 06uchytil/RomanDaten/*xls
-
 Spalten:
 # substance, membrane, exp_id, T1 [C], p1 [bar], p2 [bar], Q [ml/min],
 # Troom [C], T1 [uV], T2 [mkV], T2 - T1 [uV]
 
-in matlab:
+membranesguessed wurde geändert, siehe taubeta.log nach
 > readdata
 > calctaubeta
-
-Nun bekommen wir (wegen zusätzlicher Daten) leicht unterschiedliche tau, beta,
-siehe taubeta.log:
 Membrane HP20A wurde von tau = 1.2, beta = 6.1 auf 1.44, 7.31 geändert.
 
-__Drucken, aus shownitrogen etc. (auf A4)!
+> shownitrogen
+Drucken, aus shownitrogen etc. (auf A4)!
 export, set width 21, height 29.7, apply to figure, export to fig?.eps
 then:
 > ps2pdf fig1.eps; ps2pdf fig2.eps; pdftk fig1.pdf fig2.pdf cat output fig.pdf
 
-membraneguessed wurde also geändert, von vorne:
 > readdata
 > results
 
 results.m schreibt results0902.tsv, results0902.mat
-
 danach funktioniert
 > readdata
 > load results0902.mat
 > fig2
-fig2.m ergibt fig2a.eps, fig2b.eps; Skalierung sowie Patzierung der Legende muss
-zwischendurch geändert werden.
-fig3m ergibt fig3a.eps, fig3b.eps, Skalierung sowie Patzierung der Legende muss
-geändert werden.
 
-Figures sind die Hölle:
-in Export auf width = 8.4cm, height = 6.3 cm setzen, danach auch in print
-preview die gleiche Größe setzen, sonst stimmt's nicht.
-Markerproperties hat er
-nicht gewollt, also im property editor Größen setzen:
- 'o' 4pt, '+' 4pt, 's(quare)', 3, '.' bleibt bei 6pt (eig. dann 2pt) default
-Im ps-file ° ergänzen (in der Legende Leerzeichen freilassen), aus vim mit
-:se fileencoding=latin1 exportieren.
-Herumrücken der Legende, fig2a: Symbole sind in einem Kästchen, das genauso
-verschoben werden muss.
+
+fig2.m: m/mgas vs kappa/kappa_c für delta p approx 0.5 bar
+fig3m: m/mgas vs p1/psat für kappa/kappa_c = 0.08
