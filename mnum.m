@@ -38,7 +38,8 @@ function solver = accurate(solver) %----------------------------------- accurate
   solver.maxTperstep = .4;  solver.maxpperstep = 4e4;
 end %-------------------------------------------------------------- end accurate
 function solver = crude(solver) %----------------------------------------- crude
-  solver.rtol = 5e-2;  solver.atol = 1e-5;  solver.tola = 1e-6;
+%  solver.rtol = 5e-2  <--  Das geht nicht für flow78, non-wetting.
+  solver.rtol = 1e-3;  solver.atol = 1e-5;  solver.tola = 1e-6;
   solver.maxTperstep = 2;  solver.maxpperstep = 1e5;
 end %----------------------------------------------------------------- end crude
 
@@ -71,6 +72,7 @@ T2 = s.intjt(T1,p1,p2);
 fl.info.T1 = T1; fl.sol.T2 = T2;
 fl.info.p1 = p1;
 flsetup = flowsetup(T2,T1,theta,s,mem,f);
+% Here, one could ...
 % Calculate the information already possible: 
 %[dpk pk] = dpkdT(T);
 %fl.info.kappac = s.nul(T1)*flsetup.kmliq(T1)/(dps*s.hvap(T1));
@@ -119,7 +121,8 @@ function b = findzero(mguess,p1tol) %---------------------------------- findzero
 %FINDZERO  Find a solution to PRESIDUUM(M) = 0.
 
 %  INITIALIZE
-trace = 1; %debug output
+% Information is plotted for trace > 1. Iteration results for trace > 2.
+trace = 1;
 fcount = 0; procedure = ' ';
 savewritesolution = solver.writesolution;
 
@@ -143,12 +146,14 @@ for i = 2:6
     % found an interval.
     a = [a(i) a(old)];
     fa = [fa(i) fa(old)];
+%DEBUG disp(sprintf('Intervall: %8f < m < %8f, %8f < pres < %8f',...
+%DEBUG   a(1),a(2),fa(1),fa(2)));
     break
   end
 end
 
 %  PLOT SEARCH, IF NO INTERVAL FOUND
-if size(a,2) ~= 2
+if size(a,2) ~= 2 %DEBUG || true(); %DEBUG
   % No interval found.
   % also plot the result for mvap and mliq
   mvap = p12*mem.kappa/(flsetup.nuapp(T2,(p1+p2)/2)*mem.L);
@@ -167,9 +172,12 @@ if size(a,2) ~= 2
   while size(a,2)~= 2
     b = input(['  Provide an interval [mflux mflux] or try\n' ...
       '  several points [mflux mflux mflux ...]: ']);
-    lenb = size(b,2);
+    lenb = size(b,2); fb = b;
     for i = 1:lenb,  fb(i) = presiduum(b(i),solver);  end
+    % reuse old as figure handle; save a possible different current figure.
+    old = get(0,'CurrentFigure'); figure(fac);
     line(b,fb/p1,'Marker','+','LineStyle','none');
+    figure(old);
     if lenb == 2 && (fb(1) < 0) == (fb(2) > 0)
       a = b; fa = fb;
     end
@@ -357,7 +365,7 @@ end
 %intTrange = ceil(intTrange/stepT)*stepT;
 intTrange = ceil((Tmax-T2)/stepT)*stepT;
 if intTrange > 4
-  intTrange = [T2 T2+5*intTrange]; % use 2 for normal use
+  intTrange = [T2 T2+4*intTrange]; %DEBUG use 2 for normal use
 else
   intTrange = [T2 T2+10];
 end
@@ -534,48 +542,3 @@ end %------------------------------------------------------------ end flowstruct
 %end
 %fl.sol.m = m;
 %----------------------------------------------------------------- end garbage 1
-
-%--------------------------------------------------------------------- garbage 2
-%  FLOWSTRUCT includes four fields, FLOWSTRUCT.INFO, FLOWSTRUCT.SOL,
-%  FLOWSTRUCT.FLOW and FLOWSTRUCT.LIN which are also structures.
-%  FLOWSTRUCT.INFO includes
-%    .kap   permeability of the membrane [m2]
-%    .m     mass flux [kg/m2s]
-%    .Ca    Capillary coefficient dp../pcap, empty for theta = 90°
-%    .kapc  critical permeability [m2]
-%    .kapf  film permeability [m2], empty for theta >= 90°
-%    .L     thickness of the membrane [m]
-%    .T0    given temperature in front of the membrane [K]
-%    .p0    given pressure in front of the membrane [Pa]
-%    .dp    given pressure difference [Pa]
-%    .ph    string denoting the 2-phase flow model
-%
-%  FLOWSTRUCT.SOL includes
-%    .len   length of the structure FLOW and direction of integration
-%    .a3    vapor volume fraction behind the condensation front
-%    .q3    heat flux behind the condensation front [W/m2]
-%    .T0    temperature in front of the membrane [K]
-%    .Te    temperature downstream of the membrane [K]
-%    .p0    pressure in front of the membrane [Pa]
-%    .pe    pressure downstream of the membrane [Pa]
-%    .de    position of the evaporation front within the membrane [m]
-%    .df    position of the condensation front [m]
-%             (negative, if liquid film is present)
-%
-%  FLOWSTRUCT.FLOW includes
-%    .z     z-coordinate [m]
-%    .T     temperature [K]
-%    .p     pressure [Pa]
-%    .q     heat flux [W/m2]
-%    .a     vapor volume fraction
-%    .x     vapor mass fraction
-%    .color plotting specification (e.g.: '+k:')
-%
-%  FLOWSTRUCT.LIN gives the solution according to the linear theory,
-%    .m     mass flux [kg/m2s]
-%    .Te    temperature at the evaporation front [K]
-%    .deL   relative position of the evaporation front [-]
-%    .dfL   relative position of the film [-]
-%    .a3    vapor volume fraction behind the condensation front
-%    .x3    vapor mass fraction behind the condensation front
-%----------------------------------------------------------------- end garbage 2

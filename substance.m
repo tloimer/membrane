@@ -264,17 +264,17 @@ Acoeffs(2,1:5) = [358 130546.81 9.92365 1410.46 -64.636];
 Acoeffs(3,:) = [514 16177606 Acoeffs(2,3:5) 358 513.9 0.434294 -255.71 300056];
 
 % RHO, liquid density at saturation
-% Range: 191.5 K < T < 400 K.
+% Range: 191.5 K < T < 514.1 K.
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8G.
-% M. Frenkel, X.  Hong, R. Wilhoit, K. Hall (2000). A correlation for higher
-% temperatures is also available
+% M. Frenkel, X.  Hong, R. Wilhoit, K. Hall (2000).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
 M = 46.07;
-rhocoeffs = zeros(1,7);
+rhocoeffs = zeros(2,7);
 rhocoeffs(1,1:5) = [400 1162.39 -2.25788 5.30621e-3 -6.63070e-6];
-rhofun{1} = @poly3;
+rhocoeffs(2,:) = [514.1 1.73318 -358.319 3.19777e-4 -1.03287e-6 514.1 276];
+rhofun = {@poly3, @rholandolt};
 
 % V, specific volume of the gas
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.

@@ -1,35 +1,7 @@
-Daten wurden aus 09eurotherm/calc übernommen; Insbesondere,
- membranesguessed, data0902.tsv, results0902.tsv, results0902.mat.
+Korrigierte Fassung der Fig. 3.
 
-siehe 09eurotherm/calc/README
+results0902.tsv sowie results0902.mat wurden aus 09eurotherm/corr kopiert.
 
-data0902.tsv:
-Kopiert von 08jsm/data/dataroman.tsv sowie  08jsm/data/datakatka.tsv, wiederum
-von 06uchytil/KaterinaDaten/*xls und 06uchytil/RomanDaten/*xls
-Spalten:
-# substance, membrane, exp_id, T1 [C], p1 [bar], p2 [bar], Q [ml/min],
-# Troom [C], T1 [uV], T2 [mkV], T2 - T1 [uV]
-
-membranesguessed wurde geändert, siehe taubeta.log nach
-> readdata
-> calctaubeta
-Membrane HP20A wurde von tau = 1.2, beta = 6.1 auf 1.44, 7.31 geändert.
-
-> shownitrogen
-Drucken, aus shownitrogen etc. (auf A4)!
-export, set width 21, height 29.7, apply to figure, export to fig?.eps
-then:
-> ps2pdf fig1.eps; ps2pdf fig2.eps; pdftk fig1.pdf fig2.pdf cat output fig.pdf
-
-> readdata
-> results
-
-results.m schreibt results0902.tsv, results0902.mat
-danach funktioniert
-> readdata
-> load results0902.mat
-> fig2
-
-
-fig2.m: m/mgas vs kappa/kappa_c für delta p approx 0.5 bar
-fig3m: m/mgas vs p1/psat für kappa/kappa_c = 0.08
+> matlab &
+>> figures
+> rm fig1.eps

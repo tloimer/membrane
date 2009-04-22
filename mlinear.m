@@ -80,7 +80,7 @@ if abs(costheta)>=1e-3
   % eq. (13)
   n = mujt*dpk;
   if n>=1
-    error('state 2 is a 2ph-mixture: n >= 1, n = %f',n);
+    error('MLINEAR: state 2 is a 2ph-mixture: n >= 1, n = %f',n);
   end
 
   if costheta >= 0
@@ -177,7 +177,7 @@ if costheta==0
 % range kkc < 1 are not given.
 else % Ccap~=0
   if n>1
-    error(['The downstream state is in the 2ph-region.\n'...
+    error(['MLINEAR: The downstream state is in the 2ph-region.\n'...
       'Not supported for a contact angle ~= 90°.']);
   return
   end
@@ -557,9 +557,12 @@ switch id
 %   disp('liq.film - liq.flow');
     % eq. (24)
     mlin = (kap*p12)/(nuliq*L) * ( 1+pcap*(pk-n*p1)/(p1pk*(pk-n*p12)) );
-    disp('no flow struct written.')
+    m = mlin;
+    disp('MLINEAR: rudimentary flow struct written, m = mlin.')
+    fl.sol.len = 2; fl.sol.p0 = p1;
+    [fl.flow(1:2).color] = deal('c','c');
   otherwise
-    error('The program should never come here.');
+    error('MLINEAR: The program should never come here.');
 end
 
 fl.info.m = m;

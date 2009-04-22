@@ -37,19 +37,20 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %
 %  FLSETUP must contain the fields
 %     .curv             Curvature of the meniscus in a pore.
-%     .kelv             Function to calculate the ratio pkelv/psat.
-%     .pkelv            Function to calculate the pressure pkelv.
-%     .hgK              Function to return the vapor enthalpy hvap(T,pkelv(T)).
-%     .intdhdpdpsatdT
-%     .nuapp
-%     .knudsen
-%     .nu2ph
+%     .kelv(T,sig,rho)  Function to calculate the ratio pkelv/psat.
+%     .pkelv(T)         Function to calculate the pressure pkelv.
+%     .hgK(T)           Function to return the vapor enthalpy hvap(T,pkelv(T)).
+%     .intdhdpdpsatdT(T)
+%     .nuapp(T,p)       Apparent vapor viscosity.
+%     .knudsen(T,p)     Knudsen number.
+%     .nu2ph(T,pk,a)
 %     .kmgas
 %     .kmliq
 %     .k2ph
 %     .xdot
 %     .odemaxstep        Function to calculate integration step width.
 %
+%  See MNUM>FLSETUP.
 %  SOLVER must contain the fields
 %    .rtol              Relative error tolerance in odeset ('RelTol').
 %    .atol              Absolute error tolerance in odeset ('AbsTol').
@@ -86,12 +87,14 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %  TODO
 % rewrite intcpl(T1,T2) to icpl(T), See substance. Would have to implement
 % (rewrite) icpleq2, ipoly4, ipoly3.
-% probably use q2ph, to calculate two-phase heat flux
+% use Q2PH to calculate two-phase heat flux, simplify flow78, front89, front85,
+% ev. front37, front57
+% hvapK, hvapKraw an den schluss
 
 %  COMMON VARIABLES
 s = fl.info.substance;  mem = fl.info.membrane;  f = fl.info.fmodel;
 % definition of colors, i.e., LineSpecs
-liqcolor = 'b';  vapcolor = 'r';  twophcolor = 'g-+';
+liqcolor = 'b';  vapcolor = 'r';  twophcolor = 'g';
 
 % Combination of theta and membrane.
 % fl.info.theta is accessed directly
@@ -137,12 +140,14 @@ from2(m,T2,p2);
 
 %%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
 
-function [pk dpk hvapK] = hvapK(T) %-------------------------------------- hvapK
+function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 %HVAPK      Enthalpy of vaporization at a curved interface.
 %
-% [PK DPK HVK] = HVAPK(T) returns the enthalpy of vaporization as well as the
-% vapor pressure and the derivative of the vapor pressure with respect to
-% temperature at a curved interface. [PK] = Pa, [DPK] = Pa/K, [HVK] = J/kg.
+% [PK DPK HVK DPCAP PCAP] = HVAPK(T) returns the enthalpy of vaporization,
+% the vapor pressure, the derivatives of the vapor pressure and the capillary
+% pressure with respect to temperature at a curved interface as well as the
+% capillary pressure. [PK] = Pa, [DPK] = Pa/K, [HVK] = J/kg [DPCAP] = Pa/K,
+% [PCAP] = Pa.
 %
 % DPK: See Eq. (11) in Loimer (2007).
 %
@@ -153,7 +158,9 @@ function [pk dpk hvapK] = hvapK(T) %-------------------------------------- hvapK
 [dsig sigma] = s.dsig(T);
 [drho rho] = s.drho(T);
 pk_ps = kelv(T,sigma,rho);
-pk = pk_ps*psat; pcap = curv*sigma;
+pk = pk_ps*psat;
+pcap = curv*sigma;
+dpcap = pcap*dsig;
 dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
 %hvapK = s.hvap(T) + (pk-psat)*(s.dhdp(T,pk)-dhldp) + dhldp*curv*sigma;
 hvapK = hvapKraw(T,pk,psat,pcap,rho,drho);
@@ -172,6 +179,8 @@ function from2(m,T2,p2) %------------------------------------------------- from2
 
 % FROM2 used in order to encapsulate variables (T6,p6,q6).
 q2 = 0;
+%DEBUG - trace flow12
+%DEBUG disp(sprintf('from2: m = %.5f kg/m2s, T2 = %.3f K',m,T2));
 if p2 >= pkelv(T2)
   [T6 p6 q6] = front62(m,T2,p2,q2);
   flow56(m,T6,p6,q6,mem.L);
@@ -285,6 +294,13 @@ last = size(sol92.x,2);
 % not necessary: .ye, .xe are also in .y(last), .x(last).
 %  [T9 p9 q9 z9] = mkdimensional(sol92.ye(1,end),sol92.ye(2,end),...
 %    sol92.ye(3,end),sol92.xe(end));
+%DEBUG - trace flow12
+% disp(sprintf('  flow92: zw2 = 1, T2 = %.3f K, p2 = %.3f bar, q2 = 0',...
+%   T2,p2/1e5));
+% disp(sprintf(...
+%   '          zw9 = %.3f, T9-T2 = %.3f K, p9 = %.3f bar, q9 = %.5g',...
+%   z9/mem.L,T9-T2,p9/1e5,q9));
+%DEBUG - end trace flow12
 
 %  WRITE SOLUTION
 % if wanted, write the solution
@@ -292,19 +308,19 @@ if writesolution
   % allocate space for all points; assign last point
   T92(last) = T9; p92(last) = p9; q92(last) = q9; z92(last) = z9;
   Kn92(last) = knudsen(T9,p9);
-  pk92(last) = pkelv(T9); %DEBUG
+  %DEBUG pk92(last) = pkelv(T9);
   % and write the solution but the last point
   last = last - 1;
   [T92(1:last) p92(1:last) q92(1:last) z92(1:last)] = mkdimensional(...
     sol92.y(1,1:last),sol92.y(2,1:last),sol92.y(3,1:last),sol92.x(1:last));
   for i = 1:last
     Kn92(i) = knudsen(T92(i),p92(i));
-    pk92(i) = pkelv(T92(i));
+    %DEBUG pk92(i) = pkelv(T92(i));
   end
-%DEBUG  writetostruct('92',{'T','p','q','Kn','z','color'},...
-%DEBUG    {T92,p92,q92,Kn92,z92,vapcolor});
-  writetostruct('92',{'T','p','q','Kn','z','color','pk'},... %DEBUG
-    {T92,p92,q92,Kn92,z92,vapcolor,pk92}); %DEBUG
+  writetostruct('92',{'T','p','q','Kn','z','color'},...
+    {T92,p92,q92,Kn92,z92,vapcolor});
+    %DEBUG writetostruct('92',{'T','p','q','Kn','z','color','pk'},...
+    %DEBUG   {T92,p92,q92,Kn92,z92,vapcolor,pk92});
 end
 
 %  DECIDE AND CALL NEXT
@@ -312,16 +328,19 @@ if not(isempty(sol92.ie))
   % terminated before z = 0
   % full condensation possible?
   % p9 = pk(T9), because this is the termination condition
-  [condensation pk9 dpkdT9 hvapK9 q6] = check69or89(m,T9,q9);% q6 for front69
+  [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9);
+                                              % q6 calculated as part of front69
   if condensation
     % yes: front69 -> flow56
-    T6 = T9; p6 = p9 - curv*s.sigma(T9); %============================== front69
-    if writesolution, writetostruct('-',{},{}); end
+    T6 = T9; p6 = p9 - pcap9; %========================================= front69
+    % if writesolution, writetostruct('-',{},{}); end
+    if writesolution, fl.sol.states = ['-' fl.sol.states]; end
+    % ersteres zählt fl.sol.len weiter, also wird nur fl.sol.states modifiziert
     flow56(m,T6,p6,q6,z9);
   else
     % no:  front89 -> flow78
-    [T8 a8 doth8] = front89(m,T9,p9,q9,hvapK9,dpkdT9);
-    flow78(m,T8,a8,z9,doth8,p9,dpkdT9,hvapK9);
+    [T8 a8 doth8 dp2ph8] = front89(m,T9,p9,q9,hvapK9,dpk9,dpcap9);
+    flow78(m,T8,a8,z9,doth8,p9,dp2ph8,hvapK9);
   end
 else % not(isempty(sol92.ie))
   % vapor flow all through to z = 0
@@ -442,7 +461,6 @@ function [val,isterm,direction] = term56w(z,y)
   % Tw = y(1);  pw = y(2);
   T = mkTdim(y(1));
   val = mkpdim(y(2)) + curv*s.sigma(T) - pkelv(T);
-%  disp(sprintf('T = %g, p = %g: val = %g',T-273.15,mkpdim(y(2)),val));%DEBUG
 end
 
 %  ASSIGN LAST POINT
@@ -450,26 +468,33 @@ end
 last = size(sol56.x,2);
 T5 = mkTdim(sol56.y(1,last));  p5 = mkpdim(sol56.y(2,last));
 q5 = calcq(T5,p5); z5 = sol56.x(last)*z6; % z5 = 0;
+%DEBUG - trace flow12
+% disp(sprintf('  flow56: zw6 = %.3f, T6 = %.3f K, p6 = %.3f bar, q6 = %.5g',...
+%   z6/mem.L,T6,p6/1e5,q6));
+% disp(sprintf(...
+%   '          zw5 = %.3f, T5-T6 = %.3f K, p5 = %.3f bar, q5 = %.5g',...
+%   z5/mem.L,T5-T6,p5/1e5,q5));
+%DEBUG - end trace
 
 %  WRITE SOLUTION
 % if wanted, write the solution
 if writesolution
   % allocate space for all points; assign last point
   T56(last) = T5; p56(last) = p5; q56(last) = q5; z56(last) = z5;
-  pp56(last) = p5 + curv*s.sigma(T5); pk56(last) = pkelv(T5); %DEBUG
+  %DEBUG pp56(last) = p5 + curv*s.sigma(T5); pk56(last) = pkelv(T5);
   % and write remaining solution
   last = last - 1;
   T56(1:last) = mkTdim(sol56.y(1,1:last));
   p56(1:last) = mkpdim(sol56.y(2,1:last));
   for i = 1:last
     q56(i) = calcq(T56(i),p56(i));
-    pp56(i) = p56(i) + curv*s.sigma(T56(i)); %DEBUG
-    pk56(i) = pkelv(T56(i)); %DEBUG
+    %DEBUG pp56(i) = p56(i) + curv*s.sigma(T56(i));
+    %DEBUG pk56(i) = pkelv(T56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-%DEBUG  writetostruct('56-',{'T','p','q','z','color'},{T56,p56,q56,z56,liqcolor});
-  writetostruct('56',{'T','p','q','z','color','pp','pk'},... %DEBUG
-  {T56,p56,q56,z56,liqcolor,pp56,pk56}); %DEBUG
+  writetostruct('56',{'T','p','q','z','color'},{T56,p56,q56,z56,liqcolor});
+  %DEBUG writetostruct('56',{'T','p','q','z','color','pp','pk'},...
+  %DEBUG   {T56,p56,q56,z56,liqcolor,pp56,pk56});
 end
 
 %  DECIDE AND CALL NEXT
@@ -485,12 +510,13 @@ if isempty(sol56.ie)
     flow13(m,T3,p3,q3,0);
   end
 else % ~isempty(sol56.ie), terminated before z = 0, at z > 0
-  [T8 a8 doth8 pk8 dpkdT8 hvapK8] = front85(m,T5,p5,q5);
-  flow78(m,T8,a8,z5,doth8,pk8,dpkdT8,hvapK8);
+  [T8 a8 doth8 pk8 dp2ph8 hvapK8] = front85(m,T5,p5,q5);
+  flow78(m,T8,a8,z5,doth8,pk8,dp2ph8,hvapK8);
 end % end gottrough
 end %---------------------------------------------------------------- end flow56
 
-function [condensation pk9 dpkdT9 hvapK9 q6] = check69or89(m,T9,q9)% check69or89
+%------------------------------------------------------------------- check69or89
+function [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9)
 %CHECK69OR89 Evaporation of liquid (69) or two-phase mixture (89)?
 % Check if full condensation is possible by taking the 2ph-flow to the limit of
 % full condensation,  a -> 0, k -> kmliq, nu -> nuliq.
@@ -512,17 +538,21 @@ function [condensation pk9 dpkdT9 hvapK9 q6] = check69or89(m,T9,q9)% check69or89
 % Full condensation is necessary if eq. (2ph) does not have a solution, which my
 % be estimated with min(q8) >= m*hvapk + q9.
 
-% three vars we calculate once (and pass to front89 and flow78)
-[pk9 dpkdT9 hvapK9] = hvapK(T9);
+% some vars we calculate once (and pass to front89 and flow78)
+[pk9 dpk9 hvapK9 dpcap9 pcap9] = hvapK(T9);
 q6 = q9 + m*hvapK9; %========================================== part for front69
-if m*kmliq(T9)*s.nul(T9)/(dpkdT9*mem.kappa) >= q6
+dpkliq9 = dpk9 - dpcap9; %21.April
+% for non-wetting, dpkliq might be negative! Then, condensation is anyway
+% possible. The pressure could stay constant and the Temperature rise, still the
+% fluid would remain in its liquid state.
+if dpkliq9 <= 0 || m*kmliq(T9)*s.nul(T9)/(dpkliq9*mem.kappa) >= q6
   condensation = true;
 else
   condensation = false;
 end
 end %----------------------------------------------------------- end check69or89
 
-function [T8 a8 doth8] = front89(m,T9,p9,q9,hvapK9,dpkdT9) %------------ front89
+function [T8 a8 doth8 dp2ph8] = front89(m,T9,p9,q9,hvapK9,dpk9,dpcap9)%- front89
 %FRONT89    Full evaporation of two-phase mixture within the membrane.
 % Find a8 that solves 
 %   (1) m*xdot*hvapK + q8 = m*hvapK + q9,   if h = 0 for sat. liquid at T = T8.
@@ -530,14 +560,21 @@ function [T8 a8 doth8] = front89(m,T9,p9,q9,hvapK9,dpkdT9) %------------ front89
 % Eq. (1) may have two solutions, cf. Fig. 6 in (Loimer, 2007) for homogeneous
 % flow. However, we only come here for q8,liq < m*hvapK + q9 where only one
 % solution is possible, cf. Fig. 6.
+%
+% Correction, 2 April 2009.
+% Solve
+%   (1) xdot9*hvapK9 + q8/m = doth8/m,
+%   (2) q8 = -k2ph*dT/dz.
+% With dp/dz = -m*nu/kappa, dp/dz = dp2ph/dz = dp2ph/dT*dT/dz + dp2ph/da*da/dz,
 T8 = T9; doth8 = q9 + m*hvapK9; %pk8 = p9;
 % (1-xdot)*hvapK + q9/m - k*nu/((dpk/dT)*kap) =! 0;
 sol89 = @(a) (1-xdot(T9,p9,a))*hvapK9 + q9/m ...
-  - k2ph(T9,a)*nu2ph(T9,p9,a)/(dpkdT9*mem.kappa);
+  - k2ph(T9,a)*nu2ph(T9,p9,a)/((dpk9-(1-a)*dpcap9)*mem.kappa);
 a8 = fzero(sol89,[0 1],optimset('TolX',tola));
+dp2ph8 = dpk9 - (1-a8)*dpcap9;
 end %--------------------------------------------------------------- end front89
 
-function flow78(m,T8,a8,z8,doth8,pk8,dpkdT8,hvapK8) %-------------------- flow78
+function flow78(m,T8,a8,z8,doth8,pk8,dp2ph8,hvapK8) %-------------------- flow78
 %FLOW78     Two-phase flow within the membrane.
 % Does not terminate, goes through to z = 0.
 % p7 > psat(T7) ?
@@ -556,33 +593,42 @@ function flow78(m,T8,a8,z8,doth8,pk8,dpkdT8,hvapK8) %-------------------- flow78
 % dimensionless
 % z = z8*zw; T = (z8 m nu8/(dpkdT8 kappa)*Tw + T8;
 % dimensionless eqs:
-% dTw/dzw = -(nu/(dpk/dT) (dpk/dT)8/nu8;  nu8 = nu2ph(T8,a8);
+% dTw/dzw = -(nu/(dpk/dT)) (dpk/dT)8/nu8;  nu8 = nu2ph(T8,a8);
+%
+% Correction, 16 April 2009.
+% Solve
+%   (1) m(hgK - (1-xdot)hvapK) + q = m*hgK8 + doth8 - m*hvapK8
+%   (2) q = -k dT/dz
+%   (3) dp/dz = -m nu/kappa = dp2phdT*dT/dz + dp2hpda*da/dz.
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
 nu8 = nu2ph(T8,pk8,a8); % tmp1 = nu8/(dpkdT8*mem.kappa);
 pscale = m*z8*nu8/mem.kappa; % zscale = z8;
-Tscale = pscale/dpkdT8;
+Tscale = pscale/dp2ph8;
 mkTdim = @(Tw) Tscale.*Tw + T8;
-coeff1 = -dpkdT8/nu8;
+coeff1 = -dp2ph8/nu8;
 %coeff2 = hgK(T8) - (1-xdot(T8,pk8,a8))*hvapK8 + k2ph(T8,a8)*tmp1;
 coeff2 = hgK(T8) + doth8/m - hvapK8; %+ q9/m;
 step78 = -min(odemaxstep(pscale,maxpperstep),odemaxstep(Tscale,maxTperstep));
+%disp(sprintf('T8 = %6.2f K, Tscale = %6.2f',T8,Tscale));
 
 %  INTEGRATE
 % integrate the dimensionless equations; step78/16 is necessary for large
 % pressure drops on the order of 2 bar.
 options=odeset('InitialSlope',[-1;0],'RelTol',rtol,...
   'Mass',[1 0;0 0],'MStateDependence','none','MassSingular','yes',...
-  'Refine',1,'InitialStep',step78/16,'MaxStep',step78);
+  'Refine',1,'InitialStep',step78/16,'MaxStep',step78); %,'OutputFcn',@odeplot);
 sol78 = ode23t(@int78w,[1 0],[0 a8],options);
 
 function dy = int78w(z,y)
   Tw = y(1); a = y(2); T = mkTdim(Tw);
-  [p dpk hvK] = hvapK(T);
-  nu = nu2ph(T,p,a);
-  dTw = coeff1*nu/dpk;
-  da = hgK(T) - (1-xdot(T,p,a))*hvK + nu*k2ph(T,a)/(dpk*mem.kappa) - coeff2;
+  [pk dpk hvK dpcap] = hvapK(T);
+  nu = nu2ph(T,pk,a);
+  dp2ph = dpk - (1-a)*dpcap;
+  dTw = coeff1*nu/dp2ph;
+  da = hgK(T) - (1-xdot(T,pk,a))*hvK ...
+     + nu*k2ph(T,a)/(dp2ph*mem.kappa) - coeff2;
   dy = [dTw;da];
 end
 
@@ -591,6 +637,10 @@ end
 last = size(sol78.x,2);
 T7 = mkTdim(sol78.y(1,last));  a7 = sol78.y(2,last);  z7 = z8*sol78.x(last);
 % z7 = 0;  % p7 = pk(T7);
+%DEBUG - trace flow12
+%disp(sprintf('  flow78: z8 = %.3f mm, T8 = %6.2f K, a8 = %.3f',z8*1e3,T8,a8));
+%disp(sprintf('          zw7 = %.3f, T7-T8 = %.3f K, a7 = %.3f',z7/z8,T7-T8,a7));
+%DEBUG - end trace flow12
 
 %  WRITE SOLUTION
 % if wanted, write the solution
@@ -637,8 +687,8 @@ function [T3 p3 q3] = front37(m,T7,a7) %-------------------------------- front37
 %   q3 = q7 + m*(xdot-1)*hvapK, for q7 see front89
 T3 = T7;
 %p3 = pkelv(T7); % p3 = p7;
-[p3 dpkdT7 hvapK7] = hvapK(T7);
-q7 = m*nu2ph(T7,p3,a7)*k2ph(T7,a7)/(dpkdT7*mem.kappa); %q2ph?
+[p3 dpkdT7 hvapK7 dpcap7] = hvapK(T7);
+q7 = m*nu2ph(T7,p3,a7)*k2ph(T7,a7)/((dpkdT7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
 q3 = q7 + m*(xdot(T7,p3,a7)-1)*hvapK7;
 end  %-------------------------------------------------------------- end front37
 
@@ -649,9 +699,9 @@ function [T5 p5 q5] = front57(m,T7,a7) %-------------------------------- front57
 %   q5 = m xdot7 hvapK + q7,
 T5 = T7;
 %p7 = pk(T7);
-[p7 dpkdT7 hvapK7] = hvapK(T7);
-p5 = p7 - curv*s.sigma(T7);
-q7 = m*nu2ph(T7,p7,a7)*k2ph(T7,a7)/(dpkdT7*mem.kappa); %q2ph?
+[p7 dpkdT7 hvapK7 dpcap7 pcap7] = hvapK(T7);
+p5 = p7 - pcap7;
+q7 = m*nu2ph(T7,p7,a7)*k2ph(T7,a7)/((dpkdT7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
 q5 = q7 + m*xdot(T7,p7,a7)*hvapK7;
 end  %-------------------------------------------------------------- end front57
 
@@ -900,7 +950,7 @@ hvapK3 = hvapKraw(T3,p3,psat3,p3-p5,rho3,drho3);
 q3 = q5 - m*hvapK3;
 end %--------------------------------------------------------------- end front35
 
-function [T8 a8 doth8 pk8 dpkdT8 hvapK8] = front85(m,T5,p5,q5) %-------- front85
+function [T8 a8 doth8 pk8 dp2ph8 hvapK8] = front85(m,T5,p5,q5) %-------- front85
 %FRONT85    Full condensation of two-phase mixture within the membrane.
 % Find a8 that solves 
 %    m*xdot*hvapK + q8 =  q5.
@@ -908,12 +958,13 @@ function [T8 a8 doth8 pk8 dpkdT8 hvapK8] = front85(m,T5,p5,q5) %-------- front85
 %  0 =! q5/m - xdot*hvapK - k*nu/((dpk/dT)*kap).
 % doth8 = q8 + m*xdot*hvapK8 = q5
 T8 = T5; doth8 = q5;
-[p8 dpkdT8 hvapK8] = hvapK(T8);
-sol85 = @(a) q5/m - xdot(T8,p8,a)*hvapK8 ...
-   - k2ph(T8,a)*nu2ph(T8,p8,a)/(dpkdT8*mem.kappa);
-% DEBUG
+[pk8 dpk8 hvapK8 dpcap8] = hvapK(T8);
+sol85 = @(a) q5/m - xdot(T8,pk8,a)*hvapK8 ...
+   - k2ph(T8,a)*nu2ph(T8,pk8,a)/((dpk8-(1-a)*dpcap8)*mem.kappa);
+%DEBUG
 %try
 a8 = fzero(sol85,[0 1],optimset('TolX',tola));
+dp2ph8 = dpk8 - (1-a8)*dpcap8;
 %catch
 %a8 = [0:0.01:1]; sola8 = a8;
 %for i = 1:length(a8), sola8(i) = sol85(a8(i)); end
