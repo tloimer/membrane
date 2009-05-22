@@ -773,9 +773,16 @@ if writesolution
   T13(last) = T1; p13(1:last) = p3; q13(last) = q1;
   last = last - 1;
   T13(1:last) = mkTdim(sol13.y(1,1:last)); q13(1:last) = q3*sol13.x(1:last);
-  % the exponential of z - z3 is plotted;
+  % plotted is the characteristic scale, (exp((z-z3)/zscale) - 1)zscale + z3
   z13 = z3 + (sol13.y(2,:)-1)*zscale;
+  % To plot the physical z-coordinate:
+  %  z3 = z13(1);
+  %  (1)  z = z3 + zscale * ln( (z13-z3)/zscale + 1 ) 
+  % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
+  % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
+  % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
   writetostruct('13-',{'T','p','q','z','color'},{T13,p13,q13,z13,vapcolor});
+  fl.sol.zscale = zscale;
 end
 
 %  THE END

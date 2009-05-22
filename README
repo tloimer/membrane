@@ -1,7 +1,12 @@
-Korrigierte Fassung der Fig. 3.
-
-results0902.tsv sowie results0902.mat wurden aus 09eurotherm/corr kopiert.
-
+korrigierte Abbildungen Fig. 2,
+flow12, mnum.m, substance.m, fmodel.m(?) modifiziert.
 > matlab &
->> figures
-> rm fig1.eps
+>> readdata
+>> results
+%dauert ca. 1 Stunde; erzeugt results0902.mat, results0902.tsv.
+>> exit
+> matlab &
+>> readdata
+>> load results0902
+>> fig2
+Fig2a, Fig2b wie in fig2.m beschrieben erstellen.
