@@ -518,9 +518,9 @@ soldhdps = ode45(@intdhdpdpsdT,intTrange,0,options);
 function dh = intdhdpdpsdT(T,h)
   % calculate the term
   %   T2_int^T dh/dp dpsat/dT' dT'
-  % in the liquid phase, hence dh/dp = v - Tdv/dT = 1/rho + (1/rho^2) drho/dT.
+  % in the liquid phase, hence dh/dp = v - Tdv/dT = 1/rho + (T/rho^2) drho/dT.
   [drho rho] = s.drho(T); [ps dps] = s.ps(T);
-  dh = dps*(1+drho)/rho;
+  dh = dps*(1+T*drho)/rho;
 end
 
 flsetup.hgK = @(T) deval(solhgK,T);

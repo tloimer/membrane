@@ -397,7 +397,7 @@ mkpdim = @(pw) pscale.*pw + p6;
 % coefficients for the eqs. in int56w:
 % primarily, for the invariable part of (q6 + m*h6)/q6:
 [drho6 rho6] = s.drho(T6);
-coeff1 = q6 + m*( (p6-s.ps(T6))*(1+drho6)/rho6 - intdhdpdpsatdT(T6) );
+coeff1 = q6 + m*( (p6-s.ps(T6))*(1+T6*drho6)/rho6 - intdhdpdpsatdT(T6) );
 coeff2 = -kmliq6/q6;
 
 % calculate q. This function is needed twice, once during integration and later
@@ -406,7 +406,7 @@ function q = calcq(T,p)
   % do not vectorize! s.ps is scalar, gives wrong values on vectors.
   [drho rho] = s.drho(T);
   q = coeff1 - m ...
-    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+drho)/rho - intdhdpdpsatdT(T));
+    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+T*drho)/rho - intdhdpdpsatdT(T));
 end
 
 %  INTEGRATE
