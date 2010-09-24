@@ -95,7 +95,7 @@ Acoeffs(3,:) = [408 3649825.9 Acoeffs(2,3:5) 268 407.1 2.6705 -19.64 2792];
 % R. Wilhoit, K. Marsh, X.  Hong, N. Gadalla and M. Frenkel (1996).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
-M = 58.1234;
+M = 58.124; % VDI-Wärmeatlas, siehe unten bei kritischen Größen
 rhocoeffs = zeros(2,7);
 rhocoeffs(1,1:5) = [326 870.93 -1.36494 2.56419e-3 -5.32743e-6];
 rhocoeffs(2,:) = [407.8 0.840589 -0.0242474 3.07814e-4 -1.40048e-6 407.8 224];
@@ -183,7 +183,7 @@ Acoeffs(3,:) = [425.1 3723052.4 Acoeffs(2,3:5) 288 425.1 2.14767 -175.62 12204];
 % R. Wilhoit, K. Marsh, X.  Hong, N. Gadalla and M. Frenkel (1996).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
-M = 58.1234;
+M = 58.124; % VDI-Wärmeatlas, siehe unten bei kritischen Größen
 rhocoeffs = zeros(2,7);
 rhocoeffs(1,1:5) = [340 892.907 -1.45679 2.87931e-3 -5.35281e-6];
 rhocoeffs(2,:) = [425.12 .724403 -.0198517 2.40924e-4 -1.05134e-6 425.12 228];
@@ -270,7 +270,7 @@ Acoeffs(3,:) = [514 16177606 Acoeffs(2,3:5) 358 513.9 0.434294 -255.71 300056];
 % M. Frenkel, X.  Hong, R. Wilhoit, K. Hall (2000).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
-M = 46.07;
+M = 46.069; % VDI Wärmeatlas, siehe weiter unten bei critical constants
 rhocoeffs = zeros(2,7);
 rhocoeffs(1,1:5) = [400 1162.39 -2.25788 5.30621e-3 -6.63070e-6];
 rhocoeffs(2,:) = [514.1 1.73318 -358.319 3.19777e-4 -1.03287e-6 514.1 276];
@@ -357,7 +357,7 @@ Acoeffs(2,:) = [126.2 6069220.85 Acoeffs(1,3:5) 80 126.2 0.434294 15.32 -15.5];
 % Range: 63.15 K < T < 126.2 K
 % See Table 2-30 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Some kind of Rackett equation, i suppose.
-M = 28.014;
+M = 28.013;  % VDI-Wärmeatlas, siehe unten bei kritischen Größen
 rhocoeffs = zeros(1,7);
 rhocoeffs(1,1:6) = [126.2 3.2091 0.2861 126.2 0.2966 M];
 rhofun{1} = @rhoperry;
@@ -898,7 +898,7 @@ function mug = mulucas(T,R,M,Tc,pc,mugcoeffs)
 %  and by Perry, 7th ed. (1997). Not good for, e.g., nitrogen at saturation for
 %  T > 80 K (cf. viscosity.pdf).
 
-debye = mugcoeffs(1); Z = mugcoeffs(2);
+Z = mugcoeffs(1); debye = mugcoeffs(2);
 Navo = 6.02214e26; % Avogadros constant.
 k = R/Navo; % Boltzmann number
 

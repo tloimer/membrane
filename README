@@ -1,12 +1,30 @@
-korrigierte Abbildungen Fig. 2,
-flow12, mnum.m, substance.m, fmodel.m(?) modifiziert.
-> matlab &
->> readdata
->> results
-%dauert ca. 1 Stunde; erzeugt results0902.mat, results0902.tsv.
->> exit
-> matlab &
->> readdata
->> load results0902
->> fig2
-Fig2a, Fig2b wie in fig2.m beschrieben erstellen.
+In matlab:
+> read0905
+> results0905
+
+danach funktioniert
+> load results0905
+
+Fig2?: 2. Versuch, nach Schneiders Intervention
+
+  Numeric work horses:
+mnum.m, flow12.m, membrane.m, substance.m, fmodel.m, mlinear.m
+
+  Data evaluation:
+memplot.m, resplot.m, readdata.m, calctaubeta.m, shownitrogen.m, testnitrogen.m,
+unsat.m, vapor.m, temperature.m
+
+  Validation:
+testlinear.m
+
+  gutepunke.mat:
+indices ig in diejenigen Datenpunkte, deren Temperaturdifferenz gleich der
+nach Joule-Thomson Effekt zu erwartenden, +25% -20%, ist.
+
+  temperature.m
+Kalibration der Thermocouples.
+
+Dateien in matlab2:
+Files flow12.m and ../matlab/flow12.m differ
+Files mnum.m and ../matlab/mnum.m differ
+Files substance.m and ../matlab/substance.m differ

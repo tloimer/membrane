@@ -14,11 +14,29 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %  MNUM(M,T2,P2,THETA,S,MEM,F,TMAX) constructs a struct SOLVER and invokes
 %  FLOW12. Returns a FLOWSTRUCT. See FLOW12.
 %
+%  The flowstruct FL has the fields FL.info, Fl.calc, FL.sol and FL.flow.
+%  FL.calc is written by mnum. For gases it is empty. For vapors Fl.calc
+%  contains
+%    FL.calc.psat1      psat(T1)
+%    FL.calc.pK1        pK(T1)
+%    FL.calc.n          n = (dT/dp)_h dpK/dT at T1, see Eq. (13) in TL, 2007. 
+%    FL.calc.Ccc        (p1-p2)(1-n)/(psat-pK), Eq. (12) in Loimer, 2007.
+%    FL.calc.Ccap       n(p1-p2)/pcap, Eq. (14) in Loimer, 2007.
+%    FL.calc.kappac     kappa_crit  cf. Eq. (8) in Schneider, 1983.
+%    FL.calc.kapK       dpK/dT instead of dpsat/dT in kappac.
+%    FL.calc.kapl       (dpK/dT - d pcap/dT) instead of dpsat/dT in kappac.
+%    FL.calc.kapKK      kapKK = kapK(kapK), pK and hvapK iteratively evaluated.
+%    FL.calc.kapll      kapll = kapl(kapl), iteratively evaluated at kapl.
+%    FL.calc.mlinp1sat  mass flux according to linear theory if p1 = psat(T1).
+%    FL.calc.mguess     mass flux, estimated by improved linear description,
+%                       see (Loimer, eurotherm09)
+%    FL.calc.mgas       mass flux for isothermal flow of the gaseous phase
+
 %  Calls FLOW12.
 %
 %  See also FLOW12, FMODEL, MEMBRANE, SUBSTANCE.
 %
-%  Subfunctions:  FLOWSETUP, FLOWSTRUCT.
+%  Subfunctions:   FLCALCVARS, FLOWSETUP, FLOWSTRUCT.
 %  Try, e.g., help mnum>flowsetup.
 %
 %  Nested functions: accurate, crude, findzero, presiduum.
@@ -62,8 +80,8 @@ end % end nargin == 8
 
 %  INITIALIZE FOR MNUM PROPER
 % Assign T2, Temperature integration range, solver and call tdproperties.
-%[ps dps] = s.ps(T1);
-if  p1 > s.ps(T1)
+[psat1 dps1] = s.ps(T1);
+if  p1 > psat1
   error(['MNUM: Fluid is in liquid state at upstream location:'...
     ' p1 > psat(T1), p1 = %g bar, psat = %g bar'],p1*1e-5,s.ps(T1)*1e-5);
 end
@@ -72,14 +90,12 @@ T2 = s.intjt(T1,p1,p2);
 fl.info.T1 = T1; fl.sol.T2 = T2;
 fl.info.p1 = p1;
 flsetup = flowsetup(T2,T1,theta,s,mem,f);
-% Here, one could ...
-% Calculate the information already possible: 
-%[dpk pk] = dpkdT(T);
-%fl.info.kappac = s.nul(T1)*flsetup.kmliq(T1)/(dps*s.hvap(T1));
-%if theta ~= 90
-%  if theta < 90
-%    fl.info.Ccc = 
-%end
+
+% Calculate the information already possible.
+if isfinite(psat1) % above the critical point, these numbers do not make sense
+  fl.calc = flcalcvars(T1,p12,p1,psat1,dps1,flsetup,theta,s,mem,f);
+end
+
 % How much output is wanted.
 if nargout > 1 % mnum called with [m fl] = mnum(...
   solver.writesolution = true;
@@ -91,16 +107,36 @@ solver.partialsolution = ~solver.writesolution;
 %  FIRST GUESS
 % Guess the mass flow either from linear theory or assuming pure vapor flow.
 if nargin < 9
-  if p1 >= flsetup.pkelv(T1)
-    % for nearly saturated vapor use linear theory
-    flin = mlinear(p1,p2,T1,theta,s,mem,f);
-    mguess = flin.lin.m;
-  else
-    % for unsaturated vapor or gas, use pure vapor flow as a guess
-    % mliq = p12*mem.kappa/(s.nul(T1)*mem.L);
-    mguess = p12*mem.kappa/(flsetup.nuapp(T2,(p1+p2)/2)*mem.L);
-  end
+  % calculate the flow of the fluid in its gaseous state, isothermal flow
+  mgas = p12*mem.kappa/(flsetup.nuapp(T1,(p1+p2)/2)*mem.L);
+  % psat1 is finite, the struct .calc is only written for vapors.
+  if ~isempty(fl.calc) % this test could break easily!
+    if theta <= 90
+      plo = fl.calc.pK1 - fl.calc.n*p12;
+      if p1 > plo
+	%if fl.calc.Ccc >= 1
+	  % Use linear approximation, see Loimer, eurotherm 2009.
+	  % no further distinction between Ccc > 1 or Ccc > 1.
+	  mguess = mgas + (fl.calc.mlinp1sat-mgas)*(p1-plo)/(psat1-plo);
+	%else
+	  % rather err towards the larger values
+	  %  fl.caIlc.mlinear = fl.calc.mlinp1sat;
+	%end
+      else % p1 <= plo
+	mguess = mgas;
+      end % p1 > plo
+    else % theta > 90
+      % for non-wetting fluid near saturation use linear theory
+      flin = mlinear(p1,p2,T1,theta,s,mem,f);
+      mguess = flin.lin.m;
+    end % theta
+  else % isempty(fl.calc), therefore: psat1 = Inf
+    % for unsaturated vapor or gas, use gaseous fluid flow
+    mguess = mgas;
+  end % ~isempty(fl.calc)
+  fl.calc.mgas = mgas;
 end
+fl.calc.mguess = mguess;
 
 %  SHOOT AT P1
 p1tol = 1e-3*p12;
@@ -292,15 +328,95 @@ end %%% END MNUM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MNUM %%%
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
-function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %------------------- flsetup
+%-------------------------------------------------------------------- flcalcvars
+function calc=flcalcvars(T1,p12,p1,psat1,dps1,flsetup,theta,s,mem,f)
+%FLCALCVARS Calculate div. kappas, Ccc, Ccap, pk1 and other fl.calc variables.
+
+% Initialize the output struct.
+calc = struct('psat1',psat1,'pK1',[],'n',[],'Ccc',[],'Ccap',[],...
+  'kappac',[],'kapK',[],'kapl',[],'kapKK',[],'kapll',[],'mlinp1sat',[]);
+
+% We need this variables.
+[dpk1 calc.pK1] = flsetup.dpkdT(T1);
+[dsig1 sigma1] = s.dsig(T1);
+[drho1 rho1] = s.drho(T1);
+% probably that also
+hvap1 = s.hvap(T1);
+
+dsigma_dT1 = sigma1*dsig1;
+nulkml = s.nul(T1)*flsetup.kmliq(T1);
+
+calc.n = s.jt(T1,p1)*dpk1;
+calc.kappac = nulkml/hvap1; % reuse kappac!
+calc.kapK = calc.kappac/dpk1;
+calc.kapl = calc.kappac/(dpk1-flsetup.curv*dsigma_dT1);
+calc.kappac = calc.kappac/dps1; % kappac now is OK.
+%
+facdia = mem.dia/sqrt(mem.kappa); %  dia = facdia*sqrt(kappa);
+faccurv = flsetup.curv*mem.dia; %   curv = faccurv/dia;
+facpk_ps = -sigma1/(s.R*rho1*T1); % pk_ps = exp(curv*facpk_ps)
+% pk_ps = exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
+% dpk = pk_ps * (dps1 + psat1*curv*sigma1*(1/T1-dsig1+drho1)/(s.R*rho1*T1));
+facdpk = psat1*sigma1*(1/T1-dsig1+drho1)/(s.R*rho1*T1);
+% dpk = pk_ps * (dps1 + curv*facdpk)
+dhldp1 = (1 + T1*drho1)/rho1;
+% hvK = hvap1 + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
+fachvap = dhldp1*sigma1;
+
+function [curv dpk hvapK] = varskappa(kappa)
+  % curv = faccurv/dia; % dia = facdia*sqrt(kappa);
+  curv = faccurv/(facdia*sqrt(kappa));
+  pk_ps = exp(curv*facpk_ps);
+  dpk = pk_ps * (dps1 + curv*facdpk);
+  pk = pk_ps*psat1;
+  hvapK = hvap1 + ( (pk-psat1)*s.dhdp(T1,pk)-dhldp1 ) + curv*fachvap;
+end
+
+function kapKK = kappaK(kappa)
+  [curv dpk hvapK] = varskappa(kappa);
+  kapKK = nulkml/(dpk*hvapK);
+end
+
+function kapll = kappal(kappa)
+  [curv dpk hvapK] = varskappa(kappa);
+  %dpcap = curv*dsigma_dT1;
+  kapll = nulkml/((dpk-curv*dsigma_dT1)*hvapK);
+end
+
+options = optimset('fzero');
+options = optimset(options,'TolX',1e-6*calc.kappac);
+calc.kapKK = fzero(@(kappa) kappa - kappaK(kappa),calc.kapK,options);
+if mem.kappa < calc.kapl
+  range = calc.kapl*[0.99 1+0.3*calc.kapl/mem.kappa];
+else
+  range = calc.kapl./[1+0.3*mem.kappa/calc.kapl 1.01];
+end
+calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
+
+  if theta ~= 90
+    if theta < 90
+      calc.Ccc = p12*(1-calc.n)/(psat1-calc.pK1);
+    else
+      calc.Ccap = calc.n*p12/(flsetup.curv*sigma);
+    end
+  end
+% Calculate the mass flux for p1 = psat(T1) according to linear theory.
+  flin = mlinear(psat1,psat1-p12,T1,theta,s,mem,f);
+  calc.mlinp1sat = flin.lin.m;
+end %------------------------------------------------------------ end flcalcvars
+
+function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %FLOWSETUP  Setup of flow properties.
 % FS = FLOWSETUP(T2,Tmax,THETA,S,MEM,F) returns a struct FS that contains flow
 % properties.
 %  Fields:
 %    FS.curv              Curvature.
-%    FS.kelv(T,sigma,rho) pk/psat
-%    FS.pkelv(T)          pk/psat
+%    FS.kelv(T,sigma,rho) pK/psat
+%    FS.pkelv(T)          pK
+%    FS.dpkdT(T)          [dpK/dT pk]
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
+%    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
+%    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg].
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT.
 %    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow).
 %    FS.knudsen(T,p)      Knudsen number.
@@ -311,9 +427,9 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %------------------- flsetup
 %    FS.xdot(T,pk,a)      Vapor mass flow fraction.
 %    FS.odemaxstep(range,delta) Minimum number of integration steps.
 
-flsetup = struct('curv',[],'kelv',[],'pkelv',[],'hgK',[],'intdhdpdpsatdT',[],...
-  'nuapp',[],'knudsen',[],'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],...
-  'xdot',[],'odemaxstep',[]);
+flsetup = struct('curv',[],'kelv',[],'pkelv',[],'dpkdT',[],'hgK',[],...
+  'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],...
+  'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
 flsetup.curv = mem.fcurv(cos(theta*pi/180));
 flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
@@ -347,10 +463,6 @@ flsetup.odemaxstep = ... % 1/max(minsteps,...
   @(range,maxstep) 1/max(2,pow2(ceil(log2(abs(range)/maxstep))));
 
 % Calculate hgK, intdhdpsdpsatdT and pkelv. Check if T > Tc, i.e., ps(T) == Inf.
-% inttol: relative tolerance for integration
-inttol = 1e-6;
-stepT = 0.4;
-
 % Return Inf or NaN if the fluid is anywhere supercritical.
 % Might be changed with moderate effort to return functions that give exact
 % values.
@@ -358,8 +470,21 @@ if ~isfinite(s.ps(T2))
   flsetup.pkelv = @(T) Inf;
   flsetup.hgK = @(T) NaN;
   flsetup.intdhdpdpsatdT = @(T) NaN;
+  flsetup.hvapK = @(T) 0;
+  flsetup.hvapKraw = @(T,prad,psat,pcap,rho,drho) 0;
   return
 end
+
+flsetup.dpkdT = @dpkdT;
+flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
+%flsetup.hgK = @(T) deval(solhgK,T);
+%flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
+flsetup.hvapK = @hvapK;
+flsetup.hvapKraw = @hvapKraw;
+
+% inttol: relative tolerance for integration
+inttol = 1e-6;
+stepT = 0.4;
 
 % do an integer number of steps
 %intTrange = ceil(intTrange/stepT)*stepT;
@@ -398,7 +523,6 @@ function dh = intdhdpdpsdT(T,h)
   dh = dps*(1+drho)/rho;
 end
 
-flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
 flsetup.hgK = @(T) deval(solhgK,T);
 flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
@@ -408,7 +532,7 @@ function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 % [DPK PK] = DPKDT(T) returns the pk and dpk/dT. A copy from HVAPK, for
 % convenience.
 %
-% See also FLOW12/HVAPK.
+% See below.
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
 [drho rho] = s.drho(T);
@@ -416,6 +540,37 @@ pk_ps = flsetup.kelv(T,sigma,rho);
 pk = pk_ps*psat;
 dpk = pk_ps * (dps + psat*flsetup.curv*sigma*(1/T-dsig+drho)/(s.R*rho*T));
 end %----------------------------------------------------------------- end dpkdT
+
+function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
+%HVAPK      Enthalpy of vaporization at a curved interface.
+%
+% [PK DPK HVK DPCAP PCAP] = HVAPK(T) returns the enthalpy of vaporization,
+% the vapor pressure, the derivatives of the vapor pressure and the capillary
+% pressure with respect to temperature at a curved interface as well as the
+% capillary pressure. [PK] = Pa, [DPK] = Pa/K, [HVK] = J/kg [DPCAP] = Pa/K,
+% [PCAP] = Pa.
+%
+% DPK: See Eq. (11) in Loimer (2007).
+%
+% HVK: See Eq. (14) in [Loimer, Proc. STAMM 2004; Wang, Hutter (eds.), Trends in
+% Applications of Mathematics to Mechanics, 247-256, Shaker (2005)].
+% With dh/dp = v - T dv/dT.
+[psat dps] = s.ps(T);
+[dsig sigma] = s.dsig(T);
+[drho rho] = s.drho(T);
+pk_ps = flsetup.kelv(T,sigma,rho);
+pk = pk_ps*psat;
+pcap = flsetup.curv*sigma;
+dpcap = pcap*dsig;
+dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
+%hvapK = s.hvap(T) + (pk-psat)*(s.dhdp(T,pk)-dhldp) + dhldp*curv*sigma;
+hvapK = flsetup.hvapKraw(T,pk,psat,pcap,rho,drho);
+end %----------------------------------------------------------------- end hvapK
+
+function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
+  dhldp = (1 + T*drho)/rho;
+  hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
+end %-------------------------------------------------------------- end hvapKraw
 
 function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 %NU2PHAPP   Apparent viscosity (Knudsen + viscous flow) of the 2ph-mixture.
@@ -426,58 +581,51 @@ function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 vol = s.v(T,pk);
 nu2app = f.nu2ph(a,vol,1/s.rho(T),flsetup.nuapp(T,pk)/vol,s.mul(T));
 end %-------------------------------------------------------------- end nu2phapp
-end %--------------------------------------------------------------- end flsetup
+end %------------------------------------------------------------- end flowsetup
 
 function fl = flowstruct(theta,s,mem,f) %---------------------------- flowstruct
 %FLOWSTRUCT Constructs the structure FL containing the solution.
-%  FLOWSTRUCT(THETA,SUBSTANCE,MEMBRANE,FMODEL)
-%  FL contains the fields FL.INFO, FL.SOL and FL.FLOW.
+%  FLOWSTRUCT(THETA,SUBSTANCE,MEMBRANE,FMODEL) constructs a struct FL with the
+%  fields FL.INFO, FL.CALC, FL.SOL and FL.FLOW. FLOWSTRUCT sets the fields in
+%  FL.INFO and constructs the struct FL.SOL, but does not set any field in
+%  FL.SOL. The fields FL.CALC and FL.FLOW remain empty. The struct FL.CALC is
+%  constructed in MNUM, FL.FLOW is constructed in FLOW12.
 %  FL.info contains
 %    .theta
+%    .sname
+%    .T1
+%    .p1
+%    .p2
 %    .substance
 %    .membrane
 %    .fmodel
-%    .m
-%    .T1
-%    .p1
-%    .T2
-%    .p2
-%    .kappac
-%    .Kkappa	kappaK(kappa)
-%    .Ccc
-%  FL.sol contains
+%  FL.sol has the fields
 %    .m
 %    .T1
 %    .p1
 %    .q1
 %    .T2
-%    .p2
+%    .T3
+%    .Kn2
 %    .len
 %    .states
-%  FL.flow usually is of size > 1 and contains
-%    .z
-%    .T
-%    .p
-%    .Kn (for vapor flow in membrane, only)
-%    .q
-%    .a
-%    .color
+%
+%  See also FLOW12, FMODEL, MEMBRANE, MNUM, SUBSTANCE.
 
-fl = struct('info',[],'sol',[],'flow',[]);
-fl.info = struct('theta',theta,'substance',s,'membrane',mem,'fmodel',f,...
-  'm',[],'T1',[],'p1',[],'T2',[],'p2',[],'kappac',[],'Kkappa',[],'Ccc',[]);
-fl.sol = struct('m',[],'T1',[],'p1',[],'q1',[],'T3',[],'T2',[],'p2',[],...
+fl = struct('info',[],'calc',[],'sol',[],'flow',[]);
+fl.info = struct('theta',theta,'sname',s.name,'T1',[],'p1',[],'p2',[],...
+  'substance',s,'membrane',mem,'fmodel',f);
+fl.sol = struct('m',[],'T1',[],'p1',[],'q1',[],'T2',[],'T3',[],'Kn2',[],...
   'len',[],'states',[]);
-fl.flow = struct('z',{},'T',{},'p',{},'q',{},'a',{},'color',{});
 
 end %------------------------------------------------------------ end flowstruct
 
 %%% GARBAGE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% GARBAGE %%%
 
-%--------------------------------------------------------------------- garbage 1
+%- garbage 1 --------------------------------------------------------- garbage 1
 %% SHOOT USING FZERO
 %% Construct an interval, though; FZERO is very anxiuos. The interval search is
-%% copiet from findzero.
+%% copied from findzero.
 %% Assign accurate tolerances and use fzero
 %solver = accurate(solver);
 %

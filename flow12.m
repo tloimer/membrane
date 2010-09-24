@@ -23,10 +23,13 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %    FL.sol.p1          Upstream pressure [Pa].
 %    FL.sol.q1          Upstream heat flux [W/m2].
 %    FL.sol.T3          Temperature at the liquid film or the membrane front.
+%  If SOLVER.writesolution is true, the following fields are written:
 %    FL.sol.states      Flow states, see below.
 %    FL.sol.len         Length of the struct FL.flow. Negative number.
+%    FL.sol.zscale      Length scale of upstream temperature boundary layer.
+%  If SOLVER.writesolution is true, a struct FL.flow containing the following
+%  fields is created:
 %    FL.flow            Struct of length -FL.sol.len.
-%  If SOLVER.writesolution is true, the following fields are written: 
 %    FL.flow.z          Coordinate [m].
 %    FL.flow.T          Temperature [K].
 %    FL.flow.p          Pressure [p].
@@ -35,6 +38,10 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %    FL.flow.a          Vapor volume fraction.
 %    FL.flow.color      Plotting specification.
 %
+%  To plot the upstream boundary layer, for the z-coordinate use the
+%  transformation
+%    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
+%    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
 %  FLSETUP must contain the fields
 %     .curv             Curvature of the meniscus in a pore.
 %     .kelv(T,sig,rho)  Function to calculate the ratio pkelv/psat.
@@ -62,9 +69,8 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %
 %  See also FMODEL, MEMBRANE, MNUM, SUBSTANCE.
 %
-% Nested functions: hvapK, hvapKraw, from2, flow92, front62, flow56,
-%    check69or89, front89, flow78, front37, front57, flow13, flow45, front35,
-%    front85, writetostruct.
+% Nested functions: from2, flow92, front62, flow56, check69or89, front89,
+%    flow78, front37, front57, flow13, flow45, front35, front85, writetostruct.
 %  Subfunction: newton.
 %  Try, e.g., help flow12>newton.
 %
@@ -103,7 +109,8 @@ curv = flsetup.curv; %curv = fl.info.curv;
 %  COMMON FUNCTIONS
 % Thermodynamic properties from combination of substance, theta and membrane.
 kelv = flsetup.kelv;  pkelv = flsetup.pkelv;
-hgK = flsetup.hgK;  intdhdpdpsatdT = flsetup.intdhdpdpsatdT;
+hgK = flsetup.hgK;  hvapK = flsetup.hvapK; hvapKraw = flsetup.hvapKraw;
+intdhdpdpsatdT = flsetup.intdhdpdpsatdT;
 
 % Effective single flow - membrane and two-phase properties.
 nuapp = flsetup.nuapp;  knudsen = flsetup.knudsen;  nu2ph = flsetup.nu2ph;
@@ -124,14 +131,9 @@ fl.sol.states = [];
 if writesolution
   % initialize writestruct
   fl.sol.len = 0;
-  % make sure, fl.flow is empty
-  if ~isempty(fl.flow)
-    fl.flow = fl.flow(1);
-    [fl.flow.z fl.flow.T fl.flow.p fl.flow.q fl.flow.a fl.flow.color] ...
-      = deal([]);
-    % in 92, we assign a 'Kn'-field.
-    if isfield(fl.flow,'Kn'), fl.flow = rmfield(fl.flow,'Kn'); end
-  end
+  % construct fl.flow; initializes empty (0x0) struct fl.flow. Use of [] instead
+  % of {} would create a 1x1 struct fl.flow.
+  fl.flow = struct('z',{},'T',{},'p',{},'q',{},'Kn',{},'a',{},'color',{});
 end
 
 %  START
@@ -139,37 +141,6 @@ from2(m,T2,p2);
 % The rest plays all in the nested functions.
 
 %%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
-
-function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
-%HVAPK      Enthalpy of vaporization at a curved interface.
-%
-% [PK DPK HVK DPCAP PCAP] = HVAPK(T) returns the enthalpy of vaporization,
-% the vapor pressure, the derivatives of the vapor pressure and the capillary
-% pressure with respect to temperature at a curved interface as well as the
-% capillary pressure. [PK] = Pa, [DPK] = Pa/K, [HVK] = J/kg [DPCAP] = Pa/K,
-% [PCAP] = Pa.
-%
-% DPK: See Eq. (11) in Loimer (2007).
-%
-% HVK: See Eq. (14) in [Loimer, Proc. STAMM 2004; Wang, Hutter (eds.), Trends in
-% Applications of Mathematics to Mechanics, 247-256, Shaker (2005)].
-% With dh/dp = v - T dv/dT.
-[psat dps] = s.ps(T);
-[dsig sigma] = s.dsig(T);
-[drho rho] = s.drho(T);
-pk_ps = kelv(T,sigma,rho);
-pk = pk_ps*psat;
-pcap = curv*sigma;
-dpcap = pcap*dsig;
-dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
-%hvapK = s.hvap(T) + (pk-psat)*(s.dhdp(T,pk)-dhldp) + dhldp*curv*sigma;
-hvapK = hvapKraw(T,pk,psat,pcap,rho,drho);
-end %----------------------------------------------------------------- end hvapK
-
-function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
-  dhldp = (1 + T*drho)/rho;
-  hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
-end %-------------------------------------------------------------- end hvapKraw
 
 function from2(m,T2,p2) %------------------------------------------------- from2
 %FROM2      Start flow through the membrane.

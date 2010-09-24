@@ -2,7 +2,7 @@
 % memname,poredia,L,memdia,eps,model,tau,beta
 % substancename datamemname exp_id T1 p1 p2 Vflow Troom T1tc T2tc T12tc
 
-fid = fopen('membranesguessed');
+fid = fopen('../data/membranesguessed');
 %fid = fopen('../data/membranes');
 % membranes:
 % membrane material wetting poredia[nm] L[mm] memdia[mm] eps[%] model tau beta
@@ -14,12 +14,19 @@ fclose(fid);
 [memname,poredia,L,memdia,eps,model,tau,beta] = deal(data{:});
 %data:
 % substance membrane exp_id T1[C] p1 p2 Q[ml/min] Troom[C]
-fid = fopen('data0902.tsv');
-%fid = fopen('tmpdata.tsv');
+fid = fopen('../data/datakatka.tsv');
 data = textscan(fid,'%s%s%s%n%n%n%n%n%n%n%n',...
-  'HeaderLines',0,'ReturnOnError',0,'Delimiter','\t');
+  'HeaderLines',1,'ReturnOnError',0,'Delimiter','\t');
+fclose(fid);
+fid = fopen('../data/dataroman.tsv');
+%data2 = textscan(fid,'%s%s%s%n%n%n%n%n%*[^\n]',...
+data2 = textscan(fid,'%s%s%s%n%n%n%n%n%n%n%n',...
+  'HeaderLines',1,'ReturnOnError',0,'Delimiter','\t');
 fclose(fid);
 % concatenate Roman and Katka's data
+for k = 1:length(data)
+  data{k} = [data{k};data2{k}];
+end
 [substancename datamemname exp_id T1 p1 p2 Vflow Troom T1tc T2tc T12tc]...
   = deal(data{:});
 
@@ -36,4 +43,4 @@ p2 = p2*1e5;
 Troom = Troom + 273.15;
 % Vflow remains ml/min
 
-clear fid data;
+clear fid data data2 k;
