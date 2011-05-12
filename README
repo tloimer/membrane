@@ -1,30 +1,200 @@
-In matlab:
-> read0905
-> results0905
+  Dateien:
+flow12.m, fmodel.m, membrane.m, mlinear.m, mnum.m, substance.m:
+Kern des Programmes.
 
-danach funktioniert
-> load results0905
+read0905: liest ../data/membranesguessed; ../data/data0905.tsv
 
-Fig2?: 2. Versuch, nach Schneiders Intervention
+read1103: liest ../data/membranes11.tsv; ../data/data0905.tsv
 
-  Numeric work horses:
-mnum.m, flow12.m, membrane.m, substance.m, fmodel.m, mlinear.m
+membranes11.m: schreibt membranes11.tsv, wird in ../data verschoben.
 
-  Data evaluation:
-memplot.m, resplot.m, readdata.m, calctaubeta.m, shownitrogen.m, testnitrogen.m,
-unsat.m, vapor.m, temperature.m
+membranes11.log: diagnostischer output von membranes11.m. daraus excerpiert:
+Membrandaten, siehe weiter unten.
 
-  Validation:
-testlinear.m
+membranesalt.log, membranesalt.m:
+Variation von membranes11.m; Kontrolle der Fehlerberechnung;
+Schluss: Der Fehler für den Massenstrom der Flüssigkeit wird durch den
+Standardfehler für (1/tau), (1/tau) +/- rstd/sqrt(rsumsq), abgeschätzt.
+Zusätzlich den Scatter der Daten zu berücksichtigen ist, wegen dessen Kleinheit
+(siehe letzte Ziffer in Regr. alt.: bzw. Regression: in membranesalt.log) und
+wegen zweifelhafter Herleitung sinnlos. Für Gase können saubere Schätzungen
+aus (dot m L/(kappa delp kn_nu)) vs. (1/Kn) verwendet werden.
 
-  gutepunke.mat:
-indices ig in diejenigen Datenpunkte, deren Temperaturdifferenz gleich der
-nach Joule-Thomson Effekt zu erwartenden, +25% -20%, ist.
+results1102.m: verlangt read????.m, welches nicht im Programm steht.
+schreibt results1102.mat und results1102.tsv
 
-  temperature.m
-Kalibration der Thermocouples.
+validate/: Dateien, die der Kontrolle dienen.
+cplmug.m -> cplbutane.eps, cplbutane2.eps (enlarged), mugbutane.eps;
+Statistik: ob ich die Statistik richtig verstanden habe.
+showN2.m, showN2.ps: Berechnung von tau und beta mittels linearer Regression,
+sowie Fehlerabschätzung durch Vergleich mit Daten.
+showvapor.m, showvapor.ps: Vergleich der mit N2 gewonnenen Werte für tau und
+beta mit Daten für ungesättigte Dämpfe.
 
-Dateien in matlab2:
-Files flow12.m and ../matlab/flow12.m differ
-Files mnum.m and ../matlab/mnum.m differ
-Files substance.m and ../matlab/substance.m differ
+
+Daten erstellen:
+> matlab
+>> read0905
+>> results1102
+
+Damit werden die Massenströme berechnet und in results1102.mat und
+results1102.tsv gespeichert. Meldungen in results1102.log speichern!
+Unterschiede zu results0906 sind kleiner als 2.3 Promille im Massenstrom, siehe
+maxfehler.log.
+
+Es wurden einige kleine Fehler im directory matlab in flow12.m, .. entdeckt.
+Diese wurden in matlab2 korrigiert, die Ergebnisse unterscheiden sich aber nur
+minimal. In matlab3 residiert die konsolidierte Version.
+
+Es wurde entdeckt, dass für drho aus substance.m eine falsche Definition in
+flow12.m verwendet wurde. Es ist drho = 1/rho drho/dT, deshalb [drho]= 1/T.
+(1+drho) wurde zu (1+T*drho) ausgebesert, etc.
+Der patch (diff -U 2 old.m new.m; # 2 - lines of context):
+
+--- matlab/flow12.m	2009-07-13 15:14:20.000000000 +0200
++++ matlab3/flow12.m	2010-06-22 15:27:44.000000000 +0200
+@@ -398,5 +398,5 @@
+ % primarily, for the invariable part of (q6 + m*h6)/q6:
+ [drho6 rho6] = s.drho(T6);
+-coeff1 = q6 + m*( (p6-s.ps(T6))*(1+drho6)/rho6 - intdhdpdpsatdT(T6) );
++coeff1 = q6 + m*( (p6-s.ps(T6))*(1+T6*drho6)/rho6 - intdhdpdpsatdT(T6) );
+ coeff2 = -kmliq6/q6;
+ 
+@@ -407,5 +407,5 @@
+   [drho rho] = s.drho(T);
+   q = coeff1 - m ...
+-    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+drho)/rho - intdhdpdpsatdT(T));
++    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+T*drho)/rho - intdhdpdpsatdT(T));
+ end
+ 
+
+--- matlab/mnum.m	2010-04-06 12:32:17.000000000 +0200
++++ matlab3/mnum.m	2010-06-22 15:31:37.000000000 +0200
+@@ -519,7 +519,7 @@
+   % calculate the term
+   %   T2_int^T dh/dp dpsat/dT' dT'
+-  % in the liquid phase, hence dh/dp = v - Tdv/dT = 1/rho + (1/rho^2) drho/dT.
++  % in the liquid phase, hence dh/dp = v - Tdv/dT = 1/rho + (T/rho^2) drho/dT.
+   [drho rho] = s.drho(T); [ps dps] = s.ps(T);
+-  dh = dps*(1+drho)/rho;
++  dh = dps*(1+T*drho)/rho;
+ end
+ 
+
+Mit substance.m ist es schwieriger,
+46934 2009-07-14  matlab2/substance.m
+47160 2010-09-22  matlab/substance.m
+47185 2010-09-24  matlab/substancenew.m
+
+Der einzige Unterschied zwischen substance.m und substancenew.m ist in cpleq2
+--- matlab/substance.m	2010-09-22 18:02:27.000000000 +0200
++++ matlab/substancenew.m	2010-09-24 12:49:50.000000000 +0200
+@@ -967,6 +967,6 @@
+ x = (1-T./Tc);
+ cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
+-  nthroot(C(3).^2,3)*x.^3 - (C(3).*C(4).*x.^4)./2 - ...
+-  nthroot(C(4).^2,5).*x.^5 )./M;
++  sign(C(3)).*nthroot(C(3).^2,3).*x.^3 - (C(3).*C(4).*x.^4)./2 - ...
++  sign(C(4)).*nthroot(C(4).^2,5).*x.^5 )./M;
+ 
+ function icpl = icpleq2(C,T0,T1)
+
+
+Während in matlab2/substance.m die Molmasse mit mehr Kommastellen angegeben ist
+und debye und der Realgasfaktor Z vertauscht sind,
+
+--- matlab/substance.m	2010-09-22 18:02:27.000000000 +0200
++++ matlab2/substance.m	2009-07-14 19:11:06.000000000 +0200
+@@ -98 +98 @@
+-M = 58.124; % VDI-Wärmeatlas, siehe unten bei kritischen Größen
++M = 58.1234;
+@@ -186 +186 @@
+-M = 58.124; % VDI-Wärmeatlas, siehe unten bei kritischen Größen
++M = 58.1234;
+@@ -273 +273 @@
+-M = 46.069; % VDI Wärmeatlas, siehe weiter unten bei critical constants
++M = 46.07;
+@@ -360 +360 @@
+-M = 28.013;  % VDI-Wärmeatlas, siehe unten bei kritischen Größen
++M = 28.014;
+@@ -901 +901 @@
+-Z = mugcoeffs(1); debye = mugcoeffs(2);
++debye = mugcoeffs(1); Z = mugcoeffs(2);
+
+In matlab3 ist also Z, debye, und cpleq2 für Butan richtig. Zur Kontrolle siehe
+cplmug.m.
+
+--- matlab/substance.m	2010-09-22 18:02:27.000000000 +0200
++++ matlab3/substance.m	2011-02-15 14:58:45.000000000 +0100
+@@ -953,7 +953,8 @@
+ %CPLEQ2     Specific constant pressure heat capacity of the liquid [J/kgK].
+ %
+ %  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid.
+-%  Equation 2 to Table 2-196 n Perry, 7th ed. (1997) is used.
++%  Equation 2 to Table 2-196, from Perry, 7th ed. (1997), corrected, is used.
++%  For the correction see Perry, 8th ed. (2007), Equation 2 to Table 2-153.
+ %  CPL could be calculated from the real gas cp, from
+ %   cp = cp(id) + int_0^p (d cp/ dp')_T dp'
+ %  and with Clausius-Clapeyron, h''-h' = (dps/dT)T(v''-v'), taken the derivative
+@@ -966,8 +967,7 @@
+ Tc = C(5); M = C(6);
+ x = (1-T./Tc);
+ cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
+-  nthroot(C(3).^2,3)*x.^3 - (C(3).*C(4).*x.^4)./2 - ...
+-  nthroot(C(4).^2,5).*x.^5 )./M;
++  C(3).^2*x.^3./3 - C(3).*C(4).*x.^4./2 - C(4).^2.*x.^5./5 )./M;
+ 
+ function icpl = icpleq2(C,T0,T1)
+ %ICPLEQ2    Difference of specific enthalpy of the liquid [J/kg].
+
+
+Membrandaten:
+
+11A, 17 Messungen: 1/tau = 0.0039 +/- 0.0382, beta/tau = 0.2112 +/- 0.0083
+
+33A: No nitrogen data.
+
+33B, 10 Messungen: 1/tau = 1.0642 +/- 0.3948, beta/tau = 7.7906 +/- 0.1956
+
+55A,  4 Messungen: 1/tau = 0.9504 +/- 0.1870, beta/tau = 8.0078 +/- 0.1878
+
+HP11A: No nitrogen data.
+
+HP20A, 7 Messungen: 1/tau = 0.6989 +/- 0.2402, beta/tau = 5.0839 +/- 0.1449
+
+HP55B, 6 Messungen: 1/tau = -0.3717 +/- 1.4795, beta/tau = 8.4781 +/- 1.0453
+Erzwungen: tau = 1 Regression (1/tau, beta/tau): tau = 1.2548, beta = 12.4061.
+
+HP55C, 4 Messungen: 1/tau = 0.9799 +/- 1.7163, beta/tau = 8.0374 +/- 1.2060
+
+HP95A, 7 Messungen: 1/tau = 1.1832 +/- 0.6351, beta/tau = 7.3473 +/- 0.9598
+
+DTN05K14, 5 Messungen: 1/tau = 1.2986 +/- 0.0145, beta/tau = 4.9825 +/- 0.0308
+
+DTN05K15, 22 Messungen: 1/tau = 0.8024 +/- 0.0208, beta/tau = 4.1078 +/- 0.0933
+
+DTU05K14, 7 Messungen:  1/tau = 1.1356 +/- 0.2064, beta/tau = 5.1243 +/- 0.4132
+
+DTU05K15, 6 Messungen:  1/tau = 0.6081 +/- 0.0376, beta/tau = 3.5199 +/- 0.1791
+
+K151, 7 Messungen:  1/tau = 1.3554 +/- 0.0722, beta/tau = 6.7272 +/- 0.2300
+
+K20, 8 Messungen:   1/tau = 0.7825 +/- 0.2692, beta/tau = 4.5743 +/- 0.1086
+
+K55, 11 Messungen:  1/tau = 0.7546 +/- 0.0525, beta/tau = 6.6347 +/- 0.0688
+
+K95, 7 Messungen:   1/tau = 0.8656 +/- 0.1261, beta/tau = 8.2251 +/- 0.2655
+
+KHP20, 8 Messungen: 1/tau = 0.9323 +/- 0.1874, beta/tau = 5.8012 +/- 0.0767
+
+Änderungen der Membranen
+  11A:  253.167 53.4665 NaN 17 NaN NaN
+     11A: tau = 1, beta = 0.25.
+   HP11A: tau = 1, beta = 0.25.
+     33A: tau = 0.94, beta = 7.32.
+   HP55B: tau = 1, beta = 7.5.
+
+inakzeptabel: 11A; HP55B: 1/tau < 0.
+Sehr große Streuung, aber akzeptabler Mittelwert: HP55C, HP95A.
+
+Ende Membrandaten
