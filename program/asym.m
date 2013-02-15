@@ -1,23 +1,23 @@
-function fl = flow12(m,T2,p2,fl,flsetup,solver)
-%FLOW12     Flow through the membrane.
-%  FLOW12(M,T2,P2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT that
+function fl = asym(m,T2,p2,fl,flsetup,solver)
+%ASYM       Flow through the membrane.
+%  ASYM(M,T2,P2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT that
 %  contains the solution for the mass flux M [kg/m2s] at a downstream
 %  temperature T2 [K] and a downstream pressure P2 [Pa]. FLSETUP is a struct
-%  that contains input to FLOW12, calculated from combining SUSTANCE, MEMBRANE
+%  that contains input to ASYM, calculated from combining SUSTANCE, MEMBRANE
 %  and FMODEL properties and the maximally expected Temperature. The struct
-%  FLOWSTRUCT is also used to pass input to FLOW12. Solution tolerances are
+%  FLOWSTRUCT is also used to pass input to ASYM. Solution tolerances are
 %  controlled via the struct SOLVER.
 %
-%  FLSETUP is used because if MNUM iteratively calls FLOW12 to find a solution,
+%  FLSETUP is used because if MNUM iteratively calls ASYM to find a solution,
 %  the setup only needs to be calculated once.
 %
-%  Fields in FLOWSTRUCT (FL) used for input to FLOW12:
+%  Fields in FLOWSTRUCT (FL) used for input to ASYM:
 %    FL.info.theta      Contact angle (degree).
 %    FL.info.substance  Struct SUBSTANCE.
 %    FL.info.membrane   Struct MEMBRANE.
 %    FL.info.fmodel     Struct FMODEL.
 %
-%  Fields in FLOWSTRUCT used for output from FLOW12:
+%  Fields in FLOWSTRUCT used for output from ASYM:
 %    FL.sol.m           Mass flux [kg/m2s].
 %    FL.sol.T1          Upstream temperature [K].
 %    FL.sol.p1          Upstream pressure [Pa].
@@ -89,6 +89,19 @@ function fl = flow12(m,T2,p2,fl,flsetup,solver)
 %  Note: State 5 may denote two different states in the non-linear
 %  calculation, at contrast to the linear approximation. For conformity, an
 %  additional name is not introduced.
+
+%  flow chart
+%
+%  from2___flow92_________flow78_
+%        |        |     |        |
+%        |_______flow56_|________|_flow45..if partialsolution (yes)__END: p1
+%                       |                  (no)
+%                       |                  | 
+%                       |_________________flow13
+%                                          if partialsolution (yes)__END: T3, p1
+%                                          (no)
+%                                          |___END: T1, p1
+%                     
 
 %  TODO
 % rewrite intcpl(T1,T2) to icpl(T), See substance. Would have to implement
@@ -633,21 +646,11 @@ end
 if fl.info.theta > 90 % equivalent: theta > 90 or p7 > s.ps(T7), costheta < 0
   % yes: front57 -> flow45 (non-wetting, liq. flow in front of membrane)
   [T5 p5 q5] = front57(m,T7,a7);
-  if partialsolution
-    % THE END
-    fl.sol.p1 = p5;
-  else
-    flow45(m,T5,p5,q5);
-  end
+  flow45(m,T5,p5,q5);
 else % theta > 90 % curv <=0, p7 <=s.ps(T7)
   % no:  front37 -> flow13  (saturated or unsaturated vapor in front)
   [T3 p3 q3] = front37(m,T7,a7);
-  if partialsolution
-    % THE END
-    fl.sol.p1 = p3;
-  else
-    flow13(m,T3,p3,q3,0);
-  end
+  flow13(m,T3,p3,q3,0);
 end
 end %---------------------------------------------------------------- end flow78
 
@@ -692,6 +695,12 @@ function flow13(m,T3,p3,q3,z3) %----------------------------------------- flow13
 % Integrate from qw = 1 to qw = 0, initial conditions:
 %   Tw(qw=1) = 0, zw(qw=1) = 1.
 
+%  ASSIGN WHAT IS ALREADY KNOWN
+fl.sol.p1 = p3; fl.sol.T3 = T3;
+
+%  DO NOT COMPUTE, IF NOT NECESSARY
+if partialsolution, return; end
+
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
 cp3 = s.cpg(T3,p3);
@@ -700,8 +709,7 @@ Tscale =  q3/(m*cp3); % qscale = q3;
 % DONE ALREADY?
 if abs(Tscale) < rtol 
   %  THE END
-  % repeated below
-  fl.sol.p1 = p3;  fl.sol.T1 = T3;  fl.sol.T3 = T3; fl.sol.q1 = q3;
+  fl.sol.q1 = q3;
   return
 end
 k3 = s.kg(T3);
@@ -732,7 +740,6 @@ function dy = int13q(qw,y)
 end
 
 %  ASSIGN LAST POINT
-p1 = p3;
 % dimensionalize last point, here T1
 last = size(sol13.x,2);
 T1 = mkTdim(sol13.y(1,last));
@@ -757,8 +764,7 @@ if writesolution
 end
 
 %  THE END
-fl.sol.p1 = p1;  fl.sol.T1 = T1;  fl.sol.T3 = T3;
-fl.sol.q1 = q1; % here, but not above, q1 is always zero
+fl.sol.T1 = T1; fl.sol.q1 = q1; % here, but not above, q1 is always zero
 
 % OBSOLETE FLOW13
 % m h + q = const => m dh/dz + dq/dz = 0; dh/dz = cp dT/dz ( + dh/dp dp/dz = 0).
@@ -827,9 +833,13 @@ function flow45(m,T5,p5,q5) %-------------------------------------------- flow45
 %   dq/dT = -m cp,   dqw/dTw = -cp m*(T4-T5)/q5
 %   dz/dT = -k/q,  dzw/dTw = -k/k5 1/qw.
 
+if partialsolution, fl.sol.p1 = p5; return; end
+
 %  ASSIGN LAST POINT
 % we already know part of the solution; needed for characteristic scales.
 p4 = p5; T4 = s.Ts(p5);
+
+if isempty(T4), fl.sol.p1 = p5; return; end
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
@@ -966,7 +976,7 @@ for i = 1:last
 end
 end %--------------------------------------------------------- end writesolution
 
-end %%% END FLOW12 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FLOW12 %%%
+end %%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
 
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
