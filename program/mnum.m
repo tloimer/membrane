@@ -6,7 +6,7 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %  [Pa] and the contact angle is THETA, in degrees. Diagnostic output is printed
 %  for the GLOBAL variable VERBOSE > 0.
 %
-%  [M FL] = MNUM(T1,P1,P2,THETA,S,MEM,F) returrns the mass flux M and a
+%  [M FL] = MNUM(T1,P1,P2,THETA,S,MEM,F) returns the mass flux M and a
 %  flowstruct FL containing the solution.
 %
 %  MNUM(T1,P1,P2,THETA,S,MEM,F,'m',MGUESS) uses MGUESS as the inital guess for
@@ -33,12 +33,12 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %                       see (Loimer, eurotherm09)
 %    FL.calc.mgas       mass flux for isothermal flow of the gaseous phase
 %
-%  Calls FLOW12.
+%  Calls FLOW12, FLOWSTRUCT, FLOWSETUP.
 %
 %  See also FLOW12, FMODEL, MEMBRANE, SUBSTANCE.
 %
-%  Subfunctions:   FLCALCVARS, FLOWSETUP, FLOWSTRUCT.
-%  Try, e.g., help mnum>flowsetup.
+%  Subfunction:   FLCALCVARS.
+%  Try, e.g., help mnum>flcalcvars.
 %
 %  Nested functions: accurate, crude, findzero, presiduum.
 
@@ -91,6 +91,7 @@ T2 = s.intjt(T1,p1,p2);
 fl.info.T1 = T1; fl.sol.T2 = T2;
 fl.info.p1 = p1;
 flsetup = flowsetup(T2,T1,theta,s,mem,f);
+fl.info.flsetup = flsetup;
 
 % Calculate the information already possible.
 if isfinite(psat1) % above the critical point, these numbers do not make sense

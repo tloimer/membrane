@@ -80,10 +80,10 @@ inttol = 1e-6;
 stepT = 0.4;
 
 % do an integer number of steps
-%intTrange = ceil(intTrange/stepT)*stepT;
 intTrange = ceil((Tmax-T2)/stepT)*stepT;
+% the large interval is probably needed for the shooting-iteration
 if intTrange > 4
-  intTrange = [T2 T2+4*intTrange]; %DEBUG use 2 for normal use
+  intTrange = [T2 T2+2*intTrange]; %DEBUG use 2 for normal use
 else
   intTrange = [T2 T2+10];
 end
