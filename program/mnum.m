@@ -334,6 +334,8 @@ end %%% END MNUM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MNUM %%%
 function calc = flcalcvars(T1,p12,p1,psat1,dps1,flsetup,theta,s,mem,f)
 %FLCALCVARS Calculate div. kappas, Ccc, Ccap, pk1 and other fl.calc variables.
 
+global VERBOSE;
+
 % Initialize the output struct.
 calc = struct('psat1',psat1,'pK1',[],'n',[],'Ccc',[],'Ccap',[],...
   'kappac',[],'kapK',[],'kapl',[],'kapKK',[],'kapll',[],'mlinp1sat',[]);
@@ -393,7 +395,27 @@ if mem.kappa < calc.kapl
 else
   range = calc.kapl./[1+0.3*mem.kappa/calc.kapl 1.01];
 end
-calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
+
+try
+  calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
+catch err
+  if strcmp(err.identifier,'MATLAB:fzero:ValuesAtEndPtsSameSign')
+    calc.kapll = fzero(@(kappa) kappa - kappal(kappa),calc.kapl,options);
+    if VERBOSE > 0
+      warning(['Fzero threw an error when trying to calculate kappa_ll,\n'...
+	'no change of sign between endpoints of the initial, guessed '...
+	'range.\nOnly specify a starting point.\n'...
+	'Initial range [%.3g %.3g], result %.3g'],...
+	range(1),range(2),calc.kapll);
+      if ~isreal(calc.kapll) || calc.kapll <= 0
+        warning('fl.calc.kapll invalid.');
+      end
+    end
+  else
+    rethrow(err);
+  end
+end
+
 
   if theta ~= 90
     if theta < 90
