@@ -547,7 +547,7 @@ function flow78(m,T8,a8,z8,doth8,pk8,dp2ph8,hvapK8) %-------------------- flow78
 % abbreviations: nu, k = nu2ph, k2ph
 % dT/dz = -m nu/(dpk/dT kappa)
 % m(hgK-(1-xdot)hvapK) + m nu k/((dpk/dT) kappa)
-%  = m(hgK8-(1-xdot8)hvapK8) + m nu8 k8/((dpkdT8 kappa)
+%  = m(hgK8-(1-xdot8)hvapK8) + m nu8 k8/(dpkdT8 kappa)
 % ( = m*hgK8 + doth8 - m*hvapK8,  see front89: doth8 = m*xdot*hvapK8 + q8 ).
 % dimensionless
 % z = z8*zw; T = (z8 m nu8/(dpkdT8 kappa)*Tw + T8;
@@ -601,13 +601,15 @@ T7 = mkTdim(sol78.y(1,last));  a7 = sol78.y(2,last);  z7 = z8*sol78.x(last);
 % if wanted, write the solution
 if writesolution
   % allocate space for all points; assign last point
-  T78(last) = T7; a78(last) = a7; z78(last) = z7; p78(last) = pkelv(T7);
+  T78(last) = T7; a78(last) = a7; z78(last) = z7;
+  % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
+  p78(last) = pkelv(T7) - (1-a7)*flsetup.curv*s.sigma(T7);
   last = last - 1;
   T78(1:last) = mkTdim(sol78.y(1,1:last)); a78(1:last) = sol78.y(2,1:last);
   z78(1:last) = z8*sol78.x(1:last);
   for i = 1:last
     % pkelv is not vektorizable; Gives a result, but probably wrong numbers.
-    p78(i) = pkelv(T78(i));
+    p78(i) = pkelv(T78(i)) - (1-a78(i))*flsetup.curv*s.sigma(T78(i));
   end
   % vielleicht q78 berechnen? q2ph?
   writetostruct('78-',{'T','p','a','z','color'},{T78,p78,a78,z78,twophcolor});
