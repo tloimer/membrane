@@ -78,7 +78,8 @@ else
   ylabel('T [K]');
   % p-z diagram
   figure;
-  plot(fl.flow(1).z/L,fl.flow(1).p/1e5,[fl.flow(1).color '*']);
+  plot(fl.flow(1).z/L,fl.flow(1).p/1e5,'Color',fl.flow(1).color,...
+	'LineStyle','none','Marker','*');
   xlim([pzmin zmax]);
   ylim([pmin pmax]);
   xlabel('z/L');
