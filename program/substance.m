@@ -973,7 +973,8 @@ function icpl = icpleq2(C,T0,T1)
 %ICPLEQ2    Difference of specific enthalpy of the liquid [J/kg].
 %
 %  ICPLEQ2(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy of
-%  the liquid between the temperatures T0 and T1.
+%  the liquid between the temperatures T0 and T1. Corrected on Mai 6, 2013, see
+%  substance>cpleq2.
 %
 %  See also CPLEQ2.
 
@@ -985,8 +986,8 @@ Tc = C(5); M = C(6);
 x0 = (1-T0./Tc); x1 = (1-T1./Tc);
 
 icpl = C(1).^2.*log(x0./x1) - C(2).*(x1-x0) + C(1).*C(3).*(x1.^2-x0.^2) ...
-  + C(1).*C(4).*(x1.^3-x0.^3)/3 + nthroot(C(3).^2,3)*(x1.^4-x0.^4)/4 ...
-  + C(3).*C(4).*(x1.^5-x0.^5)/10 + nthroot(C(4).^2,5).*(x1.^6-x0.^6)/6;
+  + C(1).*C(4).*(x1.^3-x0.^3)/3 + C(3).^2.*(x1.^4-x0.^4)/12 ...
+  + C(3).*C(4).*(x1.^5-x0.^5)/10 + C(4).^2.*(x1.^6-x0.^6)/30;
 icpl = Tc.*icpl./M;
 
 function sig = sigvdi(sigcoeffs,T)
