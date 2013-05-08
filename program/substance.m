@@ -1327,7 +1327,13 @@ if p0 == p1
 else
 %jtloc = @(p,T) s.jt(T,p);
   [pi, ti] = ode45(jtloc,[p0 p1],T0);
-  T1 = ti(end);
+  % for [p0 p1], the solution for all integration steps is returned;
+  % fpr [p0 [p1 p2 p3 ..] ], the solution at all specified points is returned.
+  if size(p1,2) == 1
+    T1 = ti(end);
+  else
+    T1 = ti(2:end);
+  end
 end
 
 function y = poly2(C,x)
