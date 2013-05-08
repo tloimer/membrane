@@ -757,16 +757,18 @@ if i>1
 end
 
 s12(1:i) = 0;
+psr = ps(Tr);
+hvapr = hvap(Tr);
 for j = 1:i
   switch x(j)
     case 1
       % vapor contribution to the saturated vapor Tr, ps(Tr)
       % in sl, make sure p=ps(T1). Ts is, in general, not exact.
 %      fprintf('ENTROPY: hvap/T @ %.0f = %.4g J/kgK\n',Tr,hvap(Tr)/Tr);
-      s12(j) = sg(virialfun,vcoeffs,cpid,Tr,ps(Tr),T(j),p(j)) + hvap(Tr)/Tr;
+      s12(j) = sg(virialfun,vcoeffs,cpid,Tr,psr,T(j),p(j)) + hvapr/Tr;
 %		+ sl(intcpl_T,Ts,ps,drho,Tr,ps(Tr),T1,ps(T1));
     case 0
-      s12(j) = sl(intcpl_T,Ts,ps,drho,Tr,ps(Tr),T(j),p(j));
+      s12(j) = sl(intcpl_T,Ts,ps,drho,Tr,psr,T(j),p(j));
     otherwise
       if x(j) > 1 || x(j) < 0
         error(sprintf('Nonsense input: x = %.3g.',x(j)));
@@ -799,9 +801,8 @@ if nargin == 6 || p1 == p2
     s12 = 0;
     R = vcoeffs(end-1);
     M = vcoeffs(end);
-    [B, B1] = virialfun(vcoeffs,T1);
     [B, B2] = virialfun(vcoeffs,T2);
-    B1 = B1./(1000.*T1);  B2 = B2./(1000.*T2);
+    B2 = B2./(1000.*T2);
   end
 else % p1 ~= p2
   % the contribution  Int_p1^p2 dv/dT dp
@@ -827,19 +828,21 @@ else % p1 ~= p2
   % B = B[T2]
 
   % the seemingly more precise estimate
-  B = B/1000;
-  RT = R*T2;
-  B = -( (R*(2*asinh(1/(2*sqrt(p1*B/RT))) - 2*asinh(1/(2*sqrt(p2*B/RT))) ...
-	- sqrt(1+4*p1*B/RT) + sqrt(1+4*p2*B/RT) + log(p2/p1)))/2 ...
-	+ ((-sqrt(RT*(RT+4*p1*B)) + sqrt(RT*(RT+4*p2*B)))*B2)/(2*B) )./M;
-%  fprintf('SG: - Int_p1^p2 dv/dT@T2 dp = %.4g\n',B);
+  %B = B/1000;
+  %RT = R*T2;
+  %B = -( (R*(2*asinh(1/(2*sqrt(p1*B/RT))) - 2*asinh(1/(2*sqrt(p2*B/RT))) ...
+  %	- sqrt(1+4*p1*B/RT) + sqrt(1+4*p2*B/RT) + log(p2/p1)))/2 ...
+  %	+ ((-sqrt(RT*(RT+4*p1*B)) + sqrt(RT*(RT+4*p2*B)))*B2)/(2*B) )./M;
+  %  fprintf('SG: - Int_p1^p2 dv/dT@T2 dp = %.4g\n',B);
 end
 
 if T1 ~= T2
+  [B, B1] = virialfun(vcoeffs,T1);
+  B1 = B1./(1000.*T1);
   cpid1 = cpid(T1);
   cpid2 = cpid(T2);
   % The isobaric contribution, int_T1^T2 cpid/T dT
-  s12 = (cpid1.*T2-cpid2.*T1).*log(T2./T1)./(T2-T1) + cpid2 - cpid1;
+  s12 = s12 + (cpid1.*T2-cpid2.*T1).*log(T2./T1)./(T2-T1) + cpid2 - cpid1;
 %  fprintf('SG: isobaric contribution Int cpid/T dT = %.4g\n',s12);
 %  fprintf('SG: Int (cpg-cpid)/T dT = %.4g\n',(B1-B2).*p1./M);
   s12 = s12 + (B1-B2).*p1./M;

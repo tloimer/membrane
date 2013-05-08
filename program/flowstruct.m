@@ -14,6 +14,7 @@ function fl = flowstruct(theta,s,mem,f) %---------------------------- flowstruct
 %    .substance
 %    .membrane
 %    .fmodel
+%    .flsetup
 %  FL.sol has the fields
 %    .m
 %    .T1
