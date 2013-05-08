@@ -713,17 +713,21 @@ else % case 'cp' 'dhdp' 'jt'
   end
 
   if strcmp(out,'dhdp') || strcmp(out,'jt') % case 'dhdp' 'jt'
-    % compute dh/dp
-    % from above, with b = 4p/RT = a/T, B1 = B'T
-    % T dv/dT = ( 2 + (2+b(B+B1))/sqrt(1+bB) ) / bM
-    w = 4*p./(R.*T); % next interim variable w, w = b
-    dhdp = ( 2 + (2+w.*(B+B1))./sqrt(1+w.*B) )./(w*M); % now dhdp = T dv/dT
-    % the volume v, copied from above
-    w = 4./w; % v = RT/p = a
-    w = (0.5*w + sqrt(0.25*w.^2 + B.*w))/M;
-    dhdp = w - dhdp; % now dhdp = dh/dp = v - T dv/dT
-    % if v was empty, a scalar dhdp is returned, otherwise an array
-    v = [dhdp v];
+    if p == 0
+      v = [0 v];
+    else
+      % compute dh/dp
+      % from above, with b = 4p/RT = a/T, B1 = B'T
+      % T dv/dT = ( 2 + (2+b(B+B1))/sqrt(1+bB) ) / bM
+      w = 4*p./(R.*T); % next interim variable w, w = b
+      dhdp = ( 2 + (2+w.*(B+B1))./sqrt(1+w.*B) )./(w*M); % now dhdp = T dv/dT
+      % the volume v, copied from above
+      w = 4./w; % v = RT/p = a
+      w = (0.5*w + sqrt(0.25*w.^2 + B.*w))/M;
+      dhdp = w - dhdp; % now dhdp = dh/dp = v - T dv/dT
+      % if v was empty, a scalar dhdp is returned, otherwise an array
+      v = [dhdp v];
+    end
   end
 
 end
