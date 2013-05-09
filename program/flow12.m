@@ -290,8 +290,8 @@ if writesolution
   for i = 1:last
     Kn92(i) = knudsen(T92(i),p92(i));
   end
-  writetostruct('92',{'T','p','q','Kn','z','color'},...
-    {T92,p92,q92,Kn92,z92,vapcolor});
+  writetostruct('92',{'z','T','p','q','Kn','a','color'},...
+    {z92,T92,p92,q92,Kn92,1,vapcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -453,7 +453,7 @@ if writesolution
     q56(i) = calcq(T56(i),p56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-  writetostruct('56',{'T','p','q','z','color'},{T56,p56,q56,z56,liqcolor});
+  writetostruct('56',{'z','T','p','q','a','color'},{z56,T56,p56,q56,0,liqcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -612,7 +612,7 @@ if writesolution
     p78(i) = pkelv(T78(i)) - (1-a78(i))*flsetup.curv*s.sigma(T78(i));
   end
   % vielleicht q78 berechnen? q2ph?
-  writetostruct('78-',{'T','p','a','z','color'},{T78,p78,a78,z78,twophcolor});
+  writetostruct('78-',{'z','T','p','a','color'},{z78,T78,p78,a78,twophcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -732,7 +732,7 @@ if writesolution
   % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
   % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
   % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
-  writetostruct('13-',{'T','p','q','z','color'},{T13,p13,q13,z13,vapcolor});
+  writetostruct('13-',{'z','T','p','q','a','color'},{z13,T13,p13,q13,1,vapcolor});
   fl.sol.zscale = zscale;
 end
 
@@ -809,7 +809,7 @@ if writesolution
   last = last - 1;
   T45(1:last) = mkTdim(sol45.x(1:last)); q45(1:last) = q5*sol45.y(1,1:last);
   z45(1:last) = zscale*sol45.y(2,1:last);
-  writetostruct('45-',{'T','p','q','z','color'},{T45,p45,q45,z45,liqcolor});
+  writetostruct('45-',{'z','T','p','q','a','color'},{z45,T45,p45,q45,0,liqcolor});
 end
 
 %  CALL NEXT
