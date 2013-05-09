@@ -9,15 +9,15 @@ function pTzplots(name,fl,ispgfplot)
 %fl.calc.psat1, .pK1, .n
 
 % The number of line-parts.
-flast = -fl.sol.len;
-z3 = fl.flow(flast).z(1);
+nflow = -fl.sol.len;
+z3 = fl.flow(nflow).z(1);
 L = fl.info.membrane.L;
 zscale = fl.sol.zscale;
 % Aus flow12.m
 %    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
 %    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
-%z = [fl.flow(1:end-1).z z3+zscale*log((fl.flow(flast).z-z3)/zscale+1)]/L;
-zfront = z3 + zscale*log((fl.flow(flast).z-z3)/zscale+1);
+%z = [fl.flow(1:end-1).z z3+zscale*log((fl.flow(nflow).z-z3)/zscale+1)]/L;
+zfront = z3 + zscale*log((fl.flow(nflow).z-z3)/zscale+1);
 zflat = [fl.flow(1:end-1).z zfront] / L;
 
 % Flattened distributions.
@@ -43,13 +43,14 @@ pzmin = -0.1;
 zmax = 1.1;
 
 %%%	THE PLOTS	%%%
+Tname = ['T' name '.pgfplot'];
+pname = ['p' name '.pgfplot'];
 % pgfplots
 if ispgfplot
   % T-z diagram
   rangestr = sprintf(' xmin =%.1f, xmax = %.1f, ymin = %d, ymax = %d\n',...
 	Tzmin, zmax, Tmin, Tmax);
-  Tid = beginpgfplot(['T' name '.pgfplot'], [...
-    'xlabel={$z/L$}, ylabel = {$T$ [K]},\n' rangestr ...
+  Tid = beginpgfplot(Tname,['xlabel = {$z/L$}, ylabel = {$T$ [K]},\n' rangestr ...
     ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
     ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
 
@@ -64,7 +65,7 @@ if ispgfplot
     ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
     ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
 
-  for i = 1:flast
+  for i = 1:nflow
     addcoords(pid,fl.flow(i).z'/L,fl.flow(i).p'/1e5,...
 	'mark=*,mark options={scale=0.6},solid,thick');
   end
@@ -72,21 +73,28 @@ if ispgfplot
 else
 % matlab-plots
   % T-z diagram
-  plot(zflat,T,'k*');
+  figure('Name',['T-z diagram:  ' Tname]);
+  %plot(zflat,T,'k*');
+  plot(fl.flow(1).z/L,fl.flow(1).T,'Color',fl.flow(1).color,...
+	'LineStyle','-','Marker','*');
   xlim([Tzmin zmax]);
   xlabel('z/L');
   ylabel('T [K]');
+  for i = 2:nflow
+    line(fl.flow(i).z/L,fl.flow(i).T,'Color',fl.flow(i).color,...
+	'Marker','*','LineStyle','-');
+  end
   % p-z diagram
-  figure;
+  figure('Name',['p-z diagram:  ' pname]);
   plot(fl.flow(1).z/L,fl.flow(1).p/1e5,'Color',fl.flow(1).color,...
-	'LineStyle','none','Marker','*');
+	'LineStyle','-','Marker','*');
   xlim([pzmin zmax]);
   ylim([pmin pmax]);
   xlabel('z/L');
   ylabel('p [bar]');
   % hold on; plot..; hold off ginge auch, ohne xlim, ylim setzen zu müssen
-  for i = 2:flast
+  for i = 2:nflow
     line(fl.flow(i).z/L,fl.flow(i).p/1e5,'Color',fl.flow(i).color,...
-	'Marker','*','LineStyle','none');
+	'Marker','*','LineStyle','-');
   end
 end

@@ -1,7 +1,7 @@
 function pTplot(name,fl,ispgfplot)
 %PTPLOT     Plot p-T diagram.
 %  PTPLOT(NAME,FLOWSTRUCT,ISPGFPLOT) plots a p-T diagram. If ISPGFPLOT is true,
-%  a pgfplot-file with the name pTNAME.pgfplot is created.
+%  a pgfplot-file with the name NAME.pgfplot is created.
 
 global VERBOSE;
 
@@ -10,7 +10,7 @@ global VERBOSE;
 %fl.calc.psat1, .pK1, .n
 
 % The number of line-parts.
-flast = -fl.sol.len;
+nflow = -fl.sol.len;
 
 % Flattened distributions.
 T = [fl.flow(1:end).T];
@@ -52,12 +52,12 @@ if VERBOSE > 0
 end
 
 %%%	THE PLOT	%%%
+name = [name '.pgfplot'];
 % pgfplots
 if ispgfplot
   rangestr = sprintf(' xmin =%d, xmax = %d, ymin = %d, ymax = %d\n',...
 	Tmin, Tmax, pmin, pmax);
-  Tid = beginpgfplot(['T' name '.pgfplot'], [...
-    'xlabel={$T$ [K]}, ylabel = {$p$ [bar]},\n' rangestr ...
+  pid = beginpgfplot(name, ['xlabel = {$T$ [K]}, ylabel = {$p$ [bar]},\n' rangestr ...
     ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
     ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
 
@@ -65,7 +65,7 @@ if ispgfplot
   addcoords(pid,Tsat',pK','black, dashed, thin');
   addcoords(pid,Tsat',pKcap','black, dot-dashed, thin');
 
-  for i = 1:flast
+  for i = 1:nflow
     % to be mended
     addcoords(pid,fl.flow(i).T',fl.flow(i).p'/1e5,...
 	'mark=*,mark options={scale=0.6},solid,thick');
@@ -74,6 +74,7 @@ if ispgfplot
 	'$p_\mathrm{sat}$, $p_\mathrm K$, $p_\mathrm K - p_\mathrm{cap}');
 else
 % matlab-plots
+  figure('Name',['p-T diagram:  ' name]);
   plot(Tsat,psat,'LineWidth',2,'LineStyle','-','Color',[0.8 0.8 0.8]);
   xlim([Tmin Tmax]);
   ylim([pmin pmax]);
@@ -82,8 +83,8 @@ else
   line(Tsat,pK,'LineStyle','--','Color','k');
   line(Tsat,pKcap,'LineStyle','-.','Color','k');
   % hold on; plot..; hold off ginge auch, ohne xlim, ylim setzen zu müssen
-  for i = 1:flast
+  for i = 1:nflow
     line(fl.flow(i).T,fl.flow(i).p/1e5,'Color',fl.flow(i).color,...
-	'Marker','*','LineStyle','none');
+	'Marker','*','LineStyle','-');
   end
 end
