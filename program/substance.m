@@ -1339,7 +1339,7 @@ else
   if size(p1,2) == 1
     T1 = ti(end);
   else
-    T1 = ti(2:end);
+    T1 = ti(2:end)';
   end
 end
 
