@@ -399,29 +399,29 @@ end
 try
   calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
 catch err
-  if strcmp(err.identifier,'MATLAB:fzero:ValuesAtEndPtsSameSign')
-    calc.kapll = fzero(@(kappa) kappa - kappal(kappa),calc.kapl,options);
-    if VERBOSE > 0
-      warning(['Fzero threw an error when trying to calculate kappa_ll,\n'...
-	'no change of sign between endpoints of the initial, guessed '...
-	'range.\nOnly specify a starting point.\n'...
-	'Initial range [%.3g %.3g], result %.3g'],...
-	range(1),range(2),calc.kapll);
-      if ~isreal(calc.kapll) || calc.kapll <= 0
-        warning('fl.calc.kapll invalid.');
+  switch err.identifier
+    case 'MATLAB:fzero:ValuesAtEndPtsSameSign'
+      calc.kapll = fzero(@(kappa) kappa - kappal(kappa),calc.kapl,options);
+      if VERBOSE > 0
+        warning(['Fzero threw an error when trying to calculate kappa_ll,\n'...
+	  'no change of sign between endpoints of the initial, guessed '...
+	  'range.\nOnly specify a starting point.\n'...
+	  'Initial range [%.3g %.3g], result %.3g'],...
+	  range(1),range(2),calc.kapll);
       end
-    end
-  else
-    rethrow(err);
+    case 'MATLAB:fzero:ValuesAtEndPtsComplexOrNotFinite'
+      warning('Invalid kappa_ll (fl.calc.kapll), a non-wetting system?');
+    otherwise
+      warning('fl.calc.kapll could not be calculated.');
+      %rethrow(err);
   end
 end
-
 
   if theta ~= 90
     if theta < 90
       calc.Ccc = p12*(1-calc.n)/(psat1-calc.pK1);
     else
-      calc.Ccap = calc.n*p12/(flsetup.curv*sigma);
+      calc.Ccap = calc.n*p12/(flsetup.curv*sigma1);
     end
   end
 % Calculate the mass flux for p1 = psat(T1) according to linear theory.
