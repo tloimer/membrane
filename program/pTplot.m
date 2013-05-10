@@ -19,7 +19,7 @@ p = [fl.flow(1:end).p];
 % The temperature range
 margin = 2; step = 2;
 Tmax = ceil( (max(T)+margin)/step ) * step;
-Tmin = floor( (min(T)-margin)/step ) * step; 
+Tmin = floor( (min(T)-margin)/step ) * step;
 
 % The pressure range [Pa]
 margin = 1e4; step = 2e4;

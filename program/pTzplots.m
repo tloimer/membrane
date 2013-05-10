@@ -10,36 +10,43 @@ function pTzplots(name,fl,ispgfplot)
 
 % The number of line-parts.
 nflow = -fl.sol.len;
-z3 = fl.flow(nflow).z(1);
 L = fl.info.membrane.L;
-zscale = fl.sol.zscale;
-% Aus flow12.m
-%    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
-%    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
-%z = [fl.flow(1:end-1).z z3+zscale*log((fl.flow(nflow).z-z3)/zscale+1)]/L;
-% the last point might become, non-dimensionalized, less than zero; correct this
-% to (minus) infinity
-if (-fl.flow(nflow).z(end)+z3) < zscale
-  zfront = z3 + zscale*log((fl.flow(nflow).z-z3)/zscale+1);
+isfront = strcmp('13',fl.sol.states(1:2));
+if isfront
+  % scale the front boundary layer, it may not always be present
+  z3 = fl.flow(nflow).z(1);
+  zscale = fl.sol.zscale;
+  % Aus flow12.m
+  %    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
+  %    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
+  %z = [fl.flow(1:end-1).z z3+zscale*log((fl.flow(nflow).z-z3)/zscale+1)]/L;
+  % the last point might become, non-dimensionalized, less than zero; correct
+  % this to (minus) infinity
+  if (-fl.flow(nflow).z(end)+z3) < zscale
+    zfront = z3 + zscale*log((fl.flow(nflow).z-z3)/zscale+1);
+  else
+    zfront = z3 + zscale*log((fl.flow(nflow).z(1:end-1)-z3)/zscale+1);
+    zfront = [zfront 10*zfront(end)];
+  end
 else
-  zfront = z3 + zscale*log((fl.flow(nflow).z(1:end-1)-z3)/zscale+1);
-  zfront = [zfront 10*zfront(end)];
+  zfront = fl.flow(nflow).z;
+  zscale = 0;
 end
-zflat = [fl.flow(1:end-1).z zfront] / L;
 
 % Flattened distributions.
-T = [fl.flow(1:end).T];
-p = [fl.flow(1:end).p];
+% only used for the plot limits, immediately below
+Tflat = [fl.flow(1:end).T];
+pflat = [fl.flow(1:end).p];
 
 % The temperature range
 margin = 2; step = 2;
-Tmax = ceil( (max(T)+margin)/step ) * step;
-Tmin = floor( (min(T)-margin)/step ) * step; 
+Tmax = ceil( (max(Tflat)+margin)/step ) * step;
+Tmin = floor( (min(Tflat)-margin)/step ) * step;
 
 % The pressure range [Pa]
 margin = 1e4; step = 2e4;
-pmax = ceil( (max(p)+margin)/step ) * step;
-pmin = floor( (min(p)-margin)/step ) * step;
+pmax = ceil( (max(pflat)+margin)/step ) * step;
+pmin = floor( (min(pflat)-margin)/step ) * step;
 pmax = pmax / 1e5;
 pmin = pmin / 1e5;
 

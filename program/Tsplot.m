@@ -52,7 +52,7 @@ sp2range = [s.s(Tl2range,p2,0,Tr) s.s(Tv2range,p2,1,Tr)];
 
 % and the isenthalpic line from T1, p1 to max(p1-3*p12,100 Pa)
 p12 = p1 - p2;
-prange = p1:-p12/3:max(100,p1-3*p12);
+prange = p1:-p12/6:max(100,p1-3*p12);
 prange = prange(2:end);
 Thrange = [T1 s.intjt(T1,p1,prange)];
 shrange = s.s(Thrange,[p1 prange],1,Tr);
@@ -139,7 +139,7 @@ else % matlab-plots
   line(sp2range,[Tl2range Tv2range],'Color',[0.6 0.6 0.6]);
   % isenthalpic line
   line(shrange,Thrange,'Color','k','LineStyle','--');
-  
+
   for i = 1:nflow
     line(spath{i},Tpath{i},'Color','k','LineWidth',2);
     line(spath{i}(1),Tpath{i}(1),'Color','k','Marker','o','MarkerSize',6);
