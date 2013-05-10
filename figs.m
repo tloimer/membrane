@@ -35,7 +35,7 @@ flsetup = flowsetup(T2,T1,theta,s,mem,f);
 % With P1 = -----------------, we define P10 = pK1 - n*p12.
 %           ps1 - pK1 + n*p12
 % in mnum>flcalcvars, calc.n = s.jt(T1,p1)*dpK1, not s.jt(T1,ps1).
-P10 = pK1 - s.jt(T1,ps1)*dpK1;
+P10 = pK1 - s.jt(T1,ps1)*dpK1*p12;
 % Now all pressures are known and a suitable p1 can be given.
 p1 = pK1;
 
