@@ -58,7 +58,7 @@ Thrange = [T1 s.intjt(T1,p1,prange)];
 shrange = s.s(Thrange,[p1 prange],1,Tr);
 if s.ps(T1) > p1
   % prange contains decreasing pressures
-  prange = min(s.ps(T1),p1+p12):-p12/3:p1+p12/16;
+  prange = min(s.ps(T1),p1+p12):-p12/3:p1;
   % intjt must integrate from p1 away; turn around prange
   Thuprange = s.intjt(T1,p1,prange(end:-1:1));
   % temperatures in Thrange are now increasing
