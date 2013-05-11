@@ -1,4 +1,4 @@
-function Tsplot(name,fl,ispgfplot)
+function Tsplot(fl,name,ispgfplot)
 %TSPLOT     Plot a T-s Diagram.
 %  TSPLOT(NAME,FLOWSTRUCT,ISPGFPLOT) plots a T-s diagram. If ISPGFPLOT is true,
 %  a pgfplot-file with the name NAME.pgfplot is created.
@@ -15,7 +15,7 @@ p2 = fl.info.p2;
 dT = T1 - T2;
 Tminr = T2 - dT/2;
 Tmaxr = T1 + dT/2;
-Trange = Tminr : dT/15 : Tmaxr+dT/150; % to prevent rounding errors
+Trange = Tminr : dT/10 : Tmaxr+dT/100; % to prevent rounding errors
 nTrange = size(Trange,2);
 
 % the lines of saturated vapor and liquid
@@ -43,22 +43,30 @@ Tmax = ceil(Tmaxr);
 % the isobars p1 and p2
 Ts1 = s.Ts(p1);
 Ts2 = s.Ts(p2);
-Tl1range = [Tminr:dT/15:Ts1 Ts1];
-Tv1range = [Ts1:dT/15:Tmaxr];
-Tl2range = [Tminr:dT/15:Ts2 Ts2];
-Tv2range = [Ts2:dT/15:fl.info.T1];
+if Ts1 >= Tminr,
+  Tl1range = [Tminr:dT/10:Ts1 Ts1];
+else
+  Tl1range=[];
+end
+Tv1range = [max(Ts1,Tminr):dT/10:Tmaxr];
+if Ts2 >= Tminr,
+  Tl2range = [Tminr:dT/10:Ts2 Ts2];
+else
+  Tl2range=[];
+end
+Tv2range = [max(Ts2,Tminr):dT/10:fl.info.T1];
 sp1range = [s.s(Tl1range,p1,0,Tr) s.s(Tv1range,p1,1,Tr)];
 sp2range = [s.s(Tl2range,p2,0,Tr) s.s(Tv2range,p2,1,Tr)];
 
 % and the isenthalpic line from T1, p1 to max(p1-3*p12,100 Pa)
 p12 = p1 - p2;
-prange = p1:-p12/6:max(100,p1-3*p12);
+prange = p1:-p12/12:max(100,p1-3*p12);
 prange = prange(2:end);
 Thrange = [T1 s.intjt(T1,p1,prange)];
 shrange = s.s(Thrange,[p1 prange],1,Tr);
 if s.ps(T1) > p1
   % prange contains decreasing pressures
-  prange = min(s.ps(T1),p1+p12):-p12/3:p1;
+  prange = min(s.ps(T1),p1+p12):-p12/12:p1;
   % intjt must integrate from p1 away; turn around prange
   Thuprange = s.intjt(T1,p1,prange(end:-1:1));
   % temperatures in Thrange are now increasing
@@ -91,12 +99,10 @@ for i = 1:nflow
 end
 
 % Start plotting
-name = [name '.pgfplot'];
-
 if ispgfplot
-  rangestr = sprintf(' xmin =%d, xmax = %d, ymin = %d, ymax = %d\n',...
+  rangestr = sprintf(' xmin = %.0f, xmax = %.0f, ymin = %.0f, ymax = %.0f,\n',...
 	smin, smax, Tmin, Tmax);
-  sid = beginpgfplot(name, ['xlabel={$s - s_0$ [J/kgK]}, ylabel={$T$ [K]},\n'...
+  sid = beginpgfplot(name, ['xlabel={$s-s_0$ [J/kg\\,K]}, ylabel={$T$ [K]},\n'...
      rangestr ...
     ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
     ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
@@ -105,9 +111,9 @@ if ispgfplot
   addcoords(sid,slrange',Trange','orange!30!yellow, solid, thick');
   % Saturated vapor
   addcoords(sid,sgrange',Trange','blue!20!white, solid, thick');
-  % pk and pk-pcap dotted lines
-  addcoords(sid,scrange',Trange','black, thin, dotted, forget plot');
-  addcoords(sid,sKrange',Trange','black, thin, dotted');
+  % pk and pk-pcap dotted lines % -- with pgfplots-injection!
+  addcoords(sid,scrange',Trange','thin, dotted] plot[forget plot');
+  addcoords(sid,sKrange',Trange','thin, dotted');
   % isobars p1 and p2
   addcoords(sid,sp1range',[Tl1range Tv1range]','black!70!white');
   addcoords(sid,sp2range',[Tl2range Tv2range]','black!70!white');
@@ -115,7 +121,7 @@ if ispgfplot
   addcoords(sid,shrange',Thrange','black!70!white, thin, dashed');
 
   for i = 1:nflow
-    addcoords(sid,spath{i}',Tpath{i}','black, thick, solid');
+    addcoords(sid,spath{i}',Tpath{i}','thick, solid');
     %addcoords(sid,spath{i}(1),Tpath{i}(1),'mark=*, none');
     %addcoords(sid,spath{i}(end),Tpath{i}(end),'mark=o, none');
   end

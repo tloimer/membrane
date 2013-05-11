@@ -1,4 +1,4 @@
-function pTplot(name,fl,ispgfplot)
+function pTplot(fl,name,ispgfplot)
 %PTPLOT     Plot p-T diagram.
 %  PTPLOT(NAME,FLOWSTRUCT,ISPGFPLOT) plots a p-T diagram. If ISPGFPLOT is true,
 %  a pgfplot-file with the name NAME.pgfplot is created.
@@ -52,18 +52,17 @@ if VERBOSE > 0
 end
 
 %%%	THE PLOT	%%%
-name = [name '.pgfplot'];
 % pgfplots
 if ispgfplot
-  rangestr = sprintf(' xmin =%d, xmax = %d, ymin = %d, ymax = %d\n',...
+  rangestr = sprintf(' xmin = %.0f, xmax = %.0f, ymin = %.0f, ymax = %.0f,\n',...
 	Tmin, Tmax, pmin, pmax);
   pid = beginpgfplot(name, ['xlabel = {$T$ [K]}, ylabel = {$p$ [bar]},\n' rangestr ...
     ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
     ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
 
-  addcoords(pid,Tsat',psat','black, solid, thick');
-  addcoords(pid,Tsat',pK','black, dashed, thin');
-  addcoords(pid,Tsat',pKcap','black, dot-dashed, thin');
+  addcoords(pid,Tsat',psat','solid, thick');
+  addcoords(pid,Tsat',pK','dashed, thin');
+  addcoords(pid,Tsat',pKcap','dashdotted, thin');
 
   for i = 1:nflow
     % to be mended
@@ -71,7 +70,7 @@ if ispgfplot
 	'mark=*,mark options={scale=0.6},solid,thick');
   end
   endpgfplot(pid,...
-	'$p_\mathrm{sat}$, $p_\mathrm K$, $p_\mathrm K - p_\mathrm{cap}');
+	'$p_\\mathrm{sat}$, $p_\\mathrm K$, $p_\\mathrm K - p_\\mathrm{cap}');
 else
 % matlab-plots
   figure('Name',['p-T diagram:  ' name]);
