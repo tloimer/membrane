@@ -45,6 +45,9 @@ function s = substance(name)
 %  More help text: Try, e.g., HELP SUBSTANCE>PS.
 
 %  TODO: cpl von butane hat sich geandert, siehe Table 153, Perry, 2007
+%  entropie-berechnung: v(T) - sqrt konsequent anwenden?
+%  Überprüfen der enthalpie-Berechnung; Eventuell structs oder cell-arrays of
+%  function handles for, e.g., poly4, ..
 %  Note: poly4, eg, evaluates a polynomial; [p dp ddp] = poly4, as do pdiv3 and
 %  pdiv4, return the value and, in addition, first and second derivative (used
 %  for the virial eq.); [dp p] = dpoly3 and dpoly2 return the derivative and the
