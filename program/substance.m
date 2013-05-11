@@ -743,6 +743,10 @@ function s12 = entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,ps,Ts,hvap,drho)
 %  respectively.
 
 % s12 = sl(Tr,ps(Tr),Ts(p),p) + hvap(Ts(p))/Ts(p) + sg(Ts(p),p,T,p);
+if isempty(T) || isempty(p) || isempty(x) || isempty(Tr)
+  s12 = [];
+  return
+end
 % make all vectors
 lT = length(T);
 lp = length(p);
