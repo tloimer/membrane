@@ -1,5 +1,9 @@
 function addcoords(pid,X,Y,options)
 
+if nargin==3
+  options = [];
+end
+
 fprintf(pid,...
   ['\\addplot[black,' options '] coordinates {']);
 fprintf(pid,...
