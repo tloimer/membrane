@@ -2,9 +2,10 @@
 addpath('program'); % a no-op if 'program' is already added
 
 ispgfplot = true;
+%ispgfplot = false;
 
 if ~exist('fl')
-T1 = 25 + 273.15;
+T1 = 300;  %25 + 273.15;
 %theta = 120; % contact angle, degree
 % theta = 120;	% NON-WETTING CASE
 theta = 0;	% PARTIAL CONDENSATION CASE
@@ -19,12 +20,13 @@ s = substance('butane');
 % poredia - pore diameter, eps - void fraction, km - thermal conductivity,
 % model - pore topology (porousround, channel, tube), tau - tortuosity,
 % beta - molecular flow correction factor, L - tube length
-%mem = membrane(1000e-9,0.5,1000*s.kl(T1),'tube',1,8.1,1e-3);
-%mem = membrane(1000e-9,.44,10*s.kg(T1),'tube',1,8.1,1e-3);
-% PARTIAL CONDENSATION CASE
-mem = membrane(10e-9,1,1*s.kg(T1),'tube',1,8.1,1e-3);
+% k [w/mK]: Teflon, 0.26; Glas, 0.5 ( bis -1.38, silica); 
+% PARTIAL CONDENSATION CASE, VAPOR FLOW
+%mem = membrane(60e-9,0.44,0.5,'tube',1,8.1,1e-3);
 % NON-WETTING CASE
 %mem = membrane(1200e-9,.44,100,'tube',1,8.1,1e-3);
+% COMPLETE CONDENSATION
+mem = membrane(26e-9,0.44,0.5,'tube',1,8.1,1e-3);
 % eps = 1 ... no effect of km; in addition, km = s.kl(T1)
 % tau = 1, beta = 8.1 ... ideal values
 
@@ -49,22 +51,28 @@ P10 = pK1 - s.jt(T1,ps1)*dpK1*p12;
 %p1 = ps1 -20*(pK1-ps1);
 %p1 = pK1 ;%-(ps1-pK1); %P10 + 0.5*(ps1-pK1);
 %p1 = P10;% - 0.1*(ps1-P10);
+% VAPOR FLOW
+p1 = 2.1e5; p2 = 5e4; p12 = p1 - p2;
+%p1 = P10 - 0.1*(ps1-P10)
 % PARTIAL CONDENSATION CASE
-p1 = P10 + 0.25*(ps1-P10); p2 = 4e4; p12 = p1 - p2;
+%p1=2.3e5; p2 = 5e4; p12 = p1 - p2;
+%p1 = P10 + 0.25*(ps1-P10); p2 = 4e4;
 %          0.2, 0.3 sowie p12 = 1.5e5 ist auch OK; p1 = 1.906e5;
 %p1 = P10 + 0.25*(ps1-P10); p2 = p1 - p12;
 % NON-WETTING CASE
 %p1 = 2.4e5; p2 = 0.4e5; p12 = p1 - p2;
+% COMPLETE CONDENSATION
+p1 = ps1; p2 = 5e4; p12 = p1 - p2;
 
 %%%	SANITY CHECK	%%%
 if p1 - p12 < 0
   error('Pressure difference p12 too large, p2 < 0. p1 = %.0f Pa', p1);
 end
-p2 = p1 - p12;
+%p2 = p1 - p12;
 
 %%%	CALCULATE	%%%
-m = mlinearnew(p1,p2,T1,theta,s,mem,f);
-[m fl] = mnum(T1,p1,p1-p12,theta,s,mem,f); %,T1,m);
+%m = mlinearnew(p1,p2,T1,theta,s,mem,f);
+[m fl] = mnum(T1,p1,p2,theta,s,mem,f); %,T1,m);
 
 end
 
