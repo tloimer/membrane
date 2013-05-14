@@ -5,6 +5,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %  Fields:
 %    FS.curv              Curvature.
 %    FS.kelv(T,sigma,rho) pK/psat
+%    FS.pkps(T)           pK/psat
 %    FS.pkelv(T)          pK
 %    FS.dpkdT(T)          [dpK/dT pk]
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
@@ -20,7 +21,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.xdot(T,pk,a)      Vapor mass flow fraction.
 %    FS.odemaxstep(range,delta) Minimum number of integration steps.
 
-flsetup = struct('curv',[],'kelv',[],'pkelv',[],'dpkdT',[],'hgK',[],...
+flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'dpkdT',[],'hgK',[],...
   'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],...
   'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
@@ -69,7 +70,8 @@ if ~isfinite(s.ps(T2))
 end
 
 flsetup.dpkdT = @dpkdT;
-flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
+flsetup.pkps = @(T) flsetup.kelv(T,s.sigma(T),s.rho(T));
+flsetup.pkelv = @(T) s.ps(T)*flsetup.pkps(T);
 %flsetup.hgK = @(T) deval(solhgK,T);
 %flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 flsetup.hvapK = @hvapK;
@@ -80,10 +82,10 @@ inttol = 1e-6;
 stepT = 0.4;
 
 % do an integer number of steps
-%intTrange = ceil(intTrange/stepT)*stepT;
 intTrange = ceil((Tmax-T2)/stepT)*stepT;
+% the large interval is probably needed for the shooting-iteration
 if intTrange > 4
-  intTrange = [T2 T2+4*intTrange]; %DEBUG use 2 for normal use
+  intTrange = [T2 T2+2*intTrange]; %DEBUG use 2 for normal use
 else
   intTrange = [T2 T2+10];
 end

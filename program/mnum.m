@@ -6,7 +6,7 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %  [Pa] and the contact angle is THETA, in degrees. Diagnostic output is printed
 %  for the GLOBAL variable VERBOSE > 0.
 %
-%  [M FL] = MNUM(T1,P1,P2,THETA,S,MEM,F) returrns the mass flux M and a
+%  [M FL] = MNUM(T1,P1,P2,THETA,S,MEM,F) returns the mass flux M and a
 %  flowstruct FL containing the solution.
 %
 %  MNUM(T1,P1,P2,THETA,S,MEM,F,'m',MGUESS) uses MGUESS as the inital guess for
@@ -33,12 +33,12 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %                       see (Loimer, eurotherm09)
 %    FL.calc.mgas       mass flux for isothermal flow of the gaseous phase
 %
-%  Calls FLOW12.
+%  Calls FLOW12, FLOWSTRUCT, FLOWSETUP.
 %
 %  See also FLOW12, FMODEL, MEMBRANE, SUBSTANCE.
 %
-%  Subfunctions:   FLCALCVARS, FLOWSETUP, FLOWSTRUCT.
-%  Try, e.g., help mnum>flowsetup.
+%  Subfunction:   FLCALCVARS.
+%  Try, e.g., help mnum>flcalcvars.
 %
 %  Nested functions: accurate, crude, findzero, presiduum.
 
@@ -91,6 +91,7 @@ T2 = s.intjt(T1,p1,p2);
 fl.info.T1 = T1; fl.sol.T2 = T2;
 fl.info.p1 = p1;
 flsetup = flowsetup(T2,T1,theta,s,mem,f);
+fl.info.flsetup = flsetup;
 
 % Calculate the information already possible.
 if isfinite(psat1) % above the critical point, these numbers do not make sense
@@ -333,6 +334,8 @@ end %%% END MNUM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MNUM %%%
 function calc = flcalcvars(T1,p12,p1,psat1,dps1,flsetup,theta,s,mem,f)
 %FLCALCVARS Calculate div. kappas, Ccc, Ccap, pk1 and other fl.calc variables.
 
+global VERBOSE;
+
 % Initialize the output struct.
 calc = struct('psat1',psat1,'pK1',[],'n',[],'Ccc',[],'Ccap',[],...
   'kappac',[],'kapK',[],'kapl',[],'kapKK',[],'kapll',[],'mlinp1sat',[]);
@@ -392,13 +395,33 @@ if mem.kappa < calc.kapl
 else
   range = calc.kapl./[1+0.3*mem.kappa/calc.kapl 1.01];
 end
-calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
+
+try
+  calc.kapll = fzero(@(kappa) kappa - kappal(kappa),range,options);
+catch err
+  switch err.identifier
+    case 'MATLAB:fzero:ValuesAtEndPtsSameSign'
+      calc.kapll = fzero(@(kappa) kappa - kappal(kappa),calc.kapl,options);
+      if VERBOSE > 0
+        warning(['Fzero threw an error when trying to calculate kappa_ll,\n'...
+	  'no change of sign between endpoints of the initial, guessed '...
+	  'range.\nOnly specify a starting point.\n'...
+	  'Initial range [%.3g %.3g], result %.3g'],...
+	  range(1),range(2),calc.kapll);
+      end
+    case 'MATLAB:fzero:ValuesAtEndPtsComplexOrNotFinite'
+      warning('Invalid kappa_ll (fl.calc.kapll), a non-wetting system?');
+    otherwise
+      warning('fl.calc.kapll could not be calculated.');
+      %rethrow(err);
+  end
+end
 
   if theta ~= 90
     if theta < 90
       calc.Ccc = p12*(1-calc.n)/(psat1-calc.pK1);
     else
-      calc.Ccap = calc.n*p12/(flsetup.curv*sigma);
+      calc.Ccap = calc.n*p12/(flsetup.curv*sigma1);
     end
   end
 % Calculate the mass flux for p1 = psat(T1) according to linear theory.

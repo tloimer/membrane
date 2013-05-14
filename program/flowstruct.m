@@ -14,6 +14,7 @@ function fl = flowstruct(theta,s,mem,f) %---------------------------- flowstruct
 %    .substance
 %    .membrane
 %    .fmodel
+%    .flsetup
 %  FL.sol has the fields
 %    .m
 %    .T1
@@ -29,7 +30,8 @@ function fl = flowstruct(theta,s,mem,f) %---------------------------- flowstruct
 
 fl = struct('info',[],'calc',[],'sol',[],'flow',[]);
 fl.info = struct('theta',theta,'sname',s.name,'T1',[],'p1',[],'p2',[],...
-  'substance',s,'membrane',mem,'fmodel',f);
+  'substance',s,'membrane',mem,'fmodel',f,'flsetup',[],...
+  'colors',{{'b','r','g'}});
 fl.sol = struct('m',[],'T1',[],'p1',[],'q1',[],'T2',[],'T3',[],'Kn2',[],...
   'len',[],'states',[]);
 

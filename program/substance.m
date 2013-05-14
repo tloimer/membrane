@@ -20,7 +20,7 @@ function s = substance(name)
 %    S.mul(T)       Dynamic viscosity of the liquid [Pas]
 %    S.mug(T)       Dynamic viscosity of the vapor [Pas]
 %    S.kg(T)        Thermal conductivity of the vapor [W/mK]
-%    S.kl(T)        Thermal conductivity of the liquid [W/mK]     
+%    S.kl(T)        Thermal conductivity of the liquid [W/mK]
 %    S.cpl(T)       Specific heat capacity at const. pressure of liquid [J/kgK]
 %    S.sigma(T)     Surface tension [N/m]
 %  Functions depending (internally) on functions above:
@@ -29,11 +29,12 @@ function s = substance(name)
 %    S.dhcpg(T,p)   Derivative dh/dp and cpg, returns the array [DH/DP CPG]
 %    S.drho(T)      Neg. compressibility, [DRHO RHO] 1/rho drho/dT and rho
 %    S.dsig(T)      Derivative of sigma, [DSIG SIG] 1/sigma dsigma/dT and sigma
-%    S.intjt(T0,p0,p1)  Integral Joule-Thomson coefficient, returns T1 [K]      
-%    S.intcpl(T0,T1)  Difference of liq. enthalpy [J/kg]
+%    S.intjt(T0,p0,p1)  Integral Joule-Thomson coefficient, returns T1 [K]
+%    S.intcpl(T0,T1)  Integral of specific heat capacity of the liquid [J/kg]
+%    S.S(T,P,X,TR)  Specific entropy with respect to sat. liquid at TR [J/kgK].
 %  Auxiliary functions, for convenience:
 %    S.nul(T)       Kinematic viscosity of the liquid [m2/s]
-%    S.nug(T,p)     Kinematic viscosity of the vapor [m2/s] 
+%    S.nug(T,p)     Kinematic viscosity of the vapor [m2/s]
 %
 %  Scalar functions: S.ps, S.Ts, ...
 %  Subfunctions: genericfunc, genericafun, cpperry, cpgas, hvap, virial, ps, Ts,
@@ -42,6 +43,16 @@ function s = substance(name)
 %  poly3, dpoly3, ipoly3, poly4, ipoly4, pdiv3, pdiv4, newtony.
 %
 %  More help text: Try, e.g., HELP SUBSTANCE>PS.
+
+%  TODO: cpl von butane hat sich geandert, siehe Table 153, Perry, 2007
+%  entropie-berechnung: v(T) - sqrt konsequent anwenden?
+%  Überprüfen der enthalpie-Berechnung; Eventuell structs oder cell-arrays of
+%  function handles for, e.g., poly4, ..
+%  Note: poly4, eg, evaluates a polynomial; [p dp ddp] = poly4, as do pdiv3 and
+%  pdiv4, return the value and, in addition, first and second derivative (used
+%  for the virial eq.); [dp p] = dpoly3 and dpoly2 return the derivative and the
+%  function value (for sigma and rho, i believe), dpoly4 or dpdiv4 do not exist.
+%  Should be cleaned up.
 
 %  not implemented yet (if ever).
 %  S = SUBSTANCE(NAME,T) returns a struct s that contains material properties
@@ -140,7 +151,7 @@ kgfun = @kgroy;
 % KL, thermal conductivity of the liquid [W/mK]
 % A correlation by Latini and coworkers (Baroncini et al., 1981) in the form
 % kl = A(1-Tr)^0.38/Tr^(1/6).  See pp. 549 in Reid, Prausnitz and Poling, 4th
-% ed. (1987). A is determined from VDI-Wärmeatlas 9th ed. (2002). 
+% ed. (1987). A is determined from VDI-Wärmeatlas 9th ed. (2002).
 % kl = 0.105 W/mK at 0°C. (But webbook.nist.gov/chemistry: kl = 0.0986 )
 klcoeffs = [Tc .1495];
 klfun = @klatini;
@@ -227,7 +238,7 @@ kgfun = @kgroy;
 % KL, thermal conductivity of the liquid [W/mK]
 % A correlation by Latini and coworkers (Baroncini et al., 1981) in the form
 % kl = A(1-Tr)^0.38/Tr^(1/6).  See pp. 549 in Reid, Prausnitz and Poling, 4th
-% ed. (1987). A is determined from VDI-Wärmeatlas 9th ed. (2002). 
+% ed. (1987). A is determined from VDI-Wärmeatlas 9th ed. (2002).
 % kl = 0.109 W/mK at 20°C. (But webbook.nist.gov/chemistry: kl = 0.1068 )
 klcoeffs = [Tc .1598];
 klfun = @klatini;
@@ -443,6 +454,7 @@ s.hvap = @(T) hvap(s.ps,s.rho,s.v,T);
 % caloric equation of state
 % cpid, cpg_cpid - def'd for better readability
 cpid = @(T) cpperry(cpcoeffs,T);
+% cpg_cpid = cpg(T,p) - cpid; cpid = cp(T,p=0)
 cpg_cpid = @(T,p) virial('cp',vcoeffs,virialfun,T,p);
 s.cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p));
 s.mul = @(T) mudaubert(mulcoeffs,T);
@@ -451,12 +463,16 @@ s.kg = @(T) kgfun(kgcoeffs,T);
 s.kl = @(T) klfun(klcoeffs,T);
 s.cpl = @(T) cplfun(cplcoeffs,T);
 s.sigma = @(T) sigfun(sigcoeffs,T);
-% Functions depending on things above.
+% Derivatives of the thermic equation of state which are equal to
+% derivatives of caloric properties are computed in the function virial.
+% These helper functions extract the information from the function virial.
 s.jt = @(T,p) jt(virial('jt',vcoeffs,virialfun,T,p),cpid(T));
 s.dhdp = @(T,p) virial('dhdp',vcoeffs,virialfun,T,p);
 s.dhcpg = @(T,p) dhcpg(virial('jt',vcoeffs,virialfun,T,p),cpid(T));
 % The functions that return derivatives have a 'd' prepended.
-for i = 1:length(rhofun)
+i = length(rhofun);
+drhofun = cell(1,i);
+for i = 1:i
   drhofun{i} = str2func(['d' func2str(rhofun{i})]);
 end
 s.drho = @(T) genericafun(rhocoeffs,drhofun,T);
@@ -464,6 +480,9 @@ s.dsig = @(T) feval(str2func(['d' func2str(sigfun)]),sigcoeffs,T);
 s.intjt = @(T0,p0,p1) intjt(T0,p0,p1,@(p,T) s.jt(T,p));
 % Integrals of a function have a 'i' prepended.
 s.intcpl = @(T0,T1) feval(str2func(['i' func2str(cplfun)]),cplcoeffs,T0,T1);
+intcpl_T = @(T1,T2)feval(str2func(['i' func2str(cplfun) '_x']),cplcoeffs,T1,T2);
+s.s = @(T,p,x,Tr) ...
+  entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,s.ps,s.Ts,s.hvap,s.drho);
 % Auxiliary functions, for convenience.
 s.nul = @(T) s.mul(T)./s.rho(T);
 s.nug = @(T,p) s.mug(T).*s.v(T,p);
@@ -485,7 +504,7 @@ i = find(T <= coeffs(:,1), 1);
   y = functions{i}(coeffs(i,2:end),T);
 %end
 
-function [y1 y2] = genericafun(coeffs,functions,T)
+function [y1,y2] = genericafun(coeffs,functions,T)
 %GENERICAFUN Apply a correlation function at temperature T, returns an array.
 %
 %  GENERICAFUN(COEFFS,FUNCTIONS,T) Applies a correlation function in the cell
@@ -500,7 +519,7 @@ i = find(T <= coeffs(:,1), 1);
   % we are probably at T > Tc
 %  y1 = NaN; y2 = NaN;
 %else
-  [y1 y2] = functions{i}(coeffs(i,2:end),T);
+  [y1,y2] = functions{i}(coeffs(i,2:end),T);
 %end
 
 function cpid = cpperry(C,T)
@@ -531,7 +550,7 @@ function cpg = cpgas(cpid,cpg_cpid)
 %
 %    (dcp/dp)_T = -T (d^2v/dT^2)_p.
 
-% The identity above is obtained from the second law of thermodynamics, 
+% The identity above is obtained from the second law of thermodynamics,
 %  Tds = dh - vdp.
 % Substituting dh = (dh/dT)_p dT + (dh/dp)_T dp yields
 %  ds = (dh/dT)_p/T dT + [(dh/dp)_T - v]/T dp.
@@ -565,7 +584,7 @@ function hvap = hvap(ps,rho,v,T)
 %  PS, RHO and V are function handles to functions that return [PS DPS], RHO and
 %  V, respectively.
 
-[psat dpsat] = ps(T);
+[psat, dpsat] = ps(T);
 hvap = dpsat.*T.*(v(T,psat)-1./rho(T));
 
 function v = virial(out,vcoeffs,virialfun,T,p)
@@ -627,7 +646,7 @@ function v = virial(out,vcoeffs,virialfun,T,p)
 %  Hence,
 %   cpg - cpid = (R/M){[(B-B'T)^2 - 2BB''T^2]/BRT}[p/SQR + (RT/2B)(1/SQR - 1)]
 %    + (B''T^2/2B)(1/SQR-1).
-% In[4]:= (((B[T] - T  B'[T])^2 - 2 B[T] B''[T] T^2)/(B[T] R T))* 
+% In[4]:= (((B[T] - T  B'[T])^2 - 2 B[T] B''[T] T^2)/(B[T] R T))*
 %         (p1/SQR + (1/SQR-1)* R T/(2 B[T])) + (1/SQR - 1)*B''[T] T^2/(2 B[T]);
 %
 % In[5]:= Simplify[( %/.SQR->Sqrt[1 + 4B[T]p1/(R*T)] ) == Integrate[-T*D[T/(2*p)
@@ -649,7 +668,7 @@ function v = virial(out,vcoeffs,virialfun,T,p)
 %    1/vseries = p/RT - B (p/RT)^2
 %
 %  because
-% 
+%
 %    In = virial = SeriesData[rho, 0, {0, 1, B, C}, 0, 4, 1]
 %    Out = rho + B rho^2 + C rho^3 + O[rho]^4
 %    In = InverseSeries[virial, LHS]
@@ -682,8 +701,8 @@ if strcmp(out,'v') % case 'v'
 
 else % case 'cp' 'dhdp' 'jt'
   % call to virialfun
-  [B B1 B2] = virialfun(vcoeffs,T);
-  B = B/1000; B1 = B1/1000; B2 = B2/1000; % 
+  [B, B1, B2] = virialfun(vcoeffs,T);
+  B = B/1000; B1 = B1/1000; B2 = B2/1000; %
   % for the assignment v = [v ..] in 'dhdp' construct the output variable
   v = [];
 
@@ -697,29 +716,219 @@ else % case 'cp' 'dhdp' 'jt'
   end
 
   if strcmp(out,'dhdp') || strcmp(out,'jt') % case 'dhdp' 'jt'
-    % compute dh/dp
-    % from above, with b = 4p/RT = a/T, B1 = B'T
-    % T dv/dT = ( 2 + (2+b(B+B1))/sqrt(1+bB) ) / bM
-    w = 4*p./(R.*T); % next interim variable w, w = b
-    dhdp = ( 2 + (2+w.*(B+B1))./sqrt(1+w.*B) )./(w*M); % now dhdp = T dv/dT
-    % the volume v, copied from above
-    w = 4./w; % v = RT/p = a
-    w = (0.5*w + sqrt(0.25*w.^2 + B.*w))/M;
-    dhdp = w - dhdp; % now dhdp = dh/dp = v - T dv/dT
-    % if v was empty, a scalar dhdp is returned, otherwise an array
-    v = [dhdp v];
+    if p == 0
+      v = [0 v];
+    else
+      % compute dh/dp
+      % from above, with b = 4p/RT = a/T, B1 = B'T
+      % T dv/dT = ( 2 + (2+b(B+B1))/sqrt(1+bB) ) / bM
+      w = 4*p./(R.*T); % next interim variable w, w = b
+      dhdp = ( 2 + (2+w.*(B+B1))./sqrt(1+w.*B) )./(w*M); % now dhdp = T dv/dT
+      % the volume v, copied from above
+      w = 4./w; % v = RT/p = a
+      w = (0.5*w + sqrt(0.25*w.^2 + B.*w))/M;
+      dhdp = w - dhdp; % now dhdp = dh/dp = v - T dv/dT
+      % if v was empty, a scalar dhdp is returned, otherwise an array
+      v = [dhdp v];
+    end
   end
 
 end
 
-function [ps dps] = ps(Acoeffs,T)
+function s12 = entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,ps,Ts,hvap,drho)
+%ENTROPY    Difference of specific entropy [J/kgK].
+%
+%  S(T,P,X,TR) returns the difference of specific entropy between a state given
+%  by the Temperature T [K], Pressure P [Pa] and vapor mass fraction X, and a
+%  saturated liquid with Temperature TR, S(T,P,X) - S(TR,PS(TR),0). Arguments
+%  can be given as single values or row vectors, e.g., T = [T1 T2 T3 ... Tn ].
+%  X = 1 or X = 0 may be used to force a subcooled vapor or overheated liquid,
+%  respectively.
+
+% s12 = sl(Tr,ps(Tr),Ts(p),p) + hvap(Ts(p))/Ts(p) + sg(Ts(p),p,T,p);
+if isempty(T) || isempty(p) || isempty(x) || isempty(Tr)
+  s12 = [];
+  return
+end
+% make all vectors
+lT = length(T);
+lp = length(p);
+lx = length(x);
+i = max([lT lp lx]);
+if i>1
+  if lT == 1
+    T(1:i) = T;
+  end
+  if lp == 1
+    p(1:i) = p;
+  end
+  if lx == 1
+    x(1:i) = x;
+  end
+end
+
+s12(1:i) = 0;
+psr = ps(Tr);
+hvapr = hvap(Tr);
+for j = 1:i
+  switch x(j)
+    case 1
+      % vapor contribution to the saturated vapor Tr, ps(Tr)
+      % in sl, make sure p=ps(T1). Ts is, in general, not exact.
+%      fprintf('ENTROPY: hvap/T @ %.0f = %.4g J/kgK\n',Tr,hvap(Tr)/Tr);
+      s12(j) = sg(virialfun,vcoeffs,cpid,Tr,psr,T(j),p(j)) + hvapr/Tr;
+%		+ sl(intcpl_T,Ts,ps,drho,Tr,ps(Tr),T1,ps(T1));
+    case 0
+      s12(j) = sl(intcpl_T,Ts,ps,drho,Tr,psr,T(j),p(j));
+    otherwise
+      if x(j) > 1 || x(j) < 0
+        error(sprintf('Nonsense input: x = %.3g.',x(j)));
+      else % 0<x<1
+        if p(j) ~= ps(T(j))
+          error('For a two-phase state, p must be equal to ps(T)');
+        end
+        s12(j) = x(j)*hvap(T(j))/T(j); % ...
+	%	+ sl(intcpl_T,Ts,ps,drho,Tr,ps(Tr),T(j),p(j));
+      end
+  end
+end
+
+function s12 = sg(virialfun,vcoeffs,cpid,T1,p1,T2,p2)
+%SG         Difference of specific entropy in a gaseous state [J/kgK].
+%
+%  SG(T1,P1,T2) returns S(T2,P1) - S(T1,P1).
+%
+%  SG(T1,P1,T2,P2) returns S(T2,P2) - S(T1,P1).
+
+% s12 = (cpid1*T2-cpid2*T1)*log(T2/T1)/(T1-T2) + cpid2 - cpid1 ...
+%	+ B'(T1)*p1 - B'(T2)*p2 -R*log(p2/p1)
+% the logic below just does not calculate terms that become identically zero
+if nargin == 6 || p1 == p2
+  if T1 == T2
+    s12 = 0;
+    return
+  else
+    % calculate, what is necessary below
+    s12 = 0;
+    R = vcoeffs(end-1);
+    M = vcoeffs(end);
+    [B, B2] = virialfun(vcoeffs,T2);
+    B2 = B2./(1000.*T2);
+  end
+else % p1 ~= p2
+  % the contribution  Int_p1^p2 dv/dT dp
+  R = vcoeffs(end-1);
+  M = vcoeffs(end);
+  [B, B2] = virialfun(vcoeffs,T2);
+  B2 = B2./(1000.*T2);
+%  fprintf('SG: -R log(p2/p1) = %.4g\n',-R.*log(p2./p1)./M);
+  s12 = - R.*log(p2./p1)./M - B2*(p2-p1)./M;
+%  fprintf('SG: -R log(p2/p1) - B2 (p2-p1) = %.4g\n',s12);
+  % This was to unprecise, dv/dT = R/p. With, from above,
+  %   v = (1/2)RT/p + sqrt( (1/4)(RT/p)^2 + BRT/p ), because pv/RT = 1 + B/v,
+  %   here v is molar volume,  in mathematica we do
+  %
+  %   D[(1/2) R*T/p + Sqrt[(1/4) (R*T/p)^2 + B[T]*R*T/p],T]
+  %   Integrate[%,{p, p1, p2}, Assumptions -> R > 0 && p1 > 0 && p2 > 0
+  %      && T > 0 && 0 < R*T + 4*p*B[T] && (p2 < p1|| p2> p1 )]
+  %  (the assumptions p1 < p2 || p1 > p2 seem a bug in mathematica)
+  % (R*(2*ArcSinh[1/(2*Sqrt[(p1*B[T])/(R*T)])] -
+  %   2*ArcSinh[1/(2*Sqrt[(p2*B[T])/(R*T)])] - Sqrt[1 + (4*p1*B[T])/(R*T)] +
+  %   Sqrt[1 + (4*p2*B[T])/(R*T)] + Log[p2/p1]))/2 + ((-Sqrt[R*T*(R*T +
+  %   4*p1*B[T])] + Sqrt[R*T*(R*T + 4*p2*B[T])])* Derivative[1][B][T])/(2*B[T])
+  % B = B[T2]
+
+  % the seemingly more precise estimate
+  %B = B/1000;
+  %RT = R*T2;
+  %B = -( (R*(2*asinh(1/(2*sqrt(p1*B/RT))) - 2*asinh(1/(2*sqrt(p2*B/RT))) ...
+  %	- sqrt(1+4*p1*B/RT) + sqrt(1+4*p2*B/RT) + log(p2/p1)))/2 ...
+  %	+ ((-sqrt(RT*(RT+4*p1*B)) + sqrt(RT*(RT+4*p2*B)))*B2)/(2*B) )./M;
+  %  fprintf('SG: - Int_p1^p2 dv/dT@T2 dp = %.4g\n',B);
+end
+
+if T1 ~= T2
+  [B, B1] = virialfun(vcoeffs,T1);
+  B1 = B1./(1000.*T1);
+  cpid1 = cpid(T1);
+  cpid2 = cpid(T2);
+  % The isobaric contribution, int_T1^T2 cpid/T dT
+  s12 = s12 + (cpid1.*T2-cpid2.*T1).*log(T2./T1)./(T2-T1) + cpid2 - cpid1;
+%  fprintf('SG: isobaric contribution Int cpid/T dT = %.4g\n',s12);
+%  fprintf('SG: Int (cpg-cpid)/T dT = %.4g\n',(B1-B2).*p1./M);
+  s12 = s12 + (B1-B2).*p1./M;
+end
+
+%if nargin == 7 && p1 ~= p2
+%  if T1 == T2
+%    [B, B1] = virialfun(vcoeffs,T1);
+%    B1 = B1./(1000.*T1);
+%    fprintf('SG: T=const, Int (dv/dT)/T dp = %.4g\n',B1.*(p1-p2)./M);
+%    s12 = s12 + B1.*(p1-p2)./M;
+%  else
+%    fprintf('SG: Int (dv/dT)/T dp = %.4g\n',(B1.*p1-B2.*p2)./M);
+%    s12 = s12 + (B1.*p1-B2.*p2)./M;
+%  end
+%end
+
+function s12 = sl(intcpl_T,Ts,ps,drho,T1,p1,T2,p2)
+%SL         Difference of specific entropy in a liquid state [J/kgK].
+%
+%  SL(T1,P1,T2) returns S(T2,P1) - S(T1,P1).
+
+if nargin == 7
+  p2 = p1;
+end
+
+p0 = 101325;
+Tb = Ts(p0);
+%    S.drho(T)      Neg. compressibility, [DRHO RHO] 1/rho drho/dT and rho
+[dr, rho] = drho(T1);
+v1 = 1./rho;
+dv1 = -dr./rho;
+
+if T1 == T2
+  s12 = 0;
+  v2 = v1;
+  dv2 = dv1;
+else
+  s12 = intcpl_T(T1,T2);
+%  return % DEBUG
+  [dr, rho] = drho(T2);
+  v2 = 1./rho;
+  dv2 = -dr./rho;
+end
+%fprintf('SL: Int cp/T dT = %.4g\n',s12);
+
+if T1 >= Tb && T2 >= Tb
+  ps1 = ps(T1);
+  if T1 ~= T2
+    ps2 = ps(T2);
+    s12 = s12 + dv1.*(p1-ps1) - dv2.*(p2-ps2) - (v2-v1).*(ps2-ps1)./(T2-T1);
+  else
+    s12 = s12 + dv1.*(p1-p2);
+  end
+elseif T1 <= Tb && T2 <= Tb
+  s12 = s12 + dv1.*(p1-p0) - dv2.*(p2-p0);
+else % Tb between T1 and T2
+  ps2 = ps(T2);
+  [dr, rb] = drho(Tb);
+  if abs(T2-Tb) > 0.5
+    s12 = s12 + dv1.*(p1-p0) - dv2.*(p2-ps2) - (v2-1./rb).*(ps2-p0)./(T2-Tb);
+  else
+    s12 = s12 + dv1.*(p1-p0) - dv2.*(p2-ps2);
+  end
+end
+%fprintf('SL: s2 - s1  = %.4g\n',s12);
+
+function [ps, dps] = ps(Acoeffs,T)
 %PS         Saturation pressure [Pa].
 %
 %  PS(ANTOINECOEFFS,T) returns the saturation pressure [Pa].
 %
 %  [P DP] = PS(ANTOINECOEFFS,T) returns the saturation pressure and the
 %  derivative of the saturation pressure with respect to T [Pa, Pa/K].
-%  
+%
 %  For T > Tc, more precisely, no ANTOINECOEFFS are found, PS returns [Inf NaN].
 %
 %  PS calculates the saturation pressure by applying either the classical or an
@@ -749,13 +958,13 @@ if isempty(i)
 end
 
 % simple Antoine eq.
-[A B C T0] = deal(Acoeffs(i,3),Acoeffs(i,4),Acoeffs(i,5),Acoeffs(i,6));
+[A, B, C, T0] = deal(Acoeffs(i,3),Acoeffs(i,4),Acoeffs(i,5),Acoeffs(i,6));
 
 ps = 10.^(A-B./(C+T));
 
 if T0 ~= 0
   % extended Antoine eq.
-  [Tc n E F] = deal(Acoeffs(i,7),Acoeffs(i,8),Acoeffs(i,9),Acoeffs(i,10));
+  [Tc, n, E, F] = deal(Acoeffs(i,7),Acoeffs(i,8),Acoeffs(i,9),Acoeffs(i,10));
   chi = (T-T0)/Tc;
   ps = ps.*10.^(0.43429.*chi.^n + E.*chi.^8 + F.*chi.^12);
 end
@@ -804,7 +1013,7 @@ function Ts = Ts(Acoeffs,p)
 i = find(p <= Acoeffs(:,2), 1);
 
 % Get the solution or a good inital guess for later iteration.
-[A B C T0] = deal(Acoeffs(i,3),Acoeffs(i,4),Acoeffs(i,5),Acoeffs(i,6));
+[A, B, C, T0] = deal(Acoeffs(i,3),Acoeffs(i,4),Acoeffs(i,5),Acoeffs(i,6));
 
 %ps = 10.^(A-B./(C+T));  log(10) = 2.302585092994046;
 Ts = B./(A-log(p)/2.302585092994046)-C;
@@ -825,17 +1034,17 @@ function rho = rholandolt(coeffs,T)
 %  See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 %  Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8G.
 %  M. Frenkel, X. Hong, R. Wilhoit, K. Hall (2000).
-[A B C D Tc rhoc] ...
+[A, B, C, D, Tc, rhoc] ...
   = deal(coeffs(1),coeffs(2),coeffs(3),coeffs(4),coeffs(5),coeffs(6));
 chi = 1 - T/Tc;  phi = Tc - T;
 rho=(1+1.75.*chi.^(1/3)+0.75.*chi).*(rhoc+A.*phi+B.*phi.^2+C.*phi.^3+D.*phi.^4);
 
-function [drho rho] = drholandolt(coeffs,T)
+function [drho, rho] = drholandolt(coeffs,T)
 %DRHOLANDOLT Derivative of liquid density, (1/rho) drho/dT [1/K].
 %
 %  [DRHO RHO] = DROLANDOLT(C,T) returns the first derivative of the liquid
 %  density, DRHO = (1/RHO) (DRHO/DT), and the density.
-[A B C D Tc rhoc] ...
+[A, B, C, D, Tc, rhoc] ...
   = deal(coeffs(1),coeffs(2),coeffs(3),coeffs(4),coeffs(5),coeffs(6));
 chi = 1 - T/Tc;  phi = Tc - T;
 rho = rholandolt(coeffs,T);
@@ -855,14 +1064,14 @@ M = C(5);
 rho = C(1)/C(2).^(1 + (1 - T./C(3)).^C(4));
 rho = rho.*M;
 
-function [drho rho] = drhoperry(C,T)
+function [drho, rho] = drhoperry(C,T)
 %DRHOPERRY  Derivative of liquid density, (1/rho) drho/dT [1/K].
 %
 %  [DRHO RHO] = DRHOPERRY(C,T) returns the first derivative of the liquid
 %  density, DRHO = (1/RHO) (DRHO/DT), and the density.
 
 % In[2]:= D[C1/C2^(1+(1-T/C3)^C4),T]//InputForm
-% Out[2]//InputForm= 
+% Out[2]//InputForm=
 %  (C1*C2^(-1 - (1 - T/C3)^C4)*C4*(1 - T/C3)^(-1 + C4)*Log[C2])/C3
 
 rho = rhoperry(C,T);
@@ -950,9 +1159,9 @@ Tr = T./klcoeffs(1);
 kl = klcoeffs(2).*(1-Tr).^0.38./Tr.^(1/6);
 
 function cpl = cpleq2(C,T)
-%CPLEQ2     Specific constant pressure heat capacity of the liquid [J/kgK].
+%CPLEQ2     Evaluate Equation 2 to Table 2-153 in Green & Perry, 8th ed. (2007).
 %
-%  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid.
+%  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid [J/kgK].
 %  Equation 2 to Table 2-196, from Perry, 7th ed. (1997), corrected, is used.
 %  For the correction see Perry, 8th ed. (2007), Equation 2 to Table 2-153.
 %  CPL could be calculated from the real gas cp, from
@@ -970,10 +1179,11 @@ cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
   C(3).^2*x.^3./3 - C(3).*C(4).*x.^4./2 - C(4).^2.*x.^5./5 )./M;
 
 function icpl = icpleq2(C,T0,T1)
-%ICPLEQ2    Difference of specific enthalpy of the liquid [J/kg].
+%ICPLEQ2    Integrate CPLEQ2.
 %
 %  ICPLEQ2(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy of
-%  the liquid between the temperatures T0 and T1.
+%  the liquid between the temperatures T0 and T1. Corrected on Mai 6, 2013, see
+%  substance>cpleq2.
 %
 %  See also CPLEQ2.
 
@@ -985,9 +1195,53 @@ Tc = C(5); M = C(6);
 x0 = (1-T0./Tc); x1 = (1-T1./Tc);
 
 icpl = C(1).^2.*log(x0./x1) - C(2).*(x1-x0) + C(1).*C(3).*(x1.^2-x0.^2) ...
-  + C(1).*C(4).*(x1.^3-x0.^3)/3 + nthroot(C(3).^2,3)*(x1.^4-x0.^4)/4 ...
-  + C(3).*C(4).*(x1.^5-x0.^5)/10 + nthroot(C(4).^2,5).*(x1.^6-x0.^6)/6;
+  + C(1).*C(4).*(x1.^3-x0.^3)/3 + C(3).^2.*(x1.^4-x0.^4)/12 ...
+  + C(3).*C(4).*(x1.^5-x0.^5)/10 + C(4).^2.*(x1.^6-x0.^6)/30;
 icpl = Tc.*icpl./M;
+
+function y = icpleq2_x(C,T1,T2)
+%ICPLEQ2_X  Integrate CPL/T dT, CPL given by CPLEQ2 [J/kg K].
+%
+%  ICPLEQ2_X(CPLCOEFFS,T1,T2) integrates the specific isobaric heat capacity of
+%  the liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation of the difference
+%  of the specific entropy of the liquid.
+
+% mathematica-Session
+%
+% Integrate[(C1/x + C2 + C3*x + C4*x^2 + C5*x^3 + C6*x^4 + C7*x^5)/T /.
+%   x -> (1 - T/Tc), {T, T1, T2},
+%   Assumptions -> T1 > 0 && T2 > 0 && T1 < Tc && T2 < Tc && T1 < T2]
+% ...
+% % /. {C1 -> D1^2, C3 -> -2*D1*D3, C4 -> -D1*D4, C5 -> D3^2/3,
+%    C6 -> -D3*D4/2, C7 -> -D4^2/5}
+% ...
+% FullSimplify[%]
+% ...
+% InputForm[%]
+%  ((-12*D4^2*(T1^5 - T2^5))/5 + (15*D4*(D3 + 2*D4)*(T1^4 - T2^4)*Tc)/
+%     2 + (20*(D3^2 - 6*D3*D4 - 6*D4^2)*(T1^3 - T2^3)*Tc^2)/3 +
+%    30*(-D3^2 + 3*D3*D4 + D4*(D1 + 2*D4))*(T1 - T2)*(T1 + T2)*Tc^3 -
+%    60*(-D3^2 + 2*D3*D4 + D4^2 + 2*D1*(D3 + D4))*(T1 - T2)*Tc^4 -
+%    2*Tc^5*((10*(3*(C2 + D1^2) - 6*D1*D3 + D3^2) -
+%        15*(2*D1 + D3)*D4 - 6*D4^2)*Log[T1] +
+%      (-10*(3*(C2 + D1^2) - 6*D1*D3 + D3^2) + 15*(2*D1 + D3)*D4 +
+%        6*D4^2)*Log[T2] + 30*D1^2*(-Log[-T1 + Tc] + Log[-T2 + Tc])))/
+%   (60*Tc^5)
+% and Simplify the Logs,
+% FullSimplify[% == ...,T1 > 0 && T2 > 0 && Tc > T1 && Tc > T2]
+% True
+% and, in the editor, replace D1 - D4 by C(1) - C(4), divide by M
+
+Tc = C(5); M = C(6);
+
+y = (  (-12*C(4).^2.*(T1.^5-T2.^5))/5 ...
+  +(15*C(4).*(C(3)+2.*C(4)).*(T1.^4-T2.^4).*Tc)/2 ...
+  +(20*(C(3).^2-6*C(3).*C(4)-6*C(4).^2).*(T1.^3-T2.^3).*Tc.^2)/3 ...
+  +30*(-C(3).^2+3*C(3).*C(4)+C(4).*(C(1)+2*C(4))).*(T1-T2).*(T1+T2).*Tc.^3 ...
+  -60*(-C(3).^2+2*C(3).*C(4)+C(4).^2+2*C(1).*(C(3)+C(4))).*(T1-T2).*Tc.^4 ...
+  -2*Tc.^5.*(( 10*(3.*(C(2)+C(1).^2)-6*C(1).*C(3)+C(3).^2) ...
+  -15*(2*C(1)+C(3)).*C(4)- 6*C(4).^2 ).*(log(T1./T2)) ...
+  +30*C(1).^2.*log((Tc-T2)./(Tc-T1)))   )./(M.*60.*Tc.^5);
 
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
@@ -997,7 +1251,7 @@ function sig = sigvdi(sigcoeffs,T)
 b = sigcoeffs(1); Tc = sigcoeffs(2); pc = sigcoeffs(3);
 sig = b.*(pc.^2.*Tc).^(1/3).*(1-T./Tc).^(11/9);
 
-function [dsig sig] = dsigvdi(sigcoeffs,T)
+function [dsig, sig] = dsigvdi(sigcoeffs,T)
 %DSIGVDI    Derivative of surface tension, (1/SIG) DSIG/DT [1/K].
 %
 %  [DSIG SIG] = DSIGVDI(SCOEFFS,T) returns the derivative of the surface
@@ -1023,7 +1277,7 @@ function sig = sigstephan22(sigcoeffs,T)
 %  sig = 0;
 %end
 
-function [dsig sig] = dsigstephan22(sigcoeffs,T)
+function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 %DSIGSTEPHAN22 Surface tension [N/m].
 %
 %  [DSIG SIG] = DSIGSTEPHAN22(SCOEFFS,T) returns the derivative of the surface
@@ -1048,7 +1302,7 @@ function sig = sigstephan23(sigcoeffs,T)
 th = 1-T./sigcoeffs(4);
 sig = sigcoeffs(1)*1e-3.*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 
-function [dsig sig] = dsigstephan23(sigcoeffs,T)
+function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 %DSIGSTEPHAN23 Surface tension [N/m].
 %
 %  [DSIG SIG] = DSIGSTEPHAN23(SCOEFFS,T) returns the derivative of the surface
@@ -1068,7 +1322,7 @@ function jt = jt(V,cpid)
 % jt = -dhdp(T)./cpg(T,p); V = [dhdp cpg_cpid], see VIRIAL.
 jt = -V(1)./(cpid+V(2));
 
-function [dhdp cpg]= dhcpg(V,cpid)
+function [dhdp, cpg]= dhcpg(V,cpid)
 %DHCPG      Derivative of enthalpy by pressure at constant temperature,  dh/dp.
 %
 %  DHCPG([DHDP CPG_CPID],CPID) returns the array [DHDP CPG].
@@ -1086,8 +1340,14 @@ if p0 == p1
   T1 = T0;
 else
 %jtloc = @(p,T) s.jt(T,p);
-  [pi ti] = ode45(jtloc,[p0 p1],T0);
-  T1 = ti(end);
+  [pi, ti] = ode45(jtloc,[p0 p1],T0);
+  % for [p0 p1], the solution for all integration steps is returned;
+  % fpr [p0 [p1 p2 p3 ..] ], the solution at all specified points is returned.
+  if size(p1,2) == 1
+    T1 = ti(end);
+  else
+    T1 = ti(2:end)';
+  end
 end
 
 function y = poly2(C,x)
@@ -1096,7 +1356,7 @@ function y = poly2(C,x)
 %  POLY2(C,x) returns C(1) + C(2)*x + C(3)*x^2.
 y = C(1) + C(2)*x + C(3)*x.^2;
 
-function [dy y] = dpoly2(C,x)
+function [dy, y] = dpoly2(C,x)
 %DPOLY2     Evaluate the derivative of a polynomial of third order.
 %
 %  [DY Y] = DPOLY2(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
@@ -1112,7 +1372,7 @@ function y = poly3(C,x)
 %  POLY3(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3;
 
-function [dy y] = dpoly3(C,x)
+function [dy, y] = dpoly3(C,x)
 %DPOLY3     Evaluate the derivative of a polynomial of third order.
 %
 %  [DY Y] = DPOLY3(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
@@ -1131,6 +1391,12 @@ function iy = ipoly3(C,x0,x1)
 iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
   + C(4)*(x1.^4-x0.^4)/4;
 
+function y = ipoly3_x(C,x0,x1)
+%IPOLY3_X   Integrate a polynomial of third order, divided by x.
+%
+y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
+    + C(4).*(x1.^3-x0.^3)/3;
+
 function y = poly4(C,x)
 %POLY4      Evaluate a polynomial of fourth order, five coefficients.
 %
@@ -1146,7 +1412,13 @@ function iy = ipoly4(C,x0,x1)
 iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
   + C(4)*(x1.^4-x0.^4)/4 + C(5)*(x1.^5-x0.^5)/5;
 
-function [y y1 y2] = pdiv3(C,x)
+function y = ipoly4_x(C,x0,x1)
+%IPOLY4     Integrate a polynomial of fourth order, divided by x.
+%
+y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
+    + C(4).*(x1.^3-x0.^3)/3 + C(5).*(x1.^4-x0.^4)/4;
+
+function [y, y1, y2] = pdiv3(C,x)
 %PDIV3      Evaluate a polynomial in X^-1 of third order, four coefficients.
 %
 %  PDIV3(C,x) returns y = C(1) + C(2)/x + C(3)/x^2 + C(4)/x^3.
@@ -1160,7 +1432,7 @@ if nargout > 1
   y2 =  2*C(2)./x + 6*C(3)./x.^2 + 12*C(4)./x.^3;
 end
 
-function [y y1 y2] = pdiv4(C,x)
+function [y, y1, y2] = pdiv4(C,x)
 %POLY4      Evaluate a polynomial in X^-1 of fourth order, five coefficients.
 %
 %  PDIV4(C,x) returns y = C(1) + C(2)/x + C(3)/x^2 + C(4)/x^3 + C(5)/x^4.
@@ -1196,15 +1468,15 @@ function x = newtony(fun,x0,y,res,iter)
 %
 %  See also the MATLAB-functions function_handle, feval.
 
-if nargin < 5 iter = 100; end
-if nargin < 4 res = 1e-6; end
-if nargin < 3 y = 0; end
+if nargin < 5, iter = 100; end
+if nargin < 4, res = 1e-6; end
+if nargin < 3, y = 0; end
 
 x = x0;
 for i = 1:iter
-  [y0 dy] = fun(x);
+  [y0, dy] = fun(x);
   fy = y0 - y;
-  if abs(fy) < res return
+  if abs(fy) < res, return
   else
     x = x - fy/dy;
   end
