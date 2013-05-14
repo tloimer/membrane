@@ -70,7 +70,7 @@ if ispgfplot
 
   addcoords(Tid,zfront'/L,fl.flow(nflow).T',...
 	'mark=*,mark options={scale=0.6},solid,thick');
-  for i = 1:nflow-1
+  for i = nflow-1:-1:1
     addcoords(Tid,fl.flow(i).z'/L,fl.flow(i).T',...
 	'mark=*,mark options={scale=0.6},solid,thick');
   end
@@ -86,7 +86,7 @@ if ispgfplot
 
   addcoords(pid,zfront'/L,fl.flow(nflow).p'/1e5,...
 	'mark=*,mark options={scale=0.6},solid,thick');
-  for i = 1:nflow-1
+  for i = nflow-1:-1:1
     addcoords(pid,fl.flow(i).z'/L,fl.flow(i).p'/1e5,...
 	'mark=*,mark options={scale=0.6},solid,thick');
   end

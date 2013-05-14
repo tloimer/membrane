@@ -102,26 +102,36 @@ end
 if ispgfplot
   rangestr = sprintf(' xmin = %.0f, xmax = %.0f, ymin = %.0f, ymax = %.0f,\n',...
 	smin, smax, Tmin, Tmax);
-  sid = beginpgfplot(name, ['xlabel={$s-s_0$ [J/kg\\,K]}, ylabel={$T$ [K]},\n'...
-     rangestr ...
-    ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
-    ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
+  sid = beginpgfplot(name,['xlabel={$s-s_0$ [J/kg\\,K]}, ylabel={$T$ [K]},\n'...
+    rangestr ...
+    ' legend style={at={(0.97,0.07)}, anchor=south east, cells={anchor=west},\n'...
+    '\tdraw = white},\n'...
+    ' y label style = {rotate=-90,xshift=1bp}, width=8cm, height=6cm']);
 
   % Saturated liquid
-  addcoords(sid,slrange',Trange','orange!30!yellow, solid, thick');
+  fprintf(sid,'%% Saturated liquid\n');
+  addcoords(sid,slrange',Trange','blue!30!white, solid, thick');
   % Saturated vapor
-  addcoords(sid,sgrange',Trange','blue!20!white, solid, thick');
+  fprintf(sid,'%% Saturated vapor\n');
+  addcoords(sid,sgrange',Trange','orange!90!red, solid, thick');
   % pk and pk-pcap dotted lines % -- with pgfplots-injection!
+  fprintf(sid,'%% pK - pcap\n');
   addcoords(sid,scrange',Trange','thin, dotted] plot[forget plot');
+  fprintf(sid,'%% pK\n');
   addcoords(sid,sKrange',Trange','thin, dotted');
   % isobars p1 and p2
+  fprintf(sid,'%% isobar p = p1\n');
   addcoords(sid,sp1range',[Tl1range Tv1range]','black!70!white');
+  fprintf(sid,'%% isobar p = p2\n');
   addcoords(sid,sp2range',[Tl2range Tv2range]','black!70!white');
   % isenthalpic line
+  fprintf(sid,'%% isenthalpic line, h = h1\n');
   addcoords(sid,shrange',Thrange','black!70!white, thin, dashed');
 
+  % the path
+  fprintf(sid,'%% path of the process\n');
   for i = 1:nflow
-    addcoords(sid,spath{i}',Tpath{i}','thick, solid');
+    addcoords(sid,spath{i}.',Tpath{i}.',' very thick, solid');
     %addcoords(sid,spath{i}(1),Tpath{i}(1),'mark=*, none');
     %addcoords(sid,spath{i}(end),Tpath{i}(end),'mark=o, none');
   end

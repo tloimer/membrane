@@ -54,11 +54,12 @@ end
 %%%	THE PLOT	%%%
 % pgfplots
 if ispgfplot
-  rangestr = sprintf(' xmin = %.0f, xmax = %.0f, ymin = %.0f, ymax = %.0f,\n',...
+  rangestr = sprintf(' xmin=%.0f, xmax=%.0f, ymin=%.0f, ymax=%.0f,   ',...
 	Tmin, Tmax, pmin, pmax);
-  pid = beginpgfplot(name, ['xlabel = {$T$ [K]}, ylabel = {$p$ [bar]},\n' rangestr ...
-    ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west}},\n'...
-    ' y label style = {rotate=-90,xshift=-10bp}, width=8cm, height=6cm']);
+  pid = beginpgfplot(name, ['xlabel = {$T$ [K]}, ylabel = {$p$ [bar]},\n' ...
+    rangestr 'width=8cm, height=6cm,\n' ...
+    ' legend style={at={(0.97,0.07)},anchor=south east,cells={anchor=west},\n'...
+    '\tdraw = white},  y label style = {rotate=-90,xshift=6bp}']);
 
   addcoords(pid,Tsat',psat','solid, thick');
   addcoords(pid,Tsat',pK','dashed, thin');
@@ -67,10 +68,10 @@ if ispgfplot
   for i = 1:nflow
     % to be mended
     addcoords(pid,fl.flow(i).T',fl.flow(i).p'/1e5,...
-	'mark=*,mark options={scale=0.6},solid,thick');
+	'solid, very thick');
   end
   endpgfplot(pid,...
-	'$p_\\mathrm{sat}$, $p_\\mathrm K$, $p_\\mathrm K - p_\\mathrm{cap}');
+	'$p_\\mathrm{sat}$, $p_\\mathrm K$, $p_\\mathrm K-p_\\mathrm{cap}$');
 else
 % matlab-plots
   figure('Name',['p-T diagram:  ' name]);
