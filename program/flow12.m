@@ -502,7 +502,7 @@ function [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9)
 q6 = q9 + m*hvapK9; %========================================== part for front69
 dpkliq9 = dpk9 - dpcap9; %21.April
 % for non-wetting, dpkliq might be negative! Then, condensation is anyway
-% possible. The pressure could stay constant and the Temperature rise, still the
+% possible. The pressure could stay constant and the temperature rise, still the
 % fluid would remain in its liquid state.
 if dpkliq9 <= 0 || m*kmliq(T9)*s.nul(T9)/(dpkliq9*mem.kappa) >= q6
   condensation = true;
@@ -834,7 +834,7 @@ function [T3 p3 q3] = front35(m,T5,p5,q5) %----------------------------- front35
 T3 = T5;
 psat3 = s.ps(T3);  [drho3 rho3] = s.drho(T3);
 rhoRT = rho3*s.R*T3;
-% inital guess
+% initial guess
 p3 = (p5 + rhoRT)/(psat3+rhoRT); % p3 here really is p3/psat3
 % setup newton
 ps_rhoRT = psat3/rhoRT; p5_rhoRT = p5/rhoRT;

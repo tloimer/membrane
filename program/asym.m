@@ -1,75 +1,79 @@
-function fl = asym(m,T2,p2,fl,flsetup,solver)
-%ASYM       Flow through the membrane.
-%  ASYM(M,T2,P2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT that
-%  contains the solution for the mass flux M [kg/m2s] at a downstream
-%  temperature T2 [K] and a downstream pressure P2 [Pa]. FLSETUP is a struct
-%  that contains input to ASYM, calculated from combining SUSTANCE, MEMBRANE
-%  and FMODEL properties and the maximally expected Temperature. The struct
-%  FLOWSTRUCT is also used to pass input to ASYM. Solution tolerances are
-%  controlled via the struct SOLVER.
-%
-%  FLSETUP is used because if MNUM iteratively calls ASYM to find a solution,
-%  the setup only needs to be calculated once.
+function fl = asym(m,T2,p2,q2,a2,fl,flsetup,solver)
+%ASYM       Flow through a porous medium consisting of several layers.
+%  ASYM(M,T2,P2,Q2,A2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT
+%  that contains the solution for the mass flux M [kg/m2s] at a downstream
+%  temperature T2 [K], pressure P2 [Pa], heat flux Q2 [W/m2] and vapor volume
+%  fraction A2. A2 may be empty, if the downstream state is not a two-phase
+%  mixture or a fluid at saturation. The struct column vector FLSETUP contains
+%  input to ASYM, calculated from combining a SUBSTANCE, MEMBRANE and FMODEL
+%  column vectors and the maximum expected temperature. The struct FLOWSTRUCT
+%  also contains input to ASYM. Solution tolerances are controlled via the
+%  struct SOLVER. Where applicable, the layer properties are given in column
+%  vectors. FLSETUP is calculated only once, while the mass flow, given pressure
+%  boundary conditions, is obtained by iteratively calling ASYM.
 %
 %  Fields in FLOWSTRUCT (FL) used for input to ASYM:
-%    FL.info.theta      Contact angle (degree).
-%    FL.info.substance  Struct SUBSTANCE.
-%    FL.info.membrane   Struct MEMBRANE.
-%    FL.info.fmodel     Struct FMODEL.
+%    FL.info.theta	Contact angle (degree), column vector.
+%    FL.info.substance	Struct SUBSTANCE.
+%    FL.info.membrane	Struct MEMBRANE, column vector.
+%    FL.info.fmodel	Struct FMODEL, column vector.
+%    FL.info.colors	A cell array of linespec-colors.
+%  The fields theta, membrane and fmodel are column vectors (i,1).
 %
 %  Fields in FLOWSTRUCT used for output from ASYM:
-%    FL.sol.m           Mass flux [kg/m2s].
-%    FL.sol.T1          Upstream temperature [K].
-%    FL.sol.p1          Upstream pressure [Pa].
-%    FL.sol.q1          Upstream heat flux [W/m2].
-%    FL.sol.T3          Temperature at the liquid film or the membrane front.
+%    FL.sol.m		Mass flux [kg/m2s].
+%    FL.sol.T1		Upstream temperature [K].
+%    FL.sol.p1		Upstream pressure [Pa].
+%    FL.sol.q1		Upstream heat flux [W/m2].
+%    FL.sol.q2		Downstream heat flux [W/m2]. (Info, really.)
+%    FL.sol.T3		Temperature at the liquid film or the membrane front.
 %  If SOLVER.writesolution is true, the following fields are written:
-%    FL.sol.states      Flow states, see below.
-%    FL.sol.len         Length of the struct FL.flow. Negative number.
-%    FL.sol.zscale      Length scale of upstream temperature boundary layer.
+%    FL.sol.states	Flow states, see below.
+%    FL.sol.len		Length of the struct FL.flow. Negative number.
+%    FL.sol.zscale	Length scale of upstream temperature boundary layer.
 %  If SOLVER.writesolution is true, a struct FL.flow containing the following
 %  fields is created:
-%    FL.flow            Struct of length -FL.sol.len.
-%    FL.flow.z          Coordinate [m].
-%    FL.flow.T          Temperature [K].
-%    FL.flow.p          Pressure [p].
-%    FL.flow.q          Heat flux [W/m2].
-%    FL.flow.Kn         Knudsen number, for vapor flow.
-%    FL.flow.a          Vapor volume fraction.
-%    FL.flow.color      Plotting specification.
+%    FL.flow		Struct of length -FL.sol.len.
+%    FL.flow.z		Coordinate [m].
+%    FL.flow.T		Temperature [K].
+%    FL.flow.p		Pressure [p].
+%    FL.flow.q		Heat flux [W/m2].
+%    FL.flow.Kn		Knudsen number, for vapor flow.
+%    FL.flow.a		Vapor volume fraction.
+%    FL.flow.color	Plotting specification.
 %
 %  To plot the upstream boundary layer, for the z-coordinate use the
 %  transformation
 %    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
 %    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
-%  FLSETUP must contain the fields
-%     .curv             Curvature of the meniscus in a pore.
-%     .kelv(T,sig,rho)  Function to calculate the ratio pkelv/psat.
-%     .pkelv(T)         Function to calculate the pressure pkelv.
-%     .hgK(T)           Function to return the vapor enthalpy hvap(T,pkelv(T)).
+%  FLSETUP is a column vector (FLSETUP(i,1) and must contain the fields
+%     .curv		Curvature of the meniscus in a pore.
+%     .kelv(T,sig,rho)	Function to calculate the ratio pkelv/psat.
+%     .pkelv(T)		Function to calculate the pressure pkelv.
+%     .hgK(T)		Function to return the vapor enthalpy hvap(T,pkelv(T)).
 %     .intdhdpdpsatdT(T)
-%     .nuapp(T,p)       Apparent vapor viscosity.
-%     .knudsen(T,p)     Knudsen number.
+%     .nuapp(T,p)	Apparent vapor viscosity.
+%     .knudsen(T,p)	Knudsen number.
 %     .nu2ph(T,pk,a)
 %     .kmgas
 %     .kmliq
 %     .k2ph
 %     .xdot
-%     .odemaxstep        Function to calculate integration step width.
+%     .odemaxstep	Function to calculate integration step width.
 %
 %  See MNUM>FLSETUP.
 %  SOLVER must contain the fields
-%    .rtol              Relative error tolerance in odeset ('RelTol').
-%    .atol              Absolute error tolerance in odeset ('AbsTol').
-%    .tola              Tolerance for FZERO. Default in FZERO: 1e-16.
-%    .maxTperstep       Maximum temperature difference per integration step.
-%    .maxpperstep       Maximum pressure difference per integration step.
-%    .writesolution     If true, write FL.flow.
-%    .partialsolution   Only write a partial solution: p1, T3.
+%    .rtol		Relative error tolerance in odeset ('RelTol').
+%    .atol		Absolute error tolerance in odeset ('AbsTol').
+%    .tola		Tolerance for FZERO. Default in FZERO: 1e-16.
+%    .maxTperstep	Maximum temperature difference per integration step.
+%    .maxpperstep	Maximum pressure difference per integration step.
+%    .writesolution	If true, write FL.flow.
+%    .partialsolution	Only write a partial solution: p1, T3.
 %
 %  See also FMODEL, MEMBRANE, MNUM, SUBSTANCE.
 %
-% Nested functions: from2, flow92, front62, flow56, check69or89, front89,
+%  Nested functions: from2, flow92, front62, flow56, check69or89, front89,
 %    flow78, front37, front57, flow13, flow45, front35, front85, writetostruct.
 %  Subfunction: newton.
 %  Try, e.g., help flow12>newton.
@@ -90,18 +94,57 @@ function fl = asym(m,T2,p2,fl,flsetup,solver)
 %  calculation, at contrast to the linear approximation. For conformity, an
 %  additional name is not introduced.
 
-%  flow chart
+%  Daten, die in jedem shoot (iteratively shooting) neu geschrieben werden
+%    fl.sol.<T1,p1,...>  ...... erreichter Zustand 1
+%    fl.flow.<T,p,q,Kn,...> ... Verteilungen
 %
-%  from2___flow92_________flow78_
-%        |        |     |        |
-%        |_______flow56_|________|_flow45..if partialsolution (yes)__END: p1
-%                       |                  (no)
-%                       |                  | 
-%                       |_________________flow13
-%                                          if partialsolution (yes)__END: T3, p1
-%                                          (no)
-%                                          |___END: T1, p1
-%                     
+%  Daten, die jede Membran / jeder Membran layer extra (weil unterschiedlich)
+%  benötigt
+%    fl.info.theta
+%    fl.info.membrane
+%    fl.info.fmodel
+%    flsetup.<curv,kelv,...>  (flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
+%
+%  Daten, die ein einziges Mal für eine Membran (von mnum) berechnet werden
+%    fl.calc.<kk,kc,Ccc,...>
+%
+%  Daten, die für alle Membranen / Layer gesetzt werden, während des Schießens
+%  grob, dann accurate
+%    solver.<rtol,atol,...>
+
+%  PROGRAM SUMMARY
+%
+%  asym.m (m,T2,p2,q2,fl.flsetup,solver)
+%  Integrate against the flow direction from the end of the last membrane to
+%  the first membrane. Heat flux q2 not equal to 0 is allowed.
+%
+
+%  last = size(mem,2); % last = number of membranes, last membrane
+%  state = state2
+%  % go into the last membrane
+%  state = front_memfree(mem(last),state)
+%  state = integrate(mem(last),state)
+%  while z > 0
+%    state = front_inner(mem(last),state)
+%    state = integrate(mem(last),state)
+%  end
+%
+%  % the current location is the upstream front of the downstream-most membrane
+%  % i counts down from the penultimate to the first membrane
+%  for i = last-1:-1:1
+%    state = front_membranes(mem(i),mem(i+1),state)
+%    state = integrate(mem(i),state)
+%    while z > 0
+%      state = front_inner(mem(i),state)
+%      state = integrate(mem(i),state)
+%    end
+%  end
+%
+%  % the current location is the upstream front of the upstream-most membrane
+%  state = front_freemem(mem(1),state)
+%  % integrates both a liquid film and vapor flow
+%  % or only vapor flow in front of the membrane
+%  state = integratefree(state)
 
 %  TODO
 % rewrite intcpl(T1,T2) to icpl(T), See substance. Would have to implement
@@ -110,14 +153,17 @@ function fl = asym(m,T2,p2,fl,flsetup,solver)
 % ev. front37, front57
 % hvapK, hvapKraw an den schluss
 
+%  COMMON VARIABLES for ASYM
+%s = fl.info.substance;  f = fl.info.fmodel;
+% definition of colors, i.e., LineSpecs
+[liqcolor vapcolor twophcolor] = fl.info.colors{:};
+
 %  COMMON VARIABLES
 s = fl.info.substance;  mem = fl.info.membrane;  f = fl.info.fmodel;
-% definition of colors, i.e., LineSpecs
-liqcolor = 'b';  vapcolor = 'r';  twophcolor = 'g';
 
 % Combination of theta and membrane.
 % fl.info.theta is accessed directly
-curv = flsetup.curv; %curv = fl.info.curv;
+curv = flsetup.curv;
 
 %  COMMON FUNCTIONS
 % Thermodynamic properties from combination of substance, theta and membrane.
@@ -138,7 +184,6 @@ odemaxstep = flsetup.odemaxstep;
   = deal(solver.rtol, solver.atol, solver.tola, solver.maxTperstep,...
   solver.maxpperstep, solver.writesolution, solver.partialsolution);
 
-
 %  INITIALIZATION
 fl.sol.states = [];
 if writesolution
@@ -149,11 +194,59 @@ if writesolution
   fl.flow = struct('z',{},'T',{},'p',{},'q',{},'Kn',{},'a',{},'color',{});
 end
 
-%  START
-from2(m,T2,p2);
-% The rest plays all in the nested functions.
+%%%  ASYM PROPER  %%%
+
+% Get the number of membrane layers; Layers are sorted in a column vector.
+last = size(mem,1);
+
+% Write the downstream state to the struct state. Be verbose about the state. No
+% input check. Saturated states can be passed by giving a2, omitting p2.
+if isempty(a2)
+  if p2 > s.ps(T2)
+    a2 = 0;
+  else
+    a2 = 1;
+  end
+elseif isempty(p2)
+  p2 = s.ps(T2);
+end
+
+switch a2
+  case 1
+    phase2 = 'g'; % p2 <= s.ps
+  case 0
+    phase2 = 'l';
+  otherwise
+    phase2 = '2'; % p2 == s.ps(T2);
+end
+
+%  Construct the struct state and set it to the downstream state.
+state = struct('T',T2,'p',p2,'a',a2,'q',q2,'phase',phase2);
+
+state = front_memfree(mem(last),state,flsetup(last,1));
+
+
+%%  START
+%from2(m,T2,p2);
+%% The rest plays all in the nested functions.
 
 %%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
+
+function state1 = front_memfree(ml,state2,setup)
+
+% COMMON VARIABLES: s, f; liqcolor, vapcolor, 2phcolor;
+% ml for membrane layer.
+
+% If the downstream state is a liquid, there must be liquid within the membrane.
+% Even for non-wetting, the pressure in the membrane can not be smaller than
+% downstream of the membrane.         _________
+%                               vap.  ________(  liq.
+%
+% Or can it? Anyway, an exotic possibility.
+pk1 = setup.pkelv(state2.T);
+
+end
+
 
 function from2(m,T2,p2) %------------------------------------------------- from2
 %FROM2      Start flow through the membrane.
@@ -163,8 +256,6 @@ function from2(m,T2,p2) %------------------------------------------------- from2
 
 % FROM2 used in order to encapsulate variables (T6,p6,q6).
 q2 = 0;
-%DEBUG - trace flow12
-%DEBUG disp(sprintf('from2: m = %.5f kg/m2s, T2 = %.3f K',m,T2));
 if p2 >= pkelv(T2)
   [T6 p6 q6] = front62(m,T2,p2,q2);
   flow56(m,T6,p6,q6,mem.L);
@@ -190,7 +281,7 @@ function flow92(m,T2,p2,q2) %-------------------------------------------- flow92
 % dh/dz = (dh/dT)_p dT/dz + (dh/dp)_T dp/dz, dh/dT = s.cpg, dh/dp = s.dhdp
 %   dp/dz = -m nu/kappa
 %   dT/dz = -q/k
-%   dq/dz = -m cpg dT/dz - m dh/dp dp/dz 
+%   dq/dz = -m cpg dT/dz - m dh/dp dp/dz
 % Note: jt = -(dh/dp)/cpg
 % dimensionless (w, instead of star; with zscale = mem.L):
 %   zscale = mem.L, pscale = ps(T2)-p2,  qscale = -m dhdp2 pscale.
@@ -278,13 +369,6 @@ last = size(sol92.x,2);
 % not necessary: .ye, .xe are also in .y(last), .x(last).
 %  [T9 p9 q9 z9] = mkdimensional(sol92.ye(1,end),sol92.ye(2,end),...
 %    sol92.ye(3,end),sol92.xe(end));
-%DEBUG - trace flow12
-% disp(sprintf('  flow92: zw2 = 1, T2 = %.3f K, p2 = %.3f bar, q2 = 0',...
-%   T2,p2/1e5));
-% disp(sprintf(...
-%   '          zw9 = %.3f, T9-T2 = %.3f K, p9 = %.3f bar, q9 = %.5g',...
-%   z9/mem.L,T9-T2,p9/1e5,q9));
-%DEBUG - end trace flow12
 
 %  WRITE SOLUTION
 % if wanted, write the solution
@@ -292,19 +376,15 @@ if writesolution
   % allocate space for all points; assign last point
   T92(last) = T9; p92(last) = p9; q92(last) = q9; z92(last) = z9;
   Kn92(last) = knudsen(T9,p9);
-  %DEBUG pk92(last) = pkelv(T9);
   % and write the solution but the last point
   last = last - 1;
   [T92(1:last) p92(1:last) q92(1:last) z92(1:last)] = mkdimensional(...
     sol92.y(1,1:last),sol92.y(2,1:last),sol92.y(3,1:last),sol92.x(1:last));
   for i = 1:last
     Kn92(i) = knudsen(T92(i),p92(i));
-    %DEBUG pk92(i) = pkelv(T92(i));
   end
-  writetostruct('92',{'T','p','q','Kn','z','color'},...
-    {T92,p92,q92,Kn92,z92,vapcolor});
-    %DEBUG writetostruct('92',{'T','p','q','Kn','z','color','pk'},...
-    %DEBUG   {T92,p92,q92,Kn92,z92,vapcolor,pk92});
+  writetostruct('92',{'z','T','p','q','Kn','a','color'},...
+    {z92,T92,p92,q92,Kn92,1,vapcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -388,7 +468,7 @@ function flow56(m,T6,p6,q6,z6) %----------------------------------------- flow56
 %   dT/dz = -q/kmliq
 % dimensionless:
 %   z = z6*zw;  p = (z6*m*nul6/kappa)*pw + p6; nul6 = s.nul(T6);
-%   q = q6*qw;  T = (q6*z6/kmliq6)*Tw + T6; 
+%   q = q6*qw;  T = (q6*z6/kmliq6)*Tw + T6;
 % dimensionless eqs:
 %   qw = 1 - m (h - h6)/q6;
 %   dpw/dzw = -s.nul(T)/nul6;
@@ -452,33 +532,21 @@ end
 last = size(sol56.x,2);
 T5 = mkTdim(sol56.y(1,last));  p5 = mkpdim(sol56.y(2,last));
 q5 = calcq(T5,p5); z5 = sol56.x(last)*z6; % z5 = 0;
-%DEBUG - trace flow12
-% disp(sprintf('  flow56: zw6 = %.3f, T6 = %.3f K, p6 = %.3f bar, q6 = %.5g',...
-%   z6/mem.L,T6,p6/1e5,q6));
-% disp(sprintf(...
-%   '          zw5 = %.3f, T5-T6 = %.3f K, p5 = %.3f bar, q5 = %.5g',...
-%   z5/mem.L,T5-T6,p5/1e5,q5));
-%DEBUG - end trace
 
 %  WRITE SOLUTION
 % if wanted, write the solution
 if writesolution
   % allocate space for all points; assign last point
   T56(last) = T5; p56(last) = p5; q56(last) = q5; z56(last) = z5;
-  %DEBUG pp56(last) = p5 + curv*s.sigma(T5); pk56(last) = pkelv(T5);
   % and write remaining solution
   last = last - 1;
   T56(1:last) = mkTdim(sol56.y(1,1:last));
   p56(1:last) = mkpdim(sol56.y(2,1:last));
   for i = 1:last
     q56(i) = calcq(T56(i),p56(i));
-    %DEBUG pp56(i) = p56(i) + curv*s.sigma(T56(i));
-    %DEBUG pk56(i) = pkelv(T56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-  writetostruct('56',{'T','p','q','z','color'},{T56,p56,q56,z56,liqcolor});
-  %DEBUG writetostruct('56',{'T','p','q','z','color','pp','pk'},...
-  %DEBUG   {T56,p56,q56,z56,liqcolor,pp56,pk56});
+  writetostruct('56',{'z','T','p','q','a','color'},{z56,T56,p56,q56,0,liqcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -527,7 +595,7 @@ function [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9)
 q6 = q9 + m*hvapK9; %========================================== part for front69
 dpkliq9 = dpk9 - dpcap9; %21.April
 % for non-wetting, dpkliq might be negative! Then, condensation is anyway
-% possible. The pressure could stay constant and the Temperature rise, still the
+% possible. The pressure could stay constant and the temperature rise, still the
 % fluid would remain in its liquid state.
 if dpkliq9 <= 0 || m*kmliq(T9)*s.nul(T9)/(dpkliq9*mem.kappa) >= q6
   condensation = true;
@@ -538,7 +606,7 @@ end %----------------------------------------------------------- end check69or89
 
 function [T8 a8 doth8 dp2ph8] = front89(m,T9,p9,q9,hvapK9,dpk9,dpcap9)%- front89
 %FRONT89    Full evaporation of two-phase mixture within the membrane.
-% Find a8 that solves 
+% Find a8 that solves
 %   (1) m*xdot*hvapK + q8 = m*hvapK + q9,   if h = 0 for sat. liquid at T = T8.
 % with q8 = q8(a8) = -k*dT/dz = -k*(dT/dp)*dp/dz = k*nu*m/((dpk/dT)*kap)
 % Eq. (1) may have two solutions, cf. Fig. 6 in (Loimer, 2007) for homogeneous
@@ -572,7 +640,7 @@ function flow78(m,T8,a8,z8,doth8,pk8,dp2ph8,hvapK8) %-------------------- flow78
 % abbreviations: nu, k = nu2ph, k2ph
 % dT/dz = -m nu/(dpk/dT kappa)
 % m(hgK-(1-xdot)hvapK) + m nu k/((dpk/dT) kappa)
-%  = m(hgK8-(1-xdot8)hvapK8) + m nu8 k8/((dpkdT8 kappa)
+%  = m(hgK8-(1-xdot8)hvapK8) + m nu8 k8/(dpkdT8 kappa)
 % ( = m*hgK8 + doth8 - m*hvapK8,  see front89: doth8 = m*xdot*hvapK8 + q8 ).
 % dimensionless
 % z = z8*zw; T = (z8 m nu8/(dpkdT8 kappa)*Tw + T8;
@@ -621,25 +689,23 @@ end
 last = size(sol78.x,2);
 T7 = mkTdim(sol78.y(1,last));  a7 = sol78.y(2,last);  z7 = z8*sol78.x(last);
 % z7 = 0;  % p7 = pk(T7);
-%DEBUG - trace flow12
-%disp(sprintf('  flow78: z8 = %.3f mm, T8 = %6.2f K, a8 = %.3f',z8*1e3,T8,a8));
-%disp(sprintf('          zw7 = %.3f, T7-T8 = %.3f K, a7 = %.3f',z7/z8,T7-T8,a7));
-%DEBUG - end trace flow12
 
 %  WRITE SOLUTION
 % if wanted, write the solution
 if writesolution
   % allocate space for all points; assign last point
-  T78(last) = T7; a78(last) = a7; z78(last) = z7; p78(last) = pkelv(T7);
+  T78(last) = T7; a78(last) = a7; z78(last) = z7;
+  % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
+  p78(last) = pkelv(T7) - (1-a7)*flsetup.curv*s.sigma(T7);
   last = last - 1;
   T78(1:last) = mkTdim(sol78.y(1,1:last)); a78(1:last) = sol78.y(2,1:last);
   z78(1:last) = z8*sol78.x(1:last);
   for i = 1:last
     % pkelv is not vektorizable; Gives a result, but probably wrong numbers.
-    p78(i) = pkelv(T78(i));
+    p78(i) = pkelv(T78(i)) - (1-a78(i))*flsetup.curv*s.sigma(T78(i));
   end
   % vielleicht q78 berechnen? q2ph?
-  writetostruct('78-',{'T','p','a','z','color'},{T78,p78,a78,z78,twophcolor});
+  writetostruct('78-',{'z','T','p','a','color'},{z78,T78,p78,a78,twophcolor});
 end
 
 %  DECIDE AND CALL NEXT
@@ -707,7 +773,7 @@ cp3 = s.cpg(T3,p3);
 Tscale =  q3/(m*cp3); % qscale = q3;
 
 % DONE ALREADY?
-if abs(Tscale) < rtol 
+if abs(Tscale) < rtol
   %  THE END
   fl.sol.q1 = q3;
   return
@@ -755,59 +821,17 @@ if writesolution
   z13 = z3 + (sol13.y(2,:)-1)*zscale;
   % To plot the physical z-coordinate:
   %  z3 = z13(1);
-  %  (1)  z = z3 + zscale * ln( (z13-z3)/zscale + 1 ) 
+  %  (1)  z = z3 + zscale * ln( (z13-z3)/zscale + 1 )
   % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
   % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
   % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
-  writetostruct('13-',{'T','p','q','z','color'},{T13,p13,q13,z13,vapcolor});
+  writetostruct('13-',{'z','T','p','q','a','color'},{z13,T13,p13,q13,1,vapcolor});
   fl.sol.zscale = zscale;
 end
 
 %  THE END
 fl.sol.T1 = T1; fl.sol.q1 = q1; % here, but not above, q1 is always zero
 
-% OBSOLETE FLOW13
-% m h + q = const => m dh/dz + dq/dz = 0; dh/dz = cp dT/dz ( + dh/dp dp/dz = 0).
-% Therefore, with q = -k dT/dz we have
-%   dq/dz = - m cp dT/dz, or   dq/dz = m*cp/k q,
-%   dT/dz = - q/k.
-% The analytical solution for k, cp = const gives an exponential decay to
-% z -> -infty:   m cp dT/dz - k d^2T/dz^2 = 0;   lambda^2 - m*cp/k lambda = 0;
-% lambda1 = 0, lambda2 = m*cp/k. Hence T = Ta + Tb*exp(m*cp/k z). With boundary
-% conditions T(z=0) = T3, dT/dz(z=0) = -q3/k yields Tb = -q3/m*cp and the
-% solution is
-%    T = T3 + q3/m*cp3 ( 1 - exp(m*cp/k z) ).
-% To get a decent numerical solution, we scale the z-coordinate (for z3 = 0):
-%   zw = exp(m*cp3/k3 z),  dzw = m*cp3/k3 exp(m*cp3/k3 z) dz,
-%                          dz = dzw/(m*cp/k3 zw)
-%   qw = q/q3,  dq = q3 dqw;  (q3 may be negative!)
-%   Tw = (T - T3) / (q3/m*cp3),  dT = q3/m*cp3 dTw.
-% Hence, the differential equations become in dimensionless form
-%   dqw/dzw = cp/cp3 k3/k qw/zw,  (dqw/dzw = -cp/cp3 dTw/dzw),
-%   dTw/dzw = -k3/k qw/zw 
-% with initial conditions
-%   Tw(zw=1) = 0,  qw(zw=1) = 1.
-% Test this: For k = k3, c = cp3 the analytical solution must be recovered. The
-% dimensionless eqs. are solved by qw = zw, then dqw/dzw = 1 and dTw/dzw = -1.
-% Integrate Tw to get T = -zw + c1, bc. gives: Tw = 1 - zw. Made dimensional
-% this correctly yields the analytical solution above.
-% For z3 arbitrary the scaling is   z = ln(zw) k3/m*cp3 + z3.
-%
-%options=odeset('RelTol',rtol,'Refine',1,'InitialStep',step13,'MaxStep',step13);
-%%sol13 = ode45(@int13w,[zw3 0],[Tw3 qw3],options);
-%%sol13 = ode45(@int13w,[1 0],[0 1],options); % 0 gives singularity;
-%sol13 = ode45(@int13w,[1 0.01],[0 1],options);
-%
-%function dy = int13w(z,y)
-%% dimensionless eqs. see above
-%  Tw = y(1);  qw = y(2);
-%  T = mkTdim(Tw);
-%  dTw = -k3*qw/(z*s.kg(T));
-%  dqw = -s.cpg(T,p3)*dTw/cp3;
-%  dy = [dTw; dqw];
-%end
-%
-% END OBSOLETE FLOW13
 end %---------------------------------------------------------------- end flow13
 
 function flow45(m,T5,p5,q5) %-------------------------------------------- flow45
@@ -878,34 +902,13 @@ if writesolution
   last = last - 1;
   T45(1:last) = mkTdim(sol45.x(1:last)); q45(1:last) = q5*sol45.y(1,1:last);
   z45(1:last) = zscale*sol45.y(2,1:last);
-  writetostruct('45-',{'T','p','q','z','color'},{T45,p45,q45,z45,liqcolor});
+  writetostruct('45-',{'z','T','p','q','a','color'},{z45,T45,p45,q45,0,liqcolor});
 end
 
 %  CALL NEXT
 T3 = T4; p3 = p4; z3 = z4; q3 = q4 - m*s.hvap(T3); %==================== front34
 flow13(m,T3,p3,q3,z3);
 
-% OBSOLETE
-%%  INTEGRATE
-%% integrate; dimensionless initial conditions
-%% qw stays close to 1, no AbsTol (as in flow92) needed.
-%options=odeset('Events',@term45w,'RelTol',rtol);
-%%sol56 = ode45(@int56w,[0 filmthickness?],[T5w q5w],options);
-%sol45 = ode45(@int45w,[0 -2],[0 1],options);
-%%
-%function dy = int45w(z,y)
-%  T = mkTdim(y(1)); qw = y(2);
-%  dTw = -qw*k5/s.kl(T);
-%  dqw = s.cpl(T)*coeff1*dTw;
-%  dy = [dTw; dqw]
-%end
-%%
-%function [val,isterm,direction] = term45w(z,y)
-%isterm = 1; direction = 0; % direction of zero-crossing does not matter
-%% dimensionless, Ts(p5) = T4, hence T4w = 1
-%val = y(1) - 1;
-%end
-% END OBSOLETE
 end %---------------------------------------------------------------- end flow45
 
 function [T3 p3 q3] = front35(m,T5,p5,q5) %----------------------------- front35
@@ -922,9 +925,9 @@ function [T3 p3 q3] = front35(m,T5,p5,q5) %----------------------------- front35
 % hvapK .. see rkelv; Eq. (14) in [Loimer, 2005];
 % See also front62.
 T3 = T5;
-psat3 = s.ps(T3);  [drho3 rho3] = s.drho(T3); 
+psat3 = s.ps(T3);  [drho3 rho3] = s.drho(T3);
 rhoRT = rho3*s.R*T3;
-% inital guess 
+% initial guess
 p3 = (p5 + rhoRT)/(psat3+rhoRT); % p3 here really is p3/psat3
 % setup newton
 ps_rhoRT = psat3/rhoRT; p5_rhoRT = p5/rhoRT;
@@ -940,7 +943,7 @@ end %--------------------------------------------------------------- end front35
 
 function [T8 a8 doth8 pk8 dp2ph8 hvapK8] = front85(m,T5,p5,q5) %-------- front85
 %FRONT85    Full condensation of two-phase mixture within the membrane.
-% Find a8 that solves 
+% Find a8 that solves
 %    m*xdot*hvapK + q8 =  q5.
 % With q8 =  k*nu*m/((dpk/dT)*kap), (see front89), we have
 %  0 =! q5/m - xdot*hvapK - k*nu/((dpk/dT)*kap).
@@ -949,16 +952,8 @@ T8 = T5; doth8 = q5;
 [pk8 dpk8 hvapK8 dpcap8] = hvapK(T8);
 sol85 = @(a) q5/m - xdot(T8,pk8,a)*hvapK8 ...
    - k2ph(T8,a)*nu2ph(T8,pk8,a)/((dpk8-(1-a)*dpcap8)*mem.kappa);
-%DEBUG
-%try
 a8 = fzero(sol85,[0 1],optimset('TolX',tola));
 dp2ph8 = dpk8 - (1-a8)*dpcap8;
-%catch
-%a8 = [0:0.01:1]; sola8 = a8;
-%for i = 1:length(a8), sola8(i) = sol85(a8(i)); end
-%disp(sprintf('min sola8: %g, max sola8: %g', min(sola8), max(sola8)));
-%plot(a8,sola8,'k-');
-%end
 end %--------------------------------------------------------------- end front85
 
 function writetostruct(name,vars,values) %------------------------ writetostruct
