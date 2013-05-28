@@ -20,7 +20,7 @@ s = substance('butane');
 % poredia - pore diameter, eps - void fraction, km - thermal conductivity,
 % model - pore topology (porousround, channel, tube), tau - tortuosity,
 % beta - molecular flow correction factor, L - tube length
-% k [w/mK]: Teflon, 0.26; Glas, 0.5 ( bis -1.38, silica); 
+% k [w/mK]: Teflon, 0.26; Glas, 0.5 ( bis -1.38, silica);
 % PARTIAL CONDENSATION CASE, VAPOR FLOW
 %mem = membrane(60e-9,0.44,0.5,'tube',1,8.1,1e-3);
 % NON-WETTING CASE
@@ -35,7 +35,7 @@ f = fmodel('homogeneous');
 
 %%%	BOUNDARY CONDITIONS	%%%
 % Determine a T2 by expanding the substance to nearly complete vacuum. This is
-% necessary because p1 is not yet known. Complete vacuum is  not possible. 
+% necessary because p1 is not yet known. Complete vacuum is  not possible.
 ps1 = s.ps(T1);
 T2 = s.intjt(T1,ps1,10);
 flsetup = flowsetup(T2,T1,theta,s,mem,f);

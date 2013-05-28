@@ -115,7 +115,7 @@ nubar = mugas*vgas*2*p1/(p2+p9);
 % tmp/nubar));
 % END DEBUG
 % eq. (3), Kn = nubar*facKn/dia
-nuvap=1/(1/nubar + beta*facKn/dia); 
+nuvap=1/(1/nubar + beta*facKn/dia);
 
 % p9 stimmt fuer non-wetting nicht ganz - aber gut genug
 % Route zu w3, w1, w2 checked.
@@ -142,7 +142,7 @@ fl = struct('info',struct('kap',kap,'m',[],'C',Cc,'kapc',kapc,...
 %   kkc<=1		s1	liquid film - liq. flow - vapor or 2ph
 %   kkc>1		s2	2ph - 2ph or vapor
 % Cc < 0:  non-wetting_____
-%   Ccap>-1		n2	liq. film - meniscus - vapor 
+%   Ccap>-1		n2	liq. film - meniscus - vapor
 %   Ccap<=-1, kkc<=1	n1	liq. film - liq. flow - vapor
 %   Ccap<=-1, kkc>1	n3	liq. film - 2ph - vapor
 % Cc > 0:  wetting_____
@@ -155,7 +155,7 @@ fl = struct('info',struct('kap',kap,'m',[],'C',Cc,'kapc',kapc,...
 %   kkc<=1 or Ccap<=curv2 k2	liq. flow - meniscus
 %   kkc>1, Ccap>curv2	k3	2ph - liq. flow - meniscus
 %
-% see Fig. 1; 
+% see Fig. 1;
 
 % first the logic;
 % Schneider's solutions
@@ -188,7 +188,7 @@ else % Ccap~=0
     if Cc > 1
       if kkc>1;  id = 'w3';	% eq. (23) 2ph - vapor
       else
-	% eq. (17) 
+	% eq. (17)
 	if kkc >= n*p12/(p1pk+n*p12+pcap)
 	  id = 'w2';		% eq. (18) liq.flow - vapor
 	else id = 'w1';		% eq. (15) liq.film - liq.flow - vapor
@@ -241,7 +241,7 @@ switch id
     % de
     ded = n*nuvap/(nu2ph*nn);
     pe = p1 - m*nu2ph*ded*L/kap;
-  
+
     % write this solution;
     fl.sol.len = 2;
     fl.sol.a3 = a;

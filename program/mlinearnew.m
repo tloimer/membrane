@@ -32,7 +32,7 @@ kap = mem.kappa; curv = mem.fcurv(costheta);
 % Calculate the apparent kinematic viscosity of the gas.
 facKn = 3*sqrt(pi/(8*R*T1));
 nubar = mugas*vgas;
-nuapp=1/(1/nubar + beta*facKn/dia); 
+nuapp=1/(1/nubar + beta*facKn/dia);
 
 % Calculate mgas, mgas = kappa*(p1-p2)/(nuapp*L).
 if abs(costheta)>=1e-3

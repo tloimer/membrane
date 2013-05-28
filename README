@@ -22,7 +22,7 @@ directory, anyway, no need to control their version.
                |
   12potsdam    o
                |\ branch
-               | \ asym   
+               | \ asym
                |  o
                |  |\ branch
                |  o \ complete
@@ -56,10 +56,10 @@ Ausgaben in flowstruct.
 mlinearnew.m, mlinpsat.m: Nun, geschrieben, aber dann nicht benötigt.
 
 __Eine utility-function, aus ~/12potsdam/calc/matlab:
-misotherm.m 
+misotherm.m
 Andere utility-functions siehe ../results.
 
-__Tests__  
+__Tests__
 > matlab; >> tests;
 output in tests.log kopiert,
 *.eps und tests.log nach tests/120718 kopiert.

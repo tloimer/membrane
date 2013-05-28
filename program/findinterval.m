@@ -23,7 +23,7 @@ fcount = 1;
 % pnow |        *
 %      |       /      straight line equation, for m:
 %      |      /          m = mnow + (p-pnow)*(mnow-mold)/(pnow-pold)
-%      |     /        p = 0:  
+%      |     /        p = 0:
 % pold |    *            m = mnow - pnow*(mnow-mold)/(pnow-pold)
 %      |  mold mnow
 %      |

@@ -20,7 +20,7 @@ function [m fl] = mnum(T1,p1,p2,theta,s,mem,f,Tmax,mguess)
 %  contains
 %    FL.calc.psat1      psat(T1)
 %    FL.calc.pK1        pK(T1)
-%    FL.calc.n          n = (dT/dp)_h dpK/dT at T1, see Eq. (13) in TL, 2007. 
+%    FL.calc.n          n = (dT/dp)_h dpK/dT at T1, see Eq. (13) in TL, 2007.
 %    FL.calc.Ccc        (p1-p2)(1-n)/(psat-pK), Eq. (12) in Loimer, 2007.
 %    FL.calc.Ccap       n(p1-p2)/pcap, Eq. (14) in Loimer, 2007.
 %    FL.calc.kappac     kappa_crit  cf. Eq. (8) in Schneider, 1983.
@@ -250,11 +250,11 @@ while fb ~= 0 && a ~= b
         a = b;    b = c;    c = a;
         fa = fb;  fb = fc;  fc = fa;
     end
-    
+
     % Convergence test and possible exit
     m = 0.5*(c - b);
     toler = 2.0*tol*max(abs(b),1.0);
-    if (abs(fb) < p1tol) || (abs(m) <= toler) % || (fb == 0.0) 
+    if (abs(fb) < p1tol) || (abs(m) <= toler) % || (fb == 0.0)
         if lowprecision
 	  if trace > 1
 	    disp(sprintf('p1 = %g, p2 = %g [bar]. We jumped over 100xp1tol.',...
@@ -267,7 +267,7 @@ while fb ~= 0 && a ~= b
     if trace > 2
         disp(sprintf('%5.0f   %13.6g %13.6g        %s',fcount, b, fb, procedure));
     end
-    
+
     % Choose bisection or interpolation
     if (abs(e) < toler) || (abs(fa) <= abs(fb))
         % Bisection
@@ -297,7 +297,7 @@ while fb ~= 0 && a ~= b
             procedure='bisection';
         end;
     end % Interpolation
-    
+
     % Next point
     a = b;
     fa = fb;
