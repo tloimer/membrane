@@ -1476,10 +1476,8 @@ x = x0;
 for i = 1:iter
   [y0, dy] = fun(x);
   fy = y0 - y;
-  if abs(fy) < res, return
-  else
-    x = x - fy/dy;
-  end
+  x = x - fy/dy;
+  if abs(fy) < res, return; end
 end
 
 % Be verbose if no solution is found.

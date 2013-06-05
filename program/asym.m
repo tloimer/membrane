@@ -985,7 +985,7 @@ function x = newton(fun,x0,res,iter) %----------------------------------- newton
 %
 %  NEWTON(FUN,X0,RES,ITER) finds a solution to F(X) = 0. NEWTON iterates until
 %  X changes less than RES in one step or if more than ITER iterations are done.
-%  Default values are RES = 1e-6 and ITER = 100.
+%  Default values are RES = 1e-12 and ITER = 100.
 %
 %  Example
 %    Given
@@ -997,16 +997,14 @@ function x = newton(fun,x0,res,iter) %----------------------------------- newton
 %  See also the MATLAB-functions function_handle, feval.
 
 if nargin < 4, iter = 100; end
-if nargin < 3, res = 1e-6; end
+if nargin < 3, res = 1e-12; end
 
 x = x0;
 for i = 1:iter
   [y dy] = fun(x);
   dx = y/dy;
-  if abs(dx) < res, return
-  else
-    x = x - dx;
-  end
+  x = x - dx;
+  if abs(dx) < res, return; end
 end
 
 % Be verbose if no solution is found.
