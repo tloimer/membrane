@@ -1,12 +1,15 @@
 function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %FLOWSETUP  Setup of flow properties.
-% FS = FLOWSETUP(T2,Tmax,THETA,S,MEM,F) returns a struct FS that contains flow
-% properties.
+%  FS = FLOWSETUP(T2,TMAX,THETA,S,MEM,F) returns a struct FS that contains flow
+%  properties for a combination of contact angle THETA (in degrees), a substance
+%  S, a membrane MEM and a fmodel F. The integral of dh/dp over temperature T is
+%  calculated between T2 and at least TMAX.
 %  Fields:
 %    FS.curv              Curvature.
 %    FS.kelv(T,sigma,rho) pK/psat
 %    FS.pkps(T)           pK/psat
 %    FS.pkelv(T)          pK
+%    FS.pkpcap(T)         pk and capillary pressure pcap, returns [pk pcap]
 %    FS.dpkdT(T)          [dpK/dT pk]
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
 %    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
@@ -20,10 +23,13 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.k2ph(T,a)         Heat conductivity of two-phase filled membrane.
 %    FS.xdot(T,pk,a)      Vapor mass flow fraction.
 %    FS.odemaxstep(range,delta) Minimum number of integration steps.
+%
+%  See also SUBSTANCE, MEMBRANE, FMODEL.
 
-flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'dpkdT',[],'hgK',[],...
-  'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],...
-  'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
+flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
+  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],...
+  'nuapp',[],'knudsen',[],'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],...
+  'xdot',[],'odemaxstep',[]);
 
 flsetup.curv = mem.fcurv(cos(theta*pi/180));
 flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
@@ -71,7 +77,9 @@ end
 
 flsetup.dpkdT = @dpkdT;
 flsetup.pkps = @(T) flsetup.kelv(T,s.sigma(T),s.rho(T));
-flsetup.pkelv = @(T) s.ps(T)*flsetup.pkps(T);
+flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
+flsetup.pkpcap = @pkpcap;
+
 %flsetup.hgK = @(T) deval(solhgK,T);
 %flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 flsetup.hvapK = @hvapK;
@@ -121,12 +129,22 @@ end
 flsetup.hgK = @(T) deval(solhgK,T);
 flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
+function [pk, pcap] = pkpcap(T) %---------------------------------------- pkpcap
+%PKPCAP     Vapor pressure at a curved meniscus and capillary pressure.
+%
+% [PK, PCAP] = PKPCAP(T) returns the equilibrium pressure at a curved meniscus,
+% PK, and the capillary pressure due to Young's-Laplace equation.
+sigma = s.sigma(T);
+pk = s.ps(T)*flsetup.kelv(T,sigma,s.rho(T));
+pcap = flsetup.curv*sigma;
+end %---------------------------------------------------------------- end pkpcap
+
+
 function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
 %
-% [DPK PK] = DPKDT(T) returns the pk and dpk/dT. A copy from HVAPK, for
-% convenience.
-%
+% [DPK PK] = DPKDT(T) returns pk and dpk/dT. A copy from HVAPK, for convenience.
+
 % See below.
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
