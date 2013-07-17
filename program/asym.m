@@ -167,7 +167,7 @@ curv = flsetup.curv;
 %  COMMON FUNCTIONS
 % Thermodynamic properties from combination of substance, theta and membrane.
 kelv = flsetup.kelv;  pkelv = flsetup.pkelv;
-hgK = flsetup.hgK;  hvapK = flsetup.hvapK; hvapKraw = flsetup.hvapKraw;
+hgK = flsetup.hgK;  hvapK = flsetup.hvapK;  hvapKraw = flsetup.hvapKraw;
 intdhdpdpsatdT = flsetup.intdhdpdpsatdT;
 
 % Effective single flow - membrane and two-phase properties.
@@ -195,35 +195,36 @@ end
 
 %%%  ASYM PROPER  %%%
 
+state = downstreamstate(T2,p2,a2,q2,s,f);
+
 % Get the number of membrane layers; Layers are sorted in a column vector.
 last = size(mem,1);
 
-% Write the downstream state to the struct state. Be verbose about the state. No
-% input check. Saturated states can be passed by giving a2, omitting p2.
-if isempty(a2)
-  if p2 > s.ps(T2)
-    a2 = 0;
-  else
-    a2 = 1;
-  end
-elseif isempty(p2)
-  p2 = s.ps(T2);
-end
-
-switch a2
-  case 1
-    phase2 = 'g'; % p2 <= s.ps
-  case 0
-    phase2 = 'l';
-  otherwise
-    phase2 = '2'; % p2 == s.ps(T2);
-end
-
-%  Construct the struct state and set it to the downstream state.
-state = statestruct(T2,p2,a2,q2,phase2);
-
 state = front_memfree(mem(last),state,flsetup(last,1));
 
+% go into the last layer
+[state, z] = integrate(mem(last),state,flsetup(last,1))
+%  while z > 0
+%    state = front_inner(mem(last),state)
+%    state = integrate(mem(last),state)
+%  end
+%
+%  % the current location is the upstream front of the downstream-most membrane
+%  % i counts down from the penultimate to the first membrane
+%  for i = last-1:-1:1
+%    state = front_memmem(mem(i),mem(i+1),state)
+%    state = integrate(mem(i),state)
+%    while z > 0
+%      state = front_inner(mem(i),state)
+%      state = integrate(mem(i),state)
+%    end
+%  end
+%
+%  % the current location is the upstream front of the upstream-most membrane
+%  state = front_freemem(mem(1),state)
+%  % integrates both a liquid film and vapor flow
+%  % or only vapor flow in front of the membrane
+%  state = integratefree(state)
 
 %%  START
 %from2(m,T2,p2);
@@ -239,6 +240,14 @@ function state1 = front_memfree(ml,state2,fs)
 %   state1: T1, p1, a1; q1 |  state2: T2, p2, a2; q2
 %			   |
 
+%  Input: state2, liquid or vapor: T, p, q, as well as phase and a = 0 or 1.
+%         state2, two-phase: T, doth, hvapK, pk, as well as phase = '2'
+%  Output, state2, two-phase: same as input, plus pliq, dpk, dpcap.
+
+
+% Well, will be a general front.
+% Input: state2: T, p, a, 1, ph for single phase flow, doth for two-phase
+
 % COMMON VARIABLES: s, f; liqcolor, vapcolor, 2phcolor;
 % ml for membrane layer.
 
@@ -249,35 +258,213 @@ a2 = state2.a;
 q2 = state2.q;
 
 % Temperature is continuous.
-T1 = T2;
-[pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T1);
+%T1 = T2;
+%[pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T1);
 
-paux1 = pk1 - (1-a2)*pcap1;
+%paux1 = pk1 - (1-a2)*pcap1;
 %	    pk1		for state2 = gaseous
 %  puax1 =  pk1 - pcap1	for state2 = liquid
 %	    in between	for state2 = two-phase mixture
-
-mustbecomegaseous = p2 < paux1;
-mustbecomeliquid = p2 > paux1;
+%mustbecomegaseous = p2 < paux1;
+%mustbecomeliquid = p2 > paux1;
 % not(mustbecomegaseous) && not(mustbecomeliquid) = p2 == paux1
 
-if mustbecomegaseous
-  phase1 = 'g';
-  interface(phase1, state2.phase);
-elseif mustbecomeliquid
-  phase1 = 'l';
-  interface(phase1, state2.phase);
-else % gaseous, liquid, or two-phase mixture; p2 == paux1
-  if state2.phase = '2'
-    phase1 = '2';
-    interface(phase1, state2.phase);
-  else
-  % CONTINUE HERE, fill in from below.
-  canbecomevapor = ...;
+gaseous = 'g';  liquid = 'l';  twophase = '2';
+
+[pk1, pcap1] = fs.pkpcap(T2);
+
+switch state2.phase
+  case gaseous
+    if p2 < pk1 % mustbecomegaseous
+      % nointerface
+      state1 = state2;
+    elseif p2 > pk1 % mustbecomeliquid
+      interface_liqvap;
+    else % p2 == pk1, gaseous, liquid or two-phase possible
+      [pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T2);
+      [canbecomevapor, canbecomeliquid] = heatfluxcriterion;
+      if canbecomevapor
+	% nointerface
+	state1 = state2;
+	if canbecomeliquid
+	  warning('Double solution possible. Here, vapor remains vapor.');
+	end
+      elseif canbecomeliquid
+	interface_liqvap;
+      else
+	interface_2phvap;
+      end
+    end
+
+  case liquid
+    if p2 > pk1 - pcap1 % mustbecomeliquid
+      % nointerface
+      state1 = state2;
+    elseif p2 > pk1 - pcap1 % mustbecomegaseous
+      interface_vapliq;
+    else % gaseous, liquid or two-phase possible
+      [pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T2);
+      [canbecomevapor, canbecomeliquid] = heatfluxcriterion;
+      if canbecomeliquid
+	% nointerface
+        state1 = state2;
+	if canbecomevapor
+	  warning('Double solution possible. Here, liquid remains liquid.');
+	end
+      elseif canbecomevapor
+	interface_vapliq;
+      else
+	interface_2phliq;
+      end
+    end
+
+  case twophase
+    if state2.pk > pk1 % mustbecomeliquid
+      interface_liq2ph;
+    elseif state2.pk < pk1 % mustbecomevapor
+      interface_vap2ph;
+    else % state2.pk == pk1 % two-phase stays two-phase;
+      % nointerface
+      state1 = state2;
+      % at the end of the two-phase integrator, all auxiliary two-phase
+      % variables (dpk, dpcap) must also be set. Therefore, these variables must
+      % also be set at the end of free space (i.e., at the downstream front).
+    end
+  end
+
+  otherwise
+    error('How can we come here?');
+  end
 end
-  
-  
+
+
+function [canbecomevapor, canbecomeliquid] = heatfluxcriterion
+  % The minimum heat flux, such that a vapor remains a vapor (does not
+  % become too cold upstream of 1) is found from
+  %   m = -(kappa/nu) dp/dz,
+  %   q = -k dT/dz.
+  % A vapor stays marginally a vapor if p follows pk(T), dp/dT = dpk/dT,
+  %   m = -(kappa/nu) dpk/dT dT/dz,  m = (kappa/nu)*(dpk/dT)*q/k,
+  %   qmin = m*nu*k/(kappa*dpk/dT).
+  % Analoguous, a liquid stays marginally a liquid if p follows pk - pcap,
+  %   qmax = m*nu*k/(kappa*(dpk/dT-dpcap/dT)).
+  %[pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T1);
+  qmin = m*fs.kmgas(T2)*fs.nuapp(T2,p2)/(ml.kappa*dpk1);
+  qmax = m*fs.kmliq(T2)*s.nul(T2)/(ml.kappa*(dpk1-dpcap1));
+  % The heat flux q1 is, depending on the phase change tabulated below,
+  % vap  vap   q1 = q2
+  % vap  liq   q1 = q2 - m*hvapK
+  % liq  vap   q1 = q2 + m*hvapK
+  % liq  liq   q1 = q2
+  % A vapor is possible for q1 > qmin, hence with the first two lines above
+  canbecomevapor = q2 - (1-a2)*m*hvapK1 > qmin;
+  % A liquid is possible for q1 < qmax, the last two lines above give
+  canbecomeliquid = q2 + a2*m*hvapK1 < qmax;
+  % For complete phase change, xdot is not necessary, a2 can be used instead.
+end
+
 % Convention: pcap = p_vapor - p_liquid.
+% heat balance: doth = q + m h = const.
+
+function interface_liqvap
+  %
+  % -------------
+  %     liq.  1 ( 2  vap.
+  % -------------
+  %
+  % The radius of curvature can be explicitly calculated because
+  % p2 = pk(T,r). Hence, r is immediately known. See flow12>front62.
+  %   p2 = pk(T1,r),
+  %   pcap = p2 - p1.  (pcap > 0)
+  % With Kelvin's equation,
+  %   ln(p2/psat) = -pcap/(rho*R*T),
+  %   pcap = ln(psat/p2)*rho*R*T.
+  psat = s.ps(T2);
+  [drho2 rho2] = s.drho(T2);
+  pcap = log(psat/p2)*rho2*s.R*T2;
+  % arguments: hvapKraw(T,pk,psat,pcap,rho,drho)
+  hvapK12 = fs.hvapKraw(T2,p2,psat,pcap,rho2,drho2);
+  p1 = p2 - pcap;
+  q1 = q2 + m*hvapK12;
+  state1 = state2.aliquid(T2,p1,q1);
+end
+
+function interface_vapliq
+  %
+  % -----------------
+  % 	    vap.  1 ) 2  liq.
+  % -----------------
+  %
+  % calculate r, radius of curvature - but not directly, only pk
+  % copied and modified from flow12>front35
+  %   p1 = pk(T1,r),
+  %   p1 = p2 + pcap  (pcap < 0, hence p1 < p2),
+  % Evaluate Kelvin's eq.,
+  %   ln(p1/psat) = -pcap/(rho*R*T),
+  %   ln(p1/psat) = (p2-p1)/(rho*R*T).
+  % Solve the eq. above by Newton iteration,
+  %   F(x) = ln(x) + (x*psat - p2)/rho*R*T,
+  %   F'(x) = 1/x + psat/rho*R*T.
+  % A good first guess is, with ln(p1/psat) ~ p1/psat - 1,
+  %   p1/psat - 1 = p2/(rho*R*T) - p1/(rho*R*T),
+  %   ( with R = rho*R*T, p1*(1/psat + 1/R) = p2/R + 1, )
+  %   ( p1 = (p2/R + 1)*psat*R/(R + psat)		   )
+  %   p1/psat = (p2 + rho*R*T) / (psat + rho*R*T).
+  psat = s.ps(T2);
+  [drho2 rho2] = s.drho(T2);
+  rhoRT = rho2*s.R*T2;
+  % initial guess; here, p1 = p1/psat
+  p1 = (p2 + rhoRT)/(psat + rhoRT);
+  % setup newton
+  ps_rhoRT = psat/rhoRT;
+  function [F dF] = sol35(x)
+    F = log(x) + x*ps_rhoRT - p2/rhoRT;
+    dF = 1/x + ps_rhoRT;
+  end
+  p1 = newton(@sol35,p1,1e-15) * psat;
+  hvapK12 = fs.hvapKraw(T2,p2,psat,p1-p2,rho2,drho2);
+  % hvapKraw(T,pk,psat,pcap,rho,drho)
+  q1 = q2 - m*hvapK12;
+  state1 = avaporstate(T2,p1,q1);
+end
+
+function interface_2phliq
+  % todo:
+  % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
+  doth12 = q2;
+  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk,dpcap);
+end
+
+function interface_2phvap
+  % todo:
+  % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
+  doth12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
+  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk,dpcap);
+end
+
+function interface_liq2ph;
+  % in general, here p1 = p2liq; because, there are pores where a liquid part
+  % of the 2ph-region might border to the liquid in part1. liq-liq, so, no
+  % pressure difference
+  p1 = state2.pliq;
+  q1 = state2.doth;
+  state1 = state2.aliquid(T2,p1,q1);
+  % q1 = q2 + fs2.xdot(T2,pk2,a2)*m*hvapK2; % in general, see downstreamstate
+  % for plane interface
+end
+
+function interface_vap2ph;
+  % in general, here p1 = p2vap; for reason, see interface_liq2ph.
+  % HERE, MEMBRANE 2 PROPERTIES ARE NEEDED
+  % FOR memfree: pk2 = p2, pcap2 = 0, hvapk2 = s.hvap(T2).
+  p1 = state2.pk;
+  q1 = state2.doth - m*state2.hvapK;
+  %q1 = q2 - (1-fs2.xdot(T2,pk2,a2))*m*hvapK2;
+  %q1 = q2 - (1-free.xdot(T2,p2,a2))*m*s.hvap(T2); % for plane interface!
+  state1 = state2.avapor(T2,p1,q1);
+end
+
+%%% old decision tree %%%
 
 if p2 < paux1
   % state1 becomes gaseous
@@ -295,7 +482,7 @@ if p2 < paux1
       % p2 < pk1 - pcap1; only possible for non-wetting; pcap1 < 0
       %
       % -----------------
-      %		vap. p1	( p2  liq.
+      %		vap.  1	( 2  liq.
       % -----------------
       %
       % calculate r, radius of curvature - but not directly, only pk
@@ -1200,14 +1387,3 @@ error(['NEWTON not succesful. Increase RES or ITER. Type help newton.\n' ...
   '  function value %s(x) = %g. Allowed residual: %g, Iterations: %u.'], ...
   funname,x0,x,funname,y,res,iter)
 end %---------------------------------------------------------------- end newton
-
-function state = statestruct(T,p,a,q,ph) %-------------------------- statestruct
-%STATESTRUCT Construct the struct STATE.
-%
-%  STATE = STATESTRUCT(T,P,A,Q,PHASE) constructs the struct STATE and sets the
-%  fields .T, .p., .a, .q, .phase to the temperature T, pressure P, vapor volume
-%  fraction A, heat flux Q and phase character PHASE. The phase character is one
-%  of l for liquid, g for gaseous, or 2 for two-phase mixture.
-
-state = struct('T',T,'p',p,'a',a,'q',q,'phase',ph);
-end %---------------------------------------------------------- end  statestruct
