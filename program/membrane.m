@@ -7,6 +7,8 @@ function m = membrane(dia,epsilon,km,tname,tau,beta,L)
 %  factor BETA and membrane thickness L. The topology TNAME can be one of
 %  'porousround', 'porousslit', 'tube' or 'channel'.
 %
+%  M = MEMBRANE('FREE') returns a membrane struct appropriate for free space.
+%
 %  M contains the fields
 %    M.tname        Topology.
 %    M.dia          Pore diameter [m].
@@ -25,9 +27,19 @@ function m = membrane(dia,epsilon,km,tname,tau,beta,L)
 %  The functions FKAPPA and FDIA depend on the topology TNAME and on TAU while
 %  FCURV additionaly depends on DIA.
 
-% Struct constructor.
-m = struct('tname',tname,'dia',dia','epsilon',epsilon,'km',km,'tau',tau, ...
-  'beta',beta,'L',L,'kappa',[],'fcurv',[],'fkappa',[],'fdia',[]);
+% Struct constructor. Set free space here and return.
+if nargin == 1 && strcmpi(dia,'free') % case-insensitive string comparison
+  % shortcut; could set tname = 'free', make a case 'free' below and let the
+  % file run through
+  m = struct('tname','free','dia',Inf,'epsilon',1,'km',0,'tau',1,'beta',0,...
+    'L',Inf,'kappa',Inf,'fcurv',@(a)0,'fkappa',@(a,b)Inf,...
+    'fdia',@(k,e)sqrt(k./e));
+    % to vektorize, @(a)0 should be @(a)zeros(size(a))
+  return
+else
+  m = struct('tname',tname,'dia',dia','epsilon',epsilon,'km',km,'tau',tau, ...
+    'beta',beta,'L',L,'kappa',[],'fcurv',[],'fkappa',[],'fdia',[]);
+end
 
 % thermal conductivity of the membrane material [W/mK];
 % void fraction, tortuosity, beta and topology of the membrane

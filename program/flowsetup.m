@@ -4,6 +4,11 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %  properties for a combination of contact angle THETA (in degrees), a substance
 %  S, a membrane MEM and a fmodel F. The integral of dh/dp over temperature T is
 %  calculated between T2 and at least TMAX.
+%
+%  FREEFLOW = FLOWSETUP(S) sets the flowstruct FREEFLOW to properties
+%  appropriate for flow through free space. Uses the homogeneous flow model,
+%  FMODEL('plug'). Sets FREEFLOW.hgK and FREEFLOW.intdhdpsatdT to empty matrices.
+%
 %  Fields:
 %    FS.curv              Curvature.
 %    FS.kelv(T,sigma,rho) pK/psat
@@ -31,8 +36,22 @@ flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
   'nuapp',[],'knudsen',[],'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],...
   'xdot',[],'odemaxstep',[]);
 
-flsetup.curv = mem.fcurv(cos(theta*pi/180));
-flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
+% set for free space
+if nargin == 1
+  s = T2;
+  theta = 90;
+  mem = membrane('free');
+  f = fmodel('plug');
+  T2 = [];
+  isfreespace = true;
+  issupercritical = false; % No error checks here for free space.
+else
+  issupercritical = ~isfinite(s.ps(T2));
+  isfreespace = strcmp(mem.tname,'free');
+end
+
+% First set what is set in any case.
+% Return early further below.
 
 % Apparent vapor viscosity
 %   nuapp = nug/(1 + beta Kn),  Kn = 3 nug sqrt(pi/(8*R*T)) / dia,
@@ -66,25 +85,49 @@ flsetup.odemaxstep = ... % 1/max(minsteps,...
 % Return Inf or NaN if the fluid is anywhere supercritical.
 % Might be changed with moderate effort to return functions that give exact
 % values.
-if ~isfinite(s.ps(T2))
-  flsetup.pkelv = @(T) Inf;
-  flsetup.hgK = @(T) NaN;
-  flsetup.intdhdpdpsatdT = @(T) NaN;
-  flsetup.hvapK = @(T) 0;
-  flsetup.hvapKraw = @(T,prad,psat,pcap,rho,drho) 0;
-  return
+
+if theta == 90 || isfreespace || issupercritical
+  flsetup.curv = 0;
+  flsetup.kelv = @(T,sigma,rho) 1;
+  if issupercritical
+    flsetup.pkps = @(T) NaN;
+    flsetup.pkelv = @(T) Inf;
+    flsetup.pkpcap = @(T) Inf; % should return 2 arguments;
+    flsetup.dpkdT = @(T) NaN; % should return 2 arguments;
+    flsetup.hgK = @(T) NaN;
+    flsetup.intdhdpdpsatdT = @(T) NaN;
+    flsetup.hvapK = @(T) 0;
+    flsetup.hvapKraw = @(T,prad,psat,pcap,rho,drho) 0;
+    % this should be sufficient, to trigger an error if necessary
+    return
+  elseif isfreespace
+    flsetup.pkps = @(T) 1;
+    flsetup.pkelv = @(T) s.ps(T);
+    flsetup.pkpcap = @psatpcap;
+    flsetup.dpkdT = @dpsatdT;
+    flsetup.hvapK = @hvapsat;
+    flsetup.hvapKraw = @hvapKraw;
+    % simply do not set hgK and intdhdp... for free space
+    return
+  end
+  % do not return for theta = 90
+else
+  flsetup.curv = mem.fcurv(cos(theta*pi/180));
+  flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
 end
 
-flsetup.dpkdT = @dpkdT;
 flsetup.pkps = @(T) flsetup.kelv(T,s.sigma(T),s.rho(T));
 flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
 flsetup.pkpcap = @pkpcap;
-
-%flsetup.hgK = @(T) deval(solhgK,T);
-%flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
+flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
+% solhhK needs to exist, to be 'deval'uated
+% set further below
+%flsetup.hgK = @(T) deval(solhgK,T);
+%flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
+% Calculate hgK and intdhdpsdpsatdT.
 % inttol: relative tolerance for integration
 inttol = 1e-6;
 stepT = 0.4;
@@ -129,6 +172,8 @@ end
 flsetup.hgK = @(T) deval(solhgK,T);
 flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
+%%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
+
 function [pk, pcap] = pkpcap(T) %---------------------------------------- pkpcap
 %PKPCAP     Vapor pressure at a curved meniscus and capillary pressure.
 %
@@ -139,6 +184,10 @@ pk = s.ps(T)*flsetup.kelv(T,sigma,s.rho(T));
 pcap = flsetup.curv*sigma;
 end %---------------------------------------------------------------- end pkpcap
 
+function [psat, pcap] = psatpcap(T) %---------------------------------- psatpcap
+psat = s.ps(T);
+pcap = 0;
+end %-------------------------------------------------------------- end psatpcap
 
 function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
@@ -153,6 +202,10 @@ pk_ps = flsetup.kelv(T,sigma,rho);
 pk = pk_ps*psat;
 dpk = pk_ps * (dps + psat*flsetup.curv*sigma*(1/T-dsig+drho)/(s.R*rho*T));
 end %----------------------------------------------------------------- end dpkdT
+
+function [dps, psat] = dpsatdT(T) %------------------------------------- dpsatdT
+[psat, dps] = s.ps(T);
+end %--------------------------------------------------------------- end dpsatdT
 
 function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 %HVAPK      Enthalpy of vaporization at a curved interface.
@@ -180,6 +233,13 @@ dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
 hvapK = flsetup.hvapKraw(T,pk,psat,pcap,rho,drho);
 end %----------------------------------------------------------------- end hvapK
 
+function [psat dps hvapK dpcap pcap] = hvapsat(T) %--------------------- hvapsat
+[psat dps] = s.ps(T);
+pcap = 0;
+dpcap = 0;
+hvapK = s.hvap(T);
+end %--------------------------------------------------------------- end hvapsat
+
 function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   dhldp = (1 + T*drho)/rho;
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
@@ -194,4 +254,5 @@ function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 vol = s.v(T,pk);
 nu2app = f.nu2ph(a,vol,1/s.rho(T),flsetup.nuapp(T,pk)/vol,s.mul(T));
 end %-------------------------------------------------------------- end nu2phapp
-end %------------------------------------------------------------- end flowsetup
+
+end %%% END FLOWSETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FLOWSETUP %%%
