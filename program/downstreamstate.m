@@ -36,11 +36,6 @@ elseif isempty(p2)
   if ~isfinite(p2), error('Downstream pressure out of range'); end
 end
 
-% Phase letters
-gaseous = 'g';
-liquid = 'l';
-twophase = '2';
-
 switch a2
   case alphavapor
     state = avapor(T2,p2,q2);
@@ -108,6 +103,7 @@ function state = statestruct %-------------------------------------- statestruct
 %  STATE = STATESTRUCT constructs the struct STATE with the fields
 %    STATE.T        Temperature [K]
 %    STATE.p        Pressure [Pa]
+%    STATE.a        Vapor volume fraction
 %    STATE.q        Heat flux [W/m2]
 %    STATE.doth     Flux of enthalpy [W/m2]
 %    STATE.phase    Phase letter: 'l', 'g' or '2'.
@@ -116,10 +112,13 @@ function state = statestruct %-------------------------------------- statestruct
 %    STATE.pliq     Pressure of the liquid, in a two-phase mixture [Pa]
 %    STATE.dpk      d pk/dT
 %    STATE.dpcap    d pcap/ dT, where pcap = pvap - pliq
-%    STATE.avapor   Function ro return a vapor state, AVAPOR(T,P,Q)
-%    STATE.aliquid  Function ro return a liquid state, ALIQUID(T,P,Q)
-%    STATE.atwophase Function ro return a two-phase state, see
+%    STATE.avapor   Function to return a vapor state, AVAPOR(T,P,Q)
+%    STATE.aliquid  Function to return a liquid state, ALIQUID(T,P,Q)
+%    STATE.atwophase Function to return a two-phase state, see
 %                    DOWNSTREAMSTATE>ATWOPHASE
+%
+%  See also DOWNSTREAMSTATE>AVAPOR, DOWNSTREAMSTATE>ALIQUID,
+%           DOWNSTREAMSTATE>ATWOPHASE.
 
 state = ...
   struct('T',[],'p',[],'a',[],'q',[],'doth',[],'phase',[],'hvapK',[],'pk',[],...
