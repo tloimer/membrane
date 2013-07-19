@@ -1,4 +1,4 @@
-function fl = asym(m,T2,p2,q2,a2,fl,flsetup,solver)
+function fl = asym(m,T2,p2,q2,a2,fl,flsetup,freeflow,solver)
 %ASYM       Flow through a porous medium consisting of several layers.
 %  ASYM(M,T2,P2,Q2,A2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT
 %  that contains the solution for the mass flux M [kg/m2s] at a downstream
@@ -195,47 +195,44 @@ end
 
 %%%  ASYM PROPER  %%%
 
-state = downstreamstate(T2,p2,a2,q2,s,f);
-
 % Get the number of membrane layers; Layers are sorted in a column vector.
 last = size(mem,1);
 
-% For column vectors, flsetup(last) is equivalent to flsetup(last,1)
-state = front(state,mem(last),flsetup(last),m,s);
+state = downstreamstate(T2,p2,a2,q2,s,f);
 
-% go into the last layer
-[state, z] = integrate(state,mem(last),flsetup(last),m,s)
-%  while z > 0
-%    state = front_inner(mem(last),state)
-%    state = integrate(mem(last),state)
-%  end
-%
-%  % the current location is the upstream front of the downstream-most membrane
-%  % i counts down from the penultimate to the first membrane
-%  for i = last-1:-1:1
-%    state = front_memmem(mem(i),mem(i+1),state)
-%    state = integrate(mem(i),state)
-%    while z > 0
-%      state = front_inner(mem(i),state)
-%      state = integrate(mem(i),state)
-%    end
-%  end
-%
-%  % the current location is the upstream front of the upstream-most membrane
-%  state = front_freemem(mem(1),state)
-%  % integrates both a liquid film and vapor flow
-%  % or only vapor flow in front of the membrane
-%  state = integratefree(state)
+% Cylce down through the membrane layers
+for i = last:-1:1
+  z = mem(i).L;
+  % But stay in the same layer, as long as the integration did not end at the
+  % upstream end of that layer
+  while z > 0
+    % For column vectors, flsetup(last) is equivalent to flsetup(last,1)
+    state = front(state,flsetup(i),m,s);
+    % Correctly index into and write to the right FLOWSTRUCT FL!
+    % CONTINUE HERE to write integrate
+    [state, z] = integrate(state,mem(i),flsetup(i),m,s,solver);
+  end
+end
+
+% freeflow = flowsetup(s); % must be constructed already in mnum
+% the current location is the upstream end of the upstream-most membrane
+state = front(state,freeflow,m,s);
+if ~solver.partialsolution
+  % calculate the temperature far upstream
+  [state, fl??] = integratefree(state,m,s,solver);
+end
 
 %%  START
 %from2(m,T2,p2);
 %% The rest plays all in the nested functions.
 
+end %%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
+
 %%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
-function state1 = front(state2,ml,fs,m,s) %------------------------------- front
+function state1 = front(state2,fs,m,s) %---------------------------------- front
 %FRONT      Return the state of the fluid at the upstream side of a front.
 %
 %  STATE1 = FRONT(STATE2,MEMBRANE,FLSETUP,M,SUBSTANCE) returns the state STATE1
