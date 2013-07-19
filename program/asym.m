@@ -316,9 +316,8 @@ switch state2.phase
     elseif p2 > pk1 % mustbecomeliquid
       interface_liqvap;
     else % p2 == pk1, gaseous, liquid or two-phase possible
-      % pk1 and pcap1 get overwritten - this does not happen too often, anyway
-      [pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T2);
-      [canbecomevapor, canbecomeliquid] = heatfluxcriterion;
+      % pk1 and pcap1 are calculated again - this does not happen too often, anyway
+      [canbecomevapor canbecomeliquid hvapK1 dpk1 dpcap1] = heatfluxcriterion;
       if canbecomevapor
 	% nointerface
 	state1 = state2;
@@ -336,12 +335,11 @@ switch state2.phase
     if p2 > pk1 - pcap1 % mustbecomeliquid
       % nointerface
       state1 = state2;
-    elseif p2 > pk1 - pcap1 % mustbecomegaseous
+    elseif p2 < pk1 - pcap1 % mustbecomegaseous
       interface_vapliq;
     else % gaseous, liquid or two-phase possible
-      % pk1 and pcap1 get overwritten - this does not happen too often, anyway
-      [pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T2);
-      [canbecomevapor, canbecomeliquid] = heatfluxcriterion;
+      % pk1 and pcap1 are calculated again - this does not happen too often, anyway
+      [canbecomevapor canbecomeliquid hvapK1 dpk1 dpcap1] = heatfluxcriterion;
       if canbecomeliquid
 	% nointerface
         state1 = state2;
@@ -374,28 +372,17 @@ end
 
 %--- nested functions ----------------------------------------- nested functions
 
-function [canbecomevapor, canbecomeliquid] = heatfluxcriterion %----------------
-  % The minimum heat flux, such that a vapor remains a vapor (does not
-  % become too cold upstream of 1) is found from
-  %   m = -(kappa/nu) dp/dz,
-  %   q = -k dT/dz.
-  % A vapor stays marginally a vapor if p follows pk(T), dp/dT = dpk/dT,
-  %   m = -(kappa/nu) dpk/dT dT/dz,  m = (kappa/nu)*(dpk/dT)*q/k,
-  %   qmin = m*nu*k/(kappa*dpk/dT).
-  % Analoguous, a liquid stays marginally a liquid if p follows pk - pcap,
-  %   qmax = m*nu*k/(kappa*(dpk/dT-dpcap/dT)).
-  %[pk1 dpk1 hvapK1 dpcap1 pcap1] = fs.hvapK(T1);
-  qmin = m*fs.kmgas(T2)*fs.nuapp(T2,p2)/(ml.kappa*dpk1);
-  qmax = m*fs.kmliq(T2)*s.nul(T2)/(ml.kappa*(dpk1-dpcap1));
+function [canbecomevapor, canbecomeliquid, hvapK1, dpk1, dpcap1] = heatfluxcriterion
   % The heat flux q1 is, depending on the phase change tabulated below,
   % vap  vap   q1 = q2
   % vap  liq   q1 = q2 - m*hvapK
   % liq  vap   q1 = q2 + m*hvapK
   % liq  liq   q1 = q2
   % A vapor is possible for q1 > qmin, hence with the first two lines above
-  canbecomevapor = q2 - (1-a2)*m*hvapK1 > qmin;
+  [qmin qmax hvapK1 dpk1 dpcap1] = fs.qminqmax(m,T2);
+  canbecomevapor = q2 - (1-a2)*m*hvapK1 >= qmin;
   % A liquid is possible for q1 < qmax, the last two lines above give
-  canbecomeliquid = q2 + a2*m*hvapK1 < qmax;
+  canbecomeliquid = q2 + a2*m*hvapK1 <= qmax;
   % For complete phase change, xdot is not necessary, a2 can be used instead.
 end %---------------------------------------------------------------------------
 
@@ -468,14 +455,14 @@ function interface_2phliq %-----------------------------------------------------
   % todo:
   % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
   doth12 = q2;
-  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk,dpcap);
+  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
 end %---------------------------------------------------------------------------
 
 function interface_2phvap %-----------------------------------------------------
   % todo:
   % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
   doth12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
-  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk,dpcap);
+  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
 end %---------------------------------------------------------------------------
 
 function interface_liq2ph; %----------------------------------------------------

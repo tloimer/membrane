@@ -19,6 +19,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
 %    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
 %    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg].
+%    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid.
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT.
 %    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow).
 %    FS.knudsen(T,p)      Knudsen number.
@@ -32,9 +33,9 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %  See also SUBSTANCE, MEMBRANE, FMODEL.
 
 flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
-  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],...
-  'nuapp',[],'knudsen',[],'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],...
-  'xdot',[],'odemaxstep',[]);
+  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'qminqmax',[],...
+  'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],'nu2ph',[],...
+  'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
 % set for free space
 if nargin == 1
@@ -108,6 +109,7 @@ if theta == 90 || isfreespace || issupercritical
     flsetup.hvapK = @hvapsat;
     flsetup.hvapKraw = @hvapKraw;
     % simply do not set hgK and intdhdp... for free space
+    flsetup.qminqmax = @(m,T) qminqmaxfree(T);
     return
   end
   % do not return for theta = 90
@@ -122,6 +124,7 @@ flsetup.pkpcap = @pkpcap;
 flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
+flsetup.qminqmax = @qminqmax;
 % solhhK needs to exist, to be 'deval'uated
 % set further below
 %flsetup.hgK = @(T) deval(solhgK,T);
@@ -249,6 +252,41 @@ function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   dhldp = (1 + T*drho)/rho;
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
 end %-------------------------------------------------------------- end hvapKraw
+
+function [qmin qmax hvapK dpk dpcap] = qminqmax(m,T) %----------------- qminqmax
+%QMINQMAX   Minimum and maximum heat flux for vapor and liquid flow, respectively.
+%
+% [QMIN QMAX HVAPK DPK DPCAP] = QMINMAX(T) returns the minimum heat flux, such
+% that a vapor remains a vapor flow, and the maximum heat flux allowed for a
+% liquid to remain a liquid flow. Both liquid and vapor are at their states in
+% equilibrium with the other phase at a curved meniscus.
+
+% The minimum heat flux, such that a vapor remains a vapor (does not
+% become too cold upstream of 1) is found from
+%   m = -(kappa/nu) dp/dz,
+%   q = -k dT/dz.
+% A vapor stays marginally a vapor if p follows pk(T), dp/dT = dpk/dT,
+%   m = -(kappa/nu) dpk/dT dT/dz,  m = (kappa/nu)*(dpk/dT)*q/k,
+%   qmin = m*nu*k/(kappa*dpk/dT).
+% Analoguous, a liquid stays marginally a liquid if p follows pk - pcap,
+%   qmax = m*nu*k/(kappa*(dpk/dT-dpcap/dT)).
+[pk dpk hvapK dpcap pcap] = flsetup.hvapK(T);
+qmin = m*flsetup.kmgas(T)*flsetup.nuapp(T,pk)/(mem.kappa*dpk);
+qmax = m*flsetup.kmliq(T)*s.nul(T)/(mem.kappa*(dpk-dpcap));
+end %-------------------------------------------------------------- end qminqmax
+
+function [qmin qmax hvapK dpk dpcap] = qminqmaxfree(T) %----------- qminqmaxfree
+%QMINQMAXFREE QMINQMAX for free space.
+%
+% See also FLOWSETUP>QMINQMAX.
+
+[pk dpk hvapK dpcap pcap] = flsetup.hvapK(T);
+% Two-phase flow in free space cannot tolerate any heat flux. A vapor must not
+% become colder upstream of its saturation state in the free space, hence qmin =
+% 0. A liquid must not become warmer, hence qmax = 0.
+qmin = 0;
+qmax = 0;
+end %---------------------------------------------------------- end qminqmaxfree
 
 function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 %NU2PHAPP   Apparent viscosity (Knudsen + viscous flow) of the 2ph-mixture.
