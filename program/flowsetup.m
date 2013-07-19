@@ -92,7 +92,7 @@ if theta == 90 || isfreespace || issupercritical
   if issupercritical
     flsetup.pkps = @(T) NaN;
     flsetup.pkelv = @(T) Inf;
-    flsetup.pkpcap = @(T) Inf; % should return 2 arguments;
+    flsetup.pkpcap = @Infzero;
     flsetup.dpkdT = @(T) NaN; % should return 2 arguments;
     flsetup.hgK = @(T) NaN;
     flsetup.intdhdpdpsatdT = @(T) NaN;
@@ -188,6 +188,11 @@ function [psat, pcap] = psatpcap(T) %---------------------------------- psatpcap
 psat = s.ps(T);
 pcap = 0;
 end %-------------------------------------------------------------- end psatpcap
+
+function [infinity, nix] = Infzero(T) %--------------------------------- Infzero
+infinity = Inf;
+nix = 0;
+end %--------------------------------------------------------------- end Infzero
 
 function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
