@@ -1,25 +1,79 @@
-function fl = mlinear(p1,p2,Troom,theta,s,mem,f)
+function m = mlinear(p1,p2,T1,theta,s,mem,f)
 %MLINEAR    Mass flux from linear theory [kg/m2s].
-%  MLINEAR(P1,P2,TROOM,THETA,S,M,F) calculates the mass flux according
-%  to linear theory [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. The
-%  upstream pressure is P1 [Pa], which is assumed to be the saturation pressure
-%  at the upstream temperature. The downstream pressure is P2 [Pa], TROOM [°C]
-%  is demanded for diagnostic purposes. The substance S, membrane M and
-%  two-phase flow model F are provided via structs, see SUBSTANCE, MEMBRANE and
-%  FMODEL. The output is a flowstruct FL. The mass flux is reported in FL.LIN.M
-%  (or FL.INFO.M) [kg/m2s].
+%  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux according to linear
+%  theory. For P1 = PSAT(T1), the mass flux is calculated as given in JMS07
+%  [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. For wetted systems and PK -
+%  N*(P1-P2) < P1 < PSAT, the mass flux is obtained from an linear interpolation
+%  between MGAS and MLINEAR(P1=PSAT), see JMS11 [Loimer, J. Membr, Sci. 383, pp.
+%  104-115, 2011]. P1 [Pa] is the upstream pressure, P2 [Pa] the downstream
+%  pressure, T1 the upstream temperature, and THETA is the contact angle. at the
+%  upstream temperature. The downstream pressure is P2 [Pa], TROOM [°C] is
+%  demanded for diagnostic purposes. The substance S, membrane M and two-phase
+%  flow model F are provided via structs, see SUBSTANCE, MEMBRANE and FMODEL.
 %
-%  Possible improvements: Calculate and use v2ph and nu2ph instead of vgas or
-%  nu2ph in 2ph-flow.
+%  See also SUBSTANCE, MEMBRANE, FMODEL, MLINEAR>MLINPSAT.
+
+% THETA is in degree - calculate costheta.
+costheta = cos(theta*pi/180);
+p12 = p1 - p2;
+
+% Necessary variables.
+[ps dps] = s.ps(T1);
+R = s.R;  vliq = 1/s.rho(T1); vgas = s.v(T1,(p1+p2)/2);
+mugas = s.mug(T1); sigma = s.sigma(T1); mujt = s.jt(T1,p1);
+
+dia=mem.dia; beta = mem.beta; L = mem.L;
+kap = mem.kappa; curv = mem.fcurv(costheta);
+
+% Calculate the apparent kinematic viscosity of the gas.
+facKn = 3*sqrt(pi/(8*R*T1));
+nubar = mugas*vgas;
+nuapp=1/(1/nubar + beta*facKn/dia);
+
+% Calculate mgas, mgas = kappa*(p1-p2)/(nuapp*L).
+if abs(costheta)>=1e-3
+  % eq. (6)
+  pcap = curv*sigma;
+  % eq. (7)
+  pk_ps = exp(-pcap*vliq/(R*T1));
+  pk = pk_ps*ps;
+  % eq. (11), truncated at the first term; eq. (13)
+  n = mujt*pk_ps*dps;
+else % abs(costheta)<=1e-3
+  costheta = 0;
+  pcap = 0; pk = ps; n = mujt*dps;
+end
+mgas = kap*p12/(nuapp*L);
+
+pref = pk - n*p12;
+
+if p1 <= pref
+  m = mgas;
+else
+  fl = mlinpsat(T1,p12,theta,s,mem,f);
+  % m = ( mgas*(ps-p1) + fl.lin.m*(p1-pref) ) / (ps-pref);
+  % probably more accurate, see mnum.m, line 121
+  m = mgas + (fl.lin.m-mgas)*(p1-pref)/(ps-pref);
+end
+%%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
+
+%%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
+
+function fl = mlinpsat(T1,p12,theta,s,mem,f) %------------------------- mlinpsat
+%MLINPSAT   Mass flux from linear theory for P1 = PSAT(T1) [kg/m2s].
+%  MLINPSAT(T1,P12,THETA,S,M,F) calculates the mass flux according to linear
+%  theory [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. The upstream pressure
+%  is PSAT(T1), with T1 given in Kelvin. A pressure difference P12 [Pa] is
+%  applied. The substance S, membrane M and two-phase flow model F are provided
+%  via structs, see SUBSTANCE, MEMBRANE and FMODEL. The output is a flowstruct
+%  FL. The mass flux is reported in FL.LIN.M (or FL.INFO.M) [kg/m2s].
 %
 %  See also FLOWSTRUCT, SUBSTANCE, MEMBRANE, FMODEL.
 %
-%  Adapted from MVSKAPPA.M, see figs.tar.gz in 05jms.
+%  Adapted from MLINEAR.M in, e.g., 12potsdam, 11jms/matlab3.
 
 %% Input processing.
-% The room temperature is given in Celsius - convert to Kelvin.
 % THETA is in degree - calculate costheta.
-%Troom = Troom + 273.15;
 costheta = cos(theta*pi/180);
 
 %% Setup of material properties.
@@ -27,8 +81,7 @@ costheta = cos(theta*pi/180);
 % material properties (e.g., km, epsilon, beta) are set here.
 
 % properties, fluid
-T1 = s.Ts(p1);
-[ps dps] = s.ps(T1); ps = p1;
+[ps dps] = s.ps(T1); p1 = ps;
 R = s.R;  vliq = 1/s.rho(T1); vgas = s.v(T1,p1); hvap = s.hvap(T1);
 cpgas = s.cpg(T1,p1); muliq = s.mul(T1); mugas = s.mug(T1);
 kgas = s.kg(T1); kliq = s.kl(T1); sigma = s.sigma(T1); mujt = s.jt(T1,p1);
@@ -57,7 +110,7 @@ fk2ph = @(a) f.k2ph(a,epsilon,km,kgas,kliq);
 kml = fk2ph(0);
 
 %% Calculation of dependent variables - pk, pcap, etc.
-p12 = p1 - p2;
+p2 = p1 - p12;
 % eq. (8)
 T12 = mujt*p12; T2 = T1 - T12;
 
@@ -80,7 +133,7 @@ if abs(costheta)>=1e-3
   % eq. (13)
   n = mujt*dpk;
   if n>=1
-    error('MLINEAR: state 2 is a 2ph-mixture: n >= 1, n = %f',n);
+    error([upper(mfilename) ': state 2 is a 2ph-mixture: n >= 1, n = %f'],n);
   end
 
   if costheta >= 0
@@ -177,7 +230,7 @@ if costheta==0
 % range kkc < 1 are not given.
 else % Ccap~=0
   if n>1
-    error(['MLINEAR: The downstream state is in the 2ph-region.\n'...
+    error([upper(mfilename) ': The downstream state is in the 2ph-region.\n'...
       'Not supported for a contact angle ~= 90°.']);
   return
   end
@@ -558,24 +611,15 @@ switch id
     % eq. (24)
     mlin = (kap*p12)/(nuliq*L) * ( 1+pcap*(pk-n*p1)/(p1pk*(pk-n*p12)) );
     m = mlin;
-    disp('MLINEAR: rudimentary flow struct written, m = mlin.')
+    disp([upper(mfilename) ': rudimentary flow struct written, m = mlin.'])
     fl.sol.len = 2; fl.sol.p0 = p1;
     [fl.flow(1:2).color] = deal('c','c');
   otherwise
-    error('MLINEAR: The program should never come here.');
+    error([upper(mfilename) ': The program should never come here.']);
 end
 
 fl.info.m = m;
 fl.sol.pe = p2;
 fl.lin.m = mlin;
 fl.info.substance = s; fl.info.membrane = mem; fl.info.fmodel = f;
-
-%% Input diagnosis, verbose output
-% We assume p1 = ps(T1) and report ps(Troom) and Ts(ps).
-%tmp = s.ps(Troom);
-%disp(sprintf('  p1 = %4.2f bar, ps(Troom) = %4.2f bar. p1/ps = %5.3f', ...
-%  p1/1e5, tmp/1e5, p1/tmp));
-%disp(sprintf('  Ts(p1) = %4.1f °C, Troom = %4.1f °C.', T1-273.15,Troom-273.15));
-%disp(sprintf(['Difference between mass flux mlin from formula copied from\n'...
-%   'TL and mass flux m calculated in file, 1-m/mlin = %g'], 1-m/mlin));
-%disp(sprintf('kappa/kappaK = %f, CC = %g',kkc,Cc));
+%------------------------------------------------------------------ end mlinpsat
