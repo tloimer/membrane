@@ -21,6 +21,7 @@ function ms = mstackstruct(theta,s,mem,f) %------------------------ mstackstruct
 %    MS.q2
 %    MS.colors
 %    MS.printsetup
+%    MS.freesetup
 %    MS.substance
 %    MS.membrane
 %  MS.membrane is a struct of length length(MEMBRANE). It contains
@@ -29,6 +30,8 @@ function ms = mstackstruct(theta,s,mem,f) %------------------------ mstackstruct
 %    MS.MEMBRANE.a1
 %    MS.MEMBRANE.q1
 %    MS.MEMBRANE.layer
+%    MS.MEMBRANE.zscale
+%    MS.MEMBRANE.flow
 %  MS.MEMBRANE.layer is a struct of a length corresponding to the number of
 %  layers in each membrane. MS.MEMBRANE(i).layer(j) contains
 %    MS.MEMBRANE.LAYER.theta
@@ -69,18 +72,19 @@ if ~isequal(nlayers, nflay) % implicitly also checks nfmem, nmembranes
 end
 
 % Allocate ms.membrane(nmembranes)
-membranes(nmembranes) = struct('T1',[],'p1',[],'a1',[],'q1',[],'layer',[]);
+membranes(nmembranes) = struct('T1',[],'p1',[],'a1',[],'q1',[],'layer',[],...
+				'zscale',[],'flow',[]);
 for i = 1:nmembranes
   % Write ms.membrane(i).layer(nlayers)
   lyrs = struct('theta',thetacell{i},'matrix',memcell{i},'fmodel',fcell{i},...
-		  'flsetup',[],'calc',[],'flow',[]);
+		'flsetup',[],'calc',[],'flow',[]);
   membranes(i).layer = lyrs;
 end
 
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
-	    'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},...
-	    'printsetup',@printsetup,'substance',s,'membrane',membranes);
+  'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
+  'freesetup',[],'substance',s,'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -132,6 +136,6 @@ for i = 1:nmembranes
     end
   end
   fprintf('_____________________________________________________________________________\n\n');
-  end
+end
 fprintf('  -2-\n');
 end %------------------------------------------------------------ end printsetup
