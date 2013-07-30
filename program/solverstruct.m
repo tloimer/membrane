@@ -13,7 +13,7 @@ function solver = solverstruct(solvertype) %----------------------- solverstruct
 
 solver = struct('rtol',1e-3,'atol',1e-5,'tola',1e-6,'maxTperstep',2,...
   'maxpperstep',1e5,...
-  'writesolution',true,'fullsolution',false,'partialsolution',true); %%CHANGED!
+  'writesolution',false,'fullsolution',false,'partialsolution',true); %%CHANGED!
 %  'maxpperstep',1e5,'writesolution',false,'partialsolution',true); %%CHANGED!
 if strcmp(solvertype,'accurate')
   solver.rtol = 1e-4;  solver.atol = 1e-6;
