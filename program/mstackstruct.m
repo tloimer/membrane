@@ -21,6 +21,8 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.q2
 %    MS.colors
 %    MS.printsetup
+%    MS.writeflowsetups
+%    MS.mfluxliquid
 %    MS.freesetup
 %    MS.substance
 %    MS.membrane
@@ -87,6 +89,7 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
+  'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
   'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
@@ -122,6 +125,37 @@ end
 % here, nmembranes = 3 and nlayers = [3 2 1]
 end %----------------------------------------------------------- end expand2cell
 
+function ms = writeflowsetups(T1,T2,s,ms) %--------------------- writeflowsetups
+%WRITEFLOWSETUPS Write flow setup structs to the membrane struct.
+%  MS = WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) writes flow setup structures to each
+%  layer in the membrane struct MS.
+
+% cycle through all membranes
+nmembranes = length(ms.membrane);
+for i = 1:nmembranes
+  % and through all layers
+  nlayers = length(ms.membrane(i).layer);
+  for j = 1:nlayers
+    % Could optimize flowsetup a bit here, by computing some stuff only once
+    ms.membrane(i).layer(j).flsetup = flowsetup(T2,T1,ms.membrane(i).layer(j).theta,...
+      s,ms.membrane(i).layer(j).matrix,ms.membrane(i).layer(j).fmodel);
+  end
+end
+end %------------------------------------------------------- end writeflowsetups
+
+function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
+%MFLUXLIQUID Mass flux for the flow of liquid through the membrane stack.
+
+% With m = (kappa_i/nu) * (p_i - p_(i-1)) / L_i,   p0 |XX| p1 |XXX| p2 ... |X| pn
+%						       L1,kap1  L2     .... Ln
+%  m*nu* Sum_i=1^n (L_i/kappa_i) = Sum_i=1^n (p_i - p_i-1) = p_n - p_0.
+sumL_kappa = 0;
+for i = 1:length(ms.membrane)
+  sumL_kappa = sumL_kappa + sum([ms.membrane(i).layer(:).matrix.L] ...
+    ./[ms.membrane(i).layer(:).matrix.kappa]);
+end
+m = (p1-p2)/s.nul(T1)/sumL_kappa; % = (p1-p2)/(s.nul(T1)*sumL_kappa)
+end %----------------------------------------------------------- end mfluxliquid
 
 function printsetup(ms) %-------------------------------------------- printsetup
 fprintf('  -1-\n');
