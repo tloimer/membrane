@@ -1,234 +1,79 @@
-function fl = asym(m,T2,p2,q2,a2,fl,flsetup,freeflow,solver)
+function [p1, ms] = asym(m,state,ms,solver)
 %ASYM       Flow through a porous medium consisting of several layers.
-%  ASYM(M,T2,P2,Q2,A2,FLOWSTRUCT,FLSETUP,SOLVER) returns a structure FLOWSTRUCT
-%  that contains the solution for the mass flux M [kg/m2s] at a downstream
-%  temperature T2 [K], pressure P2 [Pa], heat flux Q2 [W/m2] and vapor volume
-%  fraction A2. A2 may be empty, if the downstream state is not a two-phase
-%  mixture or a fluid at saturation. The struct column vector FLSETUP contains
-%  input to ASYM, calculated from combining a SUBSTANCE, MEMBRANE and FMODEL
-%  column vectors and the maximum expected temperature. The struct FLOWSTRUCT
-%  also contains input to ASYM. Solution tolerances are controlled via the
-%  struct SOLVER. Where applicable, the layer properties are given in column
-%  vectors. FLSETUP is calculated only once, while the mass flow, given pressure
-%  boundary conditions, is obtained by iteratively calling ASYM.
+%  ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the solution for the flow of a fluid
+%  at a downstream state STATE through an assemblage of membranes described by
+%  the membrane struct MSTACKSTRUCT. The solution tolerances are controlled via
+%  the struct SOLVER.
 %
-%  Fields in FLOWSTRUCT (FL) used for input to ASYM:
-%    FL.info.theta	Contact angle (degree), column vector.
-%    FL.info.substance	Struct SUBSTANCE.
-%    FL.info.membrane	Struct MEMBRANE, column vector.
-%    FL.info.fmodel	Struct FMODEL, column vector.
-%    FL.info.colors	A cell array of linespec-colors.
-%  The fields theta, membrane and fmodel are column vectors (n,1).
-%
-%  Fields in FLOWSTRUCT used for output from ASYM:
-%    FL.sol.m		Mass flux [kg/m2s].
-%    FL.sol.T1		Upstream temperature [K].
-%    FL.sol.p1		Upstream pressure [Pa].
-%    FL.sol.q1		Upstream heat flux [W/m2].
-%    FL.sol.q2		Downstream heat flux [W/m2]. (Info, really.)
-%    FL.sol.T3		Temperature at the liquid film or the membrane front.
-%  If SOLVER.writesolution is true, the following fields are written:
-%    FL.sol.states	Flow states, see below.
-%    FL.sol.len		Length of the struct FL.flow. Negative number.
-%    FL.sol.zscale	Length scale of upstream temperature boundary layer.
-%  If SOLVER.writesolution is true, a struct FL.flow containing the following
-%  fields is created:
-%    FL.flow		Struct of length -FL.sol.len.
-%    FL.flow.z		Coordinate [m].
-%    FL.flow.T		Temperature [K].
-%    FL.flow.p		Pressure [p].
-%    FL.flow.q		Heat flux [W/m2].
-%    FL.flow.Kn		Knudsen number, for vapor flow.
-%    FL.flow.a		Vapor volume fraction.
-%    FL.flow.color	Plotting specification.
-%
-%  To plot the upstream boundary layer, for the z-coordinate use the
-%  transformation
-%    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
-%    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
-%  FLSETUP is a column vector (FLSETUP(n,1) and must contain the fields
-%     .curv		Curvature of the meniscus in a pore.
-%     .kelv(T,sig,rho)	Function to calculate the ratio pkelv/psat.
-%     .pkelv(T)		Function to calculate the pressure pkelv.
-%     .hgK(T)		Function to return the vapor enthalpy hvap(T,pkelv(T)).
-%     .intdhdpdpsatdT(T)
-%     .nuapp(T,p)	Apparent vapor viscosity.
-%     .knudsen(T,p)	Knudsen number.
-%     .nu2ph(T,pk,a)
-%     .kmgas
-%     .kmliq
-%     .k2ph
-%     .xdot
-%     .odemaxstep	Function to calculate integration step width.
-%
-%  See MNUM>FLSETUP.
-%  SOLVER must contain the fields
-%    .rtol		Relative error tolerance in odeset ('RelTol').
-%    .atol		Absolute error tolerance in odeset ('AbsTol').
-%    .tola		Tolerance for FZERO. Default in FZERO: 1e-16.
-%    .maxTperstep	Maximum temperature difference per integration step.
-%    .maxpperstep	Maximum pressure difference per integration step.
-%    .writesolution	If true, write FL.flow.
-%    .partialsolution	Only write a partial solution: p1, T3.
-%
-%  See also FMODEL, MEMBRANE, MNUM, SUBSTANCE.
-%
-%  Nested functions: from2, flow92, front62, flow56, check69or89, front89,
-%    flow78, front37, front57, flow13, flow45, front35, front85, writetostruct.
-%  Subfunction: newton.
-%  Try, e.g., help flow12>newton.
-%
-%  States of the fluid (see Table 2 in Loimer, 2007):
-%    1 - upstream state
-%    2 - downstream state
-%    3 - unsaturated vapor at upstream membrane front
-%    4 - saturated liquid at upstream end of liquid film
-%    5 - liquid in the liquid film at the upstream membrane front and/or
-%    5 - liquid at upstream end of liquid flow within the membrane
-%    6 - liquid at downstream end of liquid flow within the membrane
-%    7 - two-phase mixture at upstream end of 2ph-flow within the membrane
-%    8 - two-phase mixture at downstream end of 2ph-flow within the membrane
-%    9 - vapor at upstream end of vapor flow within the membrane
-%
-%  Note: State 5 may denote two different states in the non-linear
-%  calculation, at contrast to the linear approximation. For conformity, an
-%  additional name is not introduced.
+%  [P1,MSTACKSTRUCT] = ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the upstream
+%  pressure P1 and a MSTACKSTRUCT describing the solution.
 
-%  Daten, die in jedem shoot (iteratively shooting) neu geschrieben werden
-%    fl.sol.<T1,p1,...>  ...... erreichter Zustand 1
-%    fl.flow.<T,p,q,Kn,...> ... Verteilungen
-%
-%  Daten, die jede Membran / jeder Membran layer extra (weil unterschiedlich)
-%  benötigt
-%    fl.info.theta
-%    fl.info.membrane
-%    fl.info.fmodel
-%    flsetup.<curv,kelv,...>  (flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
-%
-%  Daten, die ein einziges Mal für eine Membran (von mnum) berechnet werden
-%    fl.calc.<kk,kc,Ccc,...>
-%
-%  Daten, die für alle Membranen / Layer gesetzt werden, während des Schießens
-%  grob, dann accurate
-%    solver.<rtol,atol,...>
+%  See also DOWNSTREAMSTATE, MSTACKSTRUCT, FLOWSETUP, SOLVERSTRUCT.
 
-%  PROGRAM SUMMARY
-%
-%  asym.m (m,T2,p2,q2,fl.flsetup,solver)
-%  Integrate against the flow direction from the end of the last layer to
-%  the first layer. Heat flux q2 not equal to 0 is allowed.
-
-%  last = size(mem,1); % last = number of layers, last layer
-%  state = state2
-%  % go into the last membrane
-%  state = front_memfree(mem(last),state)
-%  state = integrate(mem(last),state)
-%  while z > 0
-%    state = front_inner(mem(last),state)
-%    state = integrate(mem(last),state)
-%  end
-%
-%  % the current location is the upstream front of the downstream-most membrane
-%  % i counts down from the penultimate to the first membrane
-%  for i = last-1:-1:1
-%    state = front_memmem(mem(i),mem(i+1),state)
-%    state = integrate(mem(i),state)
-%    while z > 0
-%      state = front_inner(mem(i),state)
-%      state = integrate(mem(i),state)
-%    end
-%  end
-%
-%  % the current location is the upstream front of the upstream-most membrane
-%  state = front_freemem(mem(1),state)
-%  % integrates both a liquid film and vapor flow
-%  % or only vapor flow in front of the membrane
-%  state = integratefree(state)
-
-%  TODO
-% rewrite intcpl(T1,T2) to icpl(T), See substance. Would have to implement
-% (rewrite) icpleq2, ipoly4, ipoly3.
-% use Q2PH to calculate two-phase heat flux, simplify flow78, front89, front85,
-% ev. front37, front57
-% hvapK, hvapKraw an den schluss
-
-%  COMMON VARIABLES for ASYM
-%s = fl.info.substance;  f = fl.info.fmodel;
-% definition of colors, i.e., LineSpecs
-[liqcolor vapcolor twophcolor] = fl.info.colors{:};
-
-%  COMMON VARIABLES
-s = fl.info.substance;  mem = fl.info.membrane;  f = fl.info.fmodel;
-
-% Combination of theta and membrane.
-% fl.info.theta is accessed directly
-curv = flsetup.curv;
-
-%  COMMON FUNCTIONS
-% Thermodynamic properties from combination of substance, theta and membrane.
-kelv = flsetup.kelv;  pkelv = flsetup.pkelv;
-hgK = flsetup.hgK;  hvapK = flsetup.hvapK;  hvapKraw = flsetup.hvapKraw;
-intdhdpdpsatdT = flsetup.intdhdpdpsatdT;
-
-% Effective single flow - membrane and two-phase properties.
-nuapp = flsetup.nuapp;  knudsen = flsetup.knudsen;  nu2ph = flsetup.nu2ph;
-kmgas = flsetup.kmgas;  kmliq = flsetup.kmliq;  k2ph = flsetup.k2ph;
-xdot = flsetup.xdot;  %x = flsetup.x;
-
-% Step size calculation for ode45, ode23t.
-odemaxstep = flsetup.odemaxstep;
-
-% Solver values.
-[rtol atol tola maxTperstep maxpperstep writesolution partialsolution] ...
-  = deal(solver.rtol, solver.atol, solver.tola, solver.maxTperstep,...
-  solver.maxpperstep, solver.writesolution, solver.partialsolution);
-
-%  INITIALIZATION
-fl.sol.states = [];
-if writesolution
-  % initialize writestruct
-  fl.sol.len = 0;
-  % construct fl.flow; initializes empty (0x0) struct fl.flow. Use of [] instead
-  % of {} would create a 1x1 struct fl.flow.
-  fl.flow = struct('z',{},'T',{},'p',{},'q',{},'Kn',{},'a',{},'color',{});
+if solver.writesolution
+  % construct empty (0x0) struct flow.
+  % Use of [] instead of {} would create a 1x1 struct flow.
+  zeroflowstruct = struct('z',{},'T',{},'p',{},'a',{},'q',{},'Kn',{},'color',{});
+else
+  zeroflowstruct = [];
 end
 
-%%%  ASYM PROPER  %%%
+% This part of the code must know the mstackstruct-structure.
+nmembranes = length(ms.membrane);
+s = ms.substance;
+freesetup = ms.freesetup; % free space flow setup
 
-% Get the number of membrane layers; Layers are sorted in a column vector.
-last = size(mem,1);
+% integrate in upstream direction
+% Cycle over all membranes
+for i = nmembranes:-1:1
+  nlayers = length(ms.membrane(i).layer);
 
-state = downstreamstate(T2,p2,a2,q2,s,f);
-
-% Cylce down through the membrane layers
-for i = last:-1:1
-  z = mem(i).L;
-  % But stay in the same layer, as long as the integration did not end at the
-  % upstream end of that layer
-  while z > 0
-    % For column vectors, flsetup(last) is equivalent to flsetup(last,1)
-    state = front(state,flsetup(i),m,s);
-    % Correctly index into and write to the right FLOWSTRUCT FL!
-    % CONTINUE HERE to write integrate
-    [state, z] = integrate(state,mem(i),flsetup(i),m,s,solver);
+  % Cycle over all layers in one membrane 
+  for j = nlayers:-1:1
+    % Start is the downstream end of the last layer of the last membrane;
+    % Then, at the end of each layer.
+    z = ms.membrane(i).layer(j).matrix.L;
+    % flow grows in integrate(), if solver.writesolution is true
+    flow = zeroflowstruct;
+    % Stay in one layer, as long as it is not ready.
+    while z > 0
+      state = front(state, ms.membrane(i).layer(j).flsetup, m, s);
+      % [state, z, flow] = integrate(state, z, matrix, flsetup, m, s, solver);
+      [state,z,flow] = integrate(state,z,flow,ms.membrane(i).layer(j).matrix,...
+        ms.membrane(i).layer(j).flsetup, m,s,solver);
+    end
+    % Arrived at the upstream end of a layer
+    ms.membrane(i).layer(j).flow = flow;
+  % Go into the next layer
   end
-end
 
-% freeflow = flowsetup(s); % must be constructed already in mnum
-% the current location is the upstream end of the upstream-most membrane
-state = front(state,freeflow,m,s);
-if ~solver.partialsolution
+  % Upstream front of a membrane; Calculate the state in the intermediate space.
+  state = front(state,freesetup,m,s);
   % calculate the temperature far upstream
-  [state, fl??] = integratefree(state,m,s,solver);
-end
+  % but not necessarily for the upstream-most layer of the upstream-most membrane
+  % if i == 1 && solver.partialsolution, else  ... integratefree(..);  end
+  if i > 1 || solver.fullsolution
+    flow = zeroflowstruct;
+    % this might either be a liquid film, or the gaseous temperature boundary layer
+    [state,z,flow] = integratefree(state,z,flow,m,s,solver);
+    % THIS ONLY WORKS FOR GASEOUS PHASE UPSTREAM
+    % How could the reaching of the end state more generally be tested?
+    if state.phase ~= 'g'
+      state = front(state,freesetup,m,s);
+      % THIS MUST BE THE THERMAL BOUNDARY LAYER
+      [state,z,flow] = integratefree(state,z,flow,m,s,solver);
+    end
+    % the last call to integratefree must have called ifreevapor and return zscale.
+    ms.membrane.zscale = z;
+    ms.membrane(i).flow = flow;
+  end
 
-%%  START
-%from2(m,T2,p2);
-%% The rest plays all in the nested functions.
+% Next membrane
+end
+p1 = state.p;
 
 end %%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
 
-%%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
@@ -301,12 +146,10 @@ q2 = state2.q;
 %mustbecomeliquid = p2 > paux1;
 % not(mustbecomegaseous) && not(mustbecomeliquid) = p2 == paux1
 
-gaseous = 'g';  liquid = 'l';  twophase = '2';
-
 [pk1, pcap1] = fs.pkpcap(T2);
 
 switch state2.phase
-  case gaseous
+  case 'g' % gaseous
     if p2 < pk1 % mustbecomegaseous
       % nointerface
       state1 = state2;
@@ -314,7 +157,7 @@ switch state2.phase
       interface_liqvap;
     else % p2 == pk1, gaseous, liquid or two-phase possible
       % pk1 and pcap1 are calculated again - this does not happen too often, anyway
-      [canbecomevapor canbecomeliquid hvapK1 dpk1 dpcap1] = heatfluxcriterion;
+      [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
       if canbecomevapor
 	% nointerface
 	state1 = state2;
@@ -328,7 +171,7 @@ switch state2.phase
       end
     end
 
-  case liquid
+  case 'l' % liquid
     if p2 > pk1 - pcap1 % mustbecomeliquid
       % nointerface
       state1 = state2;
@@ -336,7 +179,7 @@ switch state2.phase
       interface_vapliq;
     else % gaseous, liquid or two-phase possible
       % pk1 and pcap1 are calculated again - this does not happen too often, anyway
-      [canbecomevapor canbecomeliquid hvapK1 dpk1 dpcap1] = heatfluxcriterion;
+      [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
       if canbecomeliquid
 	% nointerface
         state1 = state2;
@@ -350,7 +193,7 @@ switch state2.phase
       end
     end
 
-  case twophase
+  case '2' % twophase
     if state2.pk > pk1 % mustbecomeliquid
       interface_liq2ph;
     elseif state2.pk < pk1 % mustbecomevapor
@@ -369,14 +212,14 @@ end
 
 %--- nested functions ----------------------------------------- nested functions
 
-function [canbecomevapor, canbecomeliquid, hvapK1, dpk1, dpcap1] = heatfluxcriterion
+function [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion
   % The heat flux q1 is, depending on the phase change tabulated below,
   % vap  vap   q1 = q2
   % vap  liq   q1 = q2 - m*hvapK
   % liq  vap   q1 = q2 + m*hvapK
   % liq  liq   q1 = q2
   % A vapor is possible for q1 > qmin, hence with the first two lines above
-  [qmin qmax hvapK1 dpk1 dpcap1] = fs.qminqmax(m,T2);
+  [qmin, qmax, hvapK1, dpk1, dpcap1] = fs.qminqmax(m,T2);
   canbecomevapor = q2 - (1-a2)*m*hvapK1 >= qmin;
   % A liquid is possible for q1 < qmax, the last two lines above give
   canbecomeliquid = q2 + a2*m*hvapK1 <= qmax;
@@ -400,7 +243,7 @@ function interface_liqvap %-----------------------------------------------------
   %   ln(p2/psat) = -pcap/(rho*R*T),
   %   pcap = ln(psat/p2)*rho*R*T.
   psat = s.ps(T2);
-  [drho2 rho2] = s.drho(T2);
+  [drho2, rho2] = s.drho(T2);
   pcap = log(psat/p2)*rho2*s.R*T2;
   % arguments: hvapKraw(T,pk,psat,pcap,rho,drho)
   hvapK12 = fs.hvapKraw(T2,p2,psat,pcap,rho2,drho2);
@@ -431,13 +274,13 @@ function interface_vapliq %-----------------------------------------------------
   %   ( p1 = (p2/R + 1)*psat*R/(R + psat)		   )
   %   p1/psat = (p2 + rho*R*T) / (psat + rho*R*T).
   psat = s.ps(T2);
-  [drho2 rho2] = s.drho(T2);
+  [drho2, rho2] = s.drho(T2);
   rhoRT = rho2*s.R*T2;
   % initial guess; here, p1 = p1/psat
   p1 = (p2 + rhoRT)/(psat + rhoRT);
   % setup newton
   ps_rhoRT = psat/rhoRT;
-  function [F dF] = sol35(x)
+  function [F, dF] = sol35(x)
     F = log(x) + x*ps_rhoRT - p2/rhoRT;
     dF = 1/x + ps_rhoRT;
   end
@@ -449,71 +292,103 @@ function interface_vapliq %-----------------------------------------------------
 end %---------------------------------------------------------------------------
 
 function interface_2phliq %-----------------------------------------------------
-  % todo:
-  % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
+  % Solve for q1 and a1 in the integrator, not here. Also, pass a few variables
+  % (dpk, dpcap, ...), so they need not calculated twice.
   doth12 = q2;
   state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
 end %---------------------------------------------------------------------------
 
 function interface_2phvap %-----------------------------------------------------
-  % todo:
-  % Solve for q1 and a1 in the integrator, not here: Formulae are similar.
+  % Solve for q1 and a1 in the integrator. Two-phase flow is fully determined by
+  % the temperature and flux of enthalpy.
   doth12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
   state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
 end %---------------------------------------------------------------------------
 
-function interface_liq2ph; %----------------------------------------------------
+function interface_liq2ph %-----------------------------------------------------
   % in general, here p1 = p2liq; because, there are pores where a liquid part
   % of the 2ph-region might border to the liquid in part1. liq-liq, so, no
   % pressure difference
   p1 = state2.pliq;
   q1 = state2.doth;
   state1 = state2.aliquid(T2,p1,q1);
-  % q1 = q2 + fs2.xdot(T2,pk2,a2)*m*hvapK2; % in general, see downstreamstate
-  % for plane interface
 end %---------------------------------------------------------------------------
 
-function interface_vap2ph; %----------------------------------------------------
+function interface_vap2ph %-----------------------------------------------------
   % in general, here p1 = p2vap; for reason, see interface_liq2ph.
-  % HERE, MEMBRANE 2 PROPERTIES ARE NEEDED
-  % FOR memfree: pk2 = p2, pcap2 = 0, hvapk2 = s.hvap(T2).
+  % For memfree: pk2 = p2, pcap2 = 0, hvapk2 = s.hvap(T2).
   p1 = state2.pk;
   q1 = state2.doth - m*state2.hvapK;
-  %q1 = q2 - (1-fs2.xdot(T2,pk2,a2))*m*hvapK2;
-  %q1 = q2 - (1-free.xdot(T2,p2,a2))*m*s.hvap(T2); % for plane interface!
   state1 = state2.avapor(T2,p1,q1);
 end %---------------------------------------------------------------------------
 
 end %----------------------------------------------------------------- end front
 
-function from2(m,T2,p2) %------------------------------------------------- from2
-%FROM2      Start flow through the membrane.
-% p2 >= pk(T2)  Are we in the capillary condensation regime?
-%  |- no:  flow92 (unsaturated vapor flow)
-%  |- yes: front62 -> flow56 (condensation and liquid flow)
+%--------------------------------------------------------------------- integrate
+function [state,z,flow] = integrate(state,z,flow,matrix,flsetup,m,s,solver)
+%INTEGRATE  Integrate the flow within the layer.
 
-% FROM2 used in order to encapsulate variables (T6,p6,q6).
-q2 = 0;
-if p2 >= pkelv(T2)
-  [T6 p6 q6] = front62(m,T2,p2,q2);
-  flow56(m,T6,p6,q6,mem.L);
-else
-  flow92(m,T2,p2,q2); % In flow92: z2 = mem.L.
+% integrate knows the state-struct. The specific integrators do not need to know
+% about the state-struct.
+switch state.phase
+  case 'g' % gaseous
+    [T,p,q,z,flow] = integratevapor(m, state.T, state.p, state.q, z, flow, ...
+				    matrix,flsetup,s,solver);
+    % Update the state.
+    % Another possibility is to construct a new state, state=state.avapor(T,p,q)
+    state.T = T;
+    state.p = p;
+    state.q = q;
+  case 'l' % liquid
+    [T,p,q,z,flow] = integrateliquid(m, state.T, state.p, state.q, z, flow, ...
+				    matrix,flsetup,s,solver);
+    % Update the state.
+    state.T = T;
+    state.p = p;
+    state.q = q;
+  case '2' % two-phase
+    [T,doth,hvapK,pk,pliq,z,flow] = integratetwophase(m,state.T,state.doth, ...
+     state.hvapK,state.pk,state.dpk,state.dpcap,z,flow,matrix,flsetup,solver);
+    state.T = T;
+    state.doth = doth;
+    state.hvapK = hvapK;
+    state.pk = pk;
+    state.pliq = pliq;
+    state.dpk = [];
+    state.dpcap = [];
+  otherwise
+    error('No phase letter?');
 end
-end %----------------------------------------------------------------- end from2
+end %------------------------------------------------------------- end integrate
 
-function flow92(m,T2,p2,q2) %-------------------------------------------- flow92
-%FLOW92     Vapor flow within the membrane.
+function [state,z,flow] = integratefree(state,z,flow,m,s,solver) % integratefree
+switch state.phase
+  case 'g' % gaseous
+    % the thermal boundary layer.
+    [T,p,q,z,flow] = ifreevapor(m,state.T,state.p,state.q,z,flow,s,solver);
+    % Update the state.
+    state.T = T;
+    state.p = p;
+    state.q = q;
+  case 'l' % liquid
+    % liquid film. z is not given, must be zero.
+    [T,p,q,z,flow] = ifreeliquid(m,state.T,state.p,state.q,flow,s,solver);
+    % Update the state.
+    state.T = T;
+    state.p = p;
+    state.q = q;
+  otherwise
+    error('Can not integrate phase %c in free space.', state.phase);
+end
+end %--------------------------------------------------------- end integratefree
+
+%---------------------------------------------------------------- integratevapor
+function [T9,p9,q9,z9,flow] = integratevapor(m,T2,p2,q2,flow,mem,fs,s,solver)
+%INTEGRATEVAPOR Vapor flow within the membrane - a copy of FLOW12>FLOW92
+
+% TODO: z is not referred to! It is assumed z = mem.L.
+
 % Termination condition: p = pk(T), valid: p < pk(T).
-% If FLOW92 terminates before z = 0
-%  |- yes: full condensation possible ?
-%  |   |- yes: front69 -> flow56
-%  |   |- no:  front89 -> flow78
-%  |- no:  p9 > psat(T9)  Condensation in front of the membrane possible?
-%  |   |- yes: front59 -> flow45  (p9 > psat only for non-wetting possible)
-%  |   |- no:  ccond39 -> flow13  (unsaturated vapor in front of membrane;
-%  |   |                           limit: saturated vapor at z = 0 possible)
-
 % integrate from z = L to z = 0, initial conditions T2, p2, q2.
 % eqs.: Darcy's law, Fourier, energy: mh + q = const => m dh/dz = -dq/dz,
 % dh/dz = (dh/dT)_p dT/dz + (dh/dp)_T dp/dz, dh/dT = s.cpg, dh/dp = s.dhdp
@@ -540,18 +415,18 @@ function flow92(m,T2,p2,q2) %-------------------------------------------- flow92
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
 %pdarcy = m*s.nug(T2,p2)*mem.L/mem.kappa;
-pdarcy = m*nuapp(T2,p2)*mem.L/mem.kappa;
+pdarcy = m*fs.nuapp(T2,p2)*mem.L/mem.kappa;
 pscale = min(s.ps(T2) - p2,pdarcy);
 %[dhdp2 cpg2] = s.dhcpg(T2,p2); % s.dhdp
 dhdp2 = s.dhdp(T2,p2);
 qscale = -m*dhdp2*pscale;
 deltazw = pscale/pdarcy; % = 1 if pscale = pdarcy
 Tscale = qscale*mem.L*deltazw/mem.km;
-step92 = -min(odemaxstep(pscale,maxpperstep),maxpperstep/pdarcy);
+step92 = -min(solver.odemaxstep(pscale,solver.maxpperstep),solver.maxpperstep/pdarcy);
 % functions to re-calculate dimensional values
 mkTdim = @(Tw) Tscale.*Tw + T2;
 mkpdim = @(pw) pscale.*pw + p2;
-function [T p q z] = mkdimensional(Tw,pw,qw,zw)
+function [T,p,q,z] = mkdimensional(Tw,pw,qw,zw)
   T = mkTdim(Tw); p = mkpdim(pw);
   q = qscale.*qw; z = mem.L.*zw;
 end
@@ -565,7 +440,7 @@ coeff3 = m*mem.L/coeff2;
 %T2w = 0; p2w = 0; z2w = 1;
 q2w = q2/qscale; % q2w = 0;
 options=odeset('Events',@term92w,...%'AbsTol',atol*[1 1 -coeff1*cpg2],...
-  'RelTol',rtol,'Refine',1,'InitialStep',step92,'MaxStep',step92);
+  'RelTol',solver.rtol,'Refine',1,'InitialStep',step92,'MaxStep',step92);
 %sol92 = ode45(@int92w,[z2w 0],[T2w p2w q2w],options);
 sol92 = ode45(@int92w,[1 0],[0 0 q2w],options);
 
@@ -582,11 +457,11 @@ function dy = int92w(z,y)
   % dimensionless eqs., cf. above.
   Tw = y(1);  pw = y(2);  qw = y(3);
   T = mkTdim(Tw); p = mkpdim(pw);
-  dpw = nuapp(T,p)*coeff1;
-  dTw = coeff2*qw/kmgas(T);
-  [dhdp cpg] = s.dhcpg(T,p);
+  dpw = fs.nuapp(T,p)*coeff1;
+  dTw = coeff2*qw/fs.kmgas(T);
+  [dhdp, cpg] = s.dhcpg(T,p);
   dqw = coeff3*cpg*dTw + dpw*dhdp/dhdp2;
-  dy = [dTw;dpw;dqw];
+  dy = [dTw; dpw; dqw];
 end
 
 function [val,isterm,direction] = term92w(z,y)
@@ -596,13 +471,13 @@ function [val,isterm,direction] = term92w(z,y)
   % T = y(1), p = y(2)
   % dimensional: val=pk(y(1))-y(2);
   % dimensionless:
-  val = pkelv(mkTdim(y(1))) - mkpdim(y(2));
+  val = fs.pkelv(mkTdim(y(1))) - mkpdim(y(2));
 end
 
 %  ASSIGN LAST POINT
 % dimensionalize and assign actual state, here T9, p9, q9, z9
 last = size(sol92.x,2);
-[T9 p9 q9 z9] = mkdimensional(sol92.y(1,last),sol92.y(2,last),...
+[T9, p9, q9, z9] = mkdimensional(sol92.y(1,last),sol92.y(2,last),...
    sol92.y(3,last),sol92.x(last));
 % not necessary: .ye, .xe are also in .y(last), .x(last).
 %  [T9 p9 q9 z9] = mkdimensional(sol92.ye(1,end),sol92.ye(2,end),...
@@ -610,78 +485,27 @@ last = size(sol92.x,2);
 
 %  WRITE SOLUTION
 % if wanted, write the solution
-if writesolution
+if solver.writesolution
   % allocate space for all points; assign last point
   T92(last) = T9; p92(last) = p9; q92(last) = q9; z92(last) = z9;
-  Kn92(last) = knudsen(T9,p9);
+  Kn92(last) = fs.knudsen(T9,p9);
   % and write the solution but the last point
   last = last - 1;
-  [T92(1:last) p92(1:last) q92(1:last) z92(1:last)] = mkdimensional(...
+  [T92(1:last), p92(1:last), q92(1:last), z92(1:last)] = mkdimensional(...
     sol92.y(1,1:last),sol92.y(2,1:last),sol92.y(3,1:last),sol92.x(1:last));
   for i = 1:last
-    Kn92(i) = knudsen(T92(i),p92(i));
+    Kn92(i) = fs.knudsen(T92(i),p92(i));
   end
-  writetostruct('92',{'z','T','p','q','Kn','a','color'},...
-    {z92,T92,p92,q92,Kn92,1,vapcolor});
+  flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
+    {z92,T92,p92,1,q92,Kn92,'r'});
 end
 
-%  DECIDE AND CALL NEXT
-if not(isempty(sol92.ie))
-  % terminated before z = 0
-  % full condensation possible?
-  % p9 = pk(T9), because this is the termination condition
-  [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9);
-                                              % q6 calculated as part of front69
-  if condensation
-    % yes: front69 -> flow56
-    T6 = T9; p6 = p9 - pcap9; %========================================= front69
-    % if writesolution, writetostruct('-',{},{}); end
-    if writesolution, fl.sol.states = ['-' fl.sol.states]; end
-    % ersteres zählt fl.sol.len weiter, also wird nur fl.sol.states modifiziert
-    flow56(m,T6,p6,q6,z9);
-  else
-    % no:  front89 -> flow78
-    [T8 a8 doth8 dp2ph8] = front89(m,T9,p9,q9,hvapK9,dpk9,dpcap9);
-    flow78(m,T8,a8,z9,doth8,p9,dp2ph8,hvapK9);
-  end
-else % not(isempty(sol92.ie))
-  % vapor flow all through to z = 0
-  % liq. film or vapor flow?
-  if p9 > s.ps(T9)
-    % yes: front59 -> flow45  (p9 >= psat only for non-wetting possible)
-    % front59 is the same as front62
-    [T5 p5 q5] = front62(m,T9,p9,q9); %================================= front59
-    flow45(m,T5,p5,q5);
-  else
-    % no:  ccond39 -> flow13  (unsaturated vapor in front of membrane)
-    T3 = T9; p3 = p9; q3 = q9; %======================================== ccond39
-    flow13(m,T3,p3,q3,0);
-  end
-end % end terminated
-end %---------------------------------------------------------------- end flow92
+end %-------------------------------------------------------- end integratevapor
 
-function [T6 p6 q6] = front62(m,T2,p2,q2) %----------------------------- front62
-%FRONT62    Evaporation of liquid at a meniscus at downstream end of membrane.
-% Kelvin's eq. + Young-Laplace eq.; radius of curvature must be found.
-% ln(p2/psat(T2)) = -pcap/(s.rho*R*T); pcap = p2 - p6;
-% -pcap = ln(p2/psat)*rho*R*T;
-psat2 = s.ps(T2); [drho2 rho2] = s.drho(T2);
-pcap = log(psat2/p2)*rho2*s.R*T2;
-hvapK2 = hvapKraw(T2,p2,psat2,pcap,rho2,drho2);
-T6 = T2;
-p6 = p2 - pcap;
-q6 = m*hvapK2 + q2;
-end %--------------------------------------------------------------- end front62
-
-function flow56(m,T6,p6,q6,z6) %----------------------------------------- flow56
-%FLOW56     Liquid flow within the membrane.
+%--------------------------------------------------------------- integrateliquid
+function [T5,p5,q5,z5,flow] = integrateliquid(m,T6,p6,q6,z6,flow,mem,fs,s,solver)
+%INTEGRATELIQUID Liquid flow within the membrane - a copy of FLOW12>FLOW56.
 % Termination condition: p = pk(T) - pcap, valid: p > pk(T) - pcap,
-%   pcap =  curv*sigma.
-% If FLOW56 goes through to z = 0
-%  |- yes: p5 > psat(T5)
-%  |   |- yes: ccond55 -> flow45  (liquid film in front of membrane)
-%  |   |- no:  front35 -> flow13  (unsaturated or saturated vapor)
-%  |- no: front85 -> flow78  (z > 0, partial condensation within the membrane)
 
 % integrate from z = z6 to z = 0, initial conditions T6, p6, q6.
 % eqs.: Darcy's law, Fourier, energy: mh + q = const => m dh/dz = -dq/dz,
@@ -714,43 +538,43 @@ function flow56(m,T6,p6,q6,z6) %----------------------------------------- flow56
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
-nul6 = s.nul(T6);  kmliq6 = kmliq(T6);
+nul6 = s.nul(T6);  kmliq6 = fs.kmliq(T6);
 pscale = z6*m*nul6/mem.kappa;
 Tscale = q6*z6/kmliq6;
 % zscale = z6; qscale = q6;
 % integration steps
 % liquid properties only depend on temperature, not on pressure
 % step56 = -min(odemaxstep(Tscale,maxTperstep),odemaxstep(pscale,maxpperstep))
-step56 = -odemaxstep(Tscale,maxTperstep);
+step56 = -solver.odemaxstep(Tscale,solver.maxTperstep);
 % functions to re-calculate dimensional values
 mkTdim = @(Tw) Tscale.*Tw + T6;
 mkpdim = @(pw) pscale.*pw + p6;
 % coefficients for the eqs. in int56w:
 % primarily, for the invariable part of (q6 + m*h6)/q6:
-[drho6 rho6] = s.drho(T6);
-coeff1 = q6 + m*( (p6-s.ps(T6))*(1+T6*drho6)/rho6 - intdhdpdpsatdT(T6) );
+[drho6, rho6] = s.drho(T6);
+coeff1 = q6 + m*( (p6-s.ps(T6))*(1+T6*drho6)/rho6 - fs.intdhdpdpsatdT(T6) );
 coeff2 = -kmliq6/q6;
 
 % calculate q. This function is needed twice, once during integration and later
 % for evaluation of the solution.
 function q = calcq(T,p)
   % do not vectorize! s.ps is scalar, gives wrong values on vectors.
-  [drho rho] = s.drho(T);
+  [drho, rho] = s.drho(T);
   q = coeff1 - m ...
-    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+T*drho)/rho - intdhdpdpsatdT(T));
+    * (s.intcpl(T6,T) + (p-s.ps(T))*(1+T*drho)/rho - fs.intdhdpdpsatdT(T));
 end
 
 %  INTEGRATE
 % integrate; dimensionless initial conditions
 %T6w = 0; p6w = 0; q6w = 1; z6w = 1;  % O(dTw/dzw) = 1; O(dpw/dzw) = 1;
-options=odeset('Events',@term56w,'RelTol',rtol,...
+options=odeset('Events',@term56w,'RelTol',solver.rtol,...
   'Refine',1,'InitialStep',step56,'MaxStep',step56);
 %sol56 = ode45(@int56w,[z6w 0],[T6w p6w],options);
 sol56 = ode45(@int56w,[1 0],[0 0],options);
 
 function dy = int56w(z,y)
   T = mkTdim(y(1));  p = mkpdim(y(2));
-  dTw = calcq(T,p)*coeff2/kmliq(T);
+  dTw = calcq(T,p)*coeff2/fs.kmliq(T);
   dpw = -s.nul(T)/nul6;
   dy = [dTw; dpw];
 end
@@ -762,7 +586,7 @@ function [val,isterm,direction] = term56w(z,y)
   isterm = 1; direction = -1;
   % Tw = y(1);  pw = y(2);
   T = mkTdim(y(1));
-  [pk, pcap] = flsetup.pkpcap(T);
+  [pk, pcap] = fs.pkpcap(T);
   val = mkpdim(y(2)) + pcap - pk;
 end
 
@@ -774,7 +598,7 @@ q5 = calcq(T5,p5); z5 = sol56.x(last)*z6; % z5 = 0;
 
 %  WRITE SOLUTION
 % if wanted, write the solution
-if writesolution
+if solver.writesolution
   % allocate space for all points; assign last point
   T56(last) = T5; p56(last) = p5; q56(last) = q5; z56(last) = z5;
   % and write remaining solution
@@ -785,209 +609,116 @@ if writesolution
     q56(i) = calcq(T56(i),p56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-  writetostruct('56',{'z','T','p','q','a','color'},{z56,T56,p56,q56,0,liqcolor});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},{z56,T56,p56,0,q56,'b'});
 end
 
-%  DECIDE AND CALL NEXT
-if isempty(sol56.ie)
-  % got through to z = 0
-  if p5 > s.ps(T5)
-    % liquid film in front of membrane
-    % ccond55 %========================================================= ccond55
-    flow45(m,T5,p5,q5);
-  else
-    % saturated or unsaturated vapor in front of membrane
-    [T3 p3 q3] = front35(m,T5,p5,q5);
-    flow13(m,T3,p3,q3,0);
-  end
-else % ~isempty(sol56.ie), terminated before z = 0, at z > 0
-  [T8 a8 doth8 pk8 dp2ph8 hvapK8] = front85(m,T5,p5,q5);
-  flow78(m,T8,a8,z5,doth8,pk8,dp2ph8,hvapK8);
-end % end gottrough
-end %---------------------------------------------------------------- end flow56
+end %------------------------------------------------------- end integrateliquid
 
-%------------------------------------------------------------------- check69or89
-function [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9)
-%CHECK69OR89 Evaporation of liquid (69) or two-phase mixture (89)?
-% Check if full condensation is possible by taking the 2ph-flow to the limit of
-% full condensation,  a -> 0, k -> kmliq, nu -> nuliq.
-%   (liq)  m*h6 + q6 = m*h9 + q9,
-%   (2ph)  m*xdot*hvapK + q8 = m*hvapK + q9,   if h = 0 for sat. liquid at T8.
-% In 2ph-flow the heat flux is a function of a,
-%   q8 = -k*dT/dz = -k*(dT/dp)*dp/dz = k*nu*m/((dpk/dT)*kap)
-% For full condensation q6 must be small enough such that the temperature falls
-% below the saturation temperature. q = q8,liq gives the temperature gradient
-% such that T follows Tk(p), hence q6 <=! q8,liq, with q6 = m*hvapK + q9 and q8
-% from above
-% full condensation possible:
-%   m*kmliq*nuliq/((dpk/dT)*kap) >= m*hvapK + q9.
-% However, since min(q8) not= q8,liq in the case of the homogeneous 2ph-flow
-% model (but close to it, see Fig. 6 in Loimer, 2007), eq. (2ph) may still have
-% a solution,
-%   q8 = (1-xdot) mhvapK + q9, although ~min(q8) >= max(rhs).
-% The additional solutions are not tracked, instead full condensation is used.
-% Full condensation is necessary if eq. (2ph) does not have a solution, which my
-% be estimated with min(q8) >= m*hvapk + q9.
+%------------------------------------------------------------- integratetwophase
+function [T7,doth7,hvapK7,pk7,pliq7,z7,flow] = integratetwophase(m,T8,doth8,...
+				hvapK8,pk8,dpk8,dpcap8,z8,flow,mem,fs,solver)
+%INTEGRATETWOPHASE Two-phase flow - copy of FLOW12>FRONT89 and FLOW12>FLOW78.
 
-% some vars we calculate once (and pass to front89 and flow78)
-[pk9 dpk9 hvapK9 dpcap9 pcap9] = hvapK(T9);
-q6 = q9 + m*hvapK9; %========================================== part for front69
-dpkliq9 = dpk9 - dpcap9; %21.April
-% for non-wetting, dpkliq might be negative! Then, condensation is anyway
-% possible. The pressure could stay constant and the temperature rise, still the
-% fluid would remain in its liquid state.
-if dpkliq9 <= 0 || m*kmliq(T9)*s.nul(T9)/(dpkliq9*mem.kappa) >= q6
-  condensation = true;
-else
-  condensation = false;
-end
-end %----------------------------------------------------------- end check69or89
+% The part below is from FLOW12>FRONT89
 
-function [T8 a8 doth8 dp2ph8] = front89(m,T9,p9,q9,hvapK9,dpk9,dpcap9)%- front89
-%FRONT89    Full evaporation of two-phase mixture within the membrane.
-% Find a8 that solves
-%   (1) m*xdot*hvapK + q8 = m*hvapK + q9,   if h = 0 for sat. liquid at T = T8.
-% with q8 = q8(a8) = -k*dT/dz = -k*(dT/dp)*dp/dz = k*nu*m/((dpk/dT)*kap)
-% Eq. (1) may have two solutions, cf. Fig. 6 in (Loimer, 2007) for homogeneous
-% flow. However, we only come here for q8,liq < m*hvapK + q9 where only one
-% solution is possible, cf. Fig. 6.
-%
-% Correction, 2 April 2009.
 % Solve
 %   (1) xdot9*hvapK9 + q8/m = doth8/m,
 %   (2) q8 = -k2ph*dT/dz.
-% With dp/dz = -m*nu/kappa, dp/dz = dp2ph/dz = dp2ph/dT*dT/dz + dp2ph/da*da/dz,
-T8 = T9; doth8 = q9 + m*hvapK9; %pk8 = p9;
-% (1-xdot)*hvapK + q9/m - k*nu/((dpk/dT)*kap) =! 0;
-sol89 = @(a) (1-xdot(T9,p9,a))*hvapK9 + q9/m ...
-  - k2ph(T9,a)*nu2ph(T9,p9,a)/((dpk9-(1-a)*dpcap9)*mem.kappa);
-a8 = fzero(sol89,[0 1],optimset('TolX',tola));
-dp2ph8 = dpk9 - (1-a8)*dpcap9;
-end %--------------------------------------------------------------- end front89
+% With dp/dz = -m*nu/kappa, dp/dz = dp2ph/dz = dp2ph/dT*dT/dz + dp2ph/da*da/dz.
+%  UNDER THE ASSUMPTION  da/dz = 0 (somewhat arbitrarily, i believe)
+% follows q/m = k2ph*nu2ph/(kappa*dp2ph/dT)
+% Remark: Eq. (1) above sets the enthalpy of the liquid at T8 and pliq8 to zero.
+% Eq. (1) follows from m*h + q = const.
+sol89 = @(a) doth8/m - fs.xdot(T8,pk8,a)*hvapK8 ...
+  - fs.k2ph(T8,a)*fs.nu2ph(T8,pk8,a)/((dpk8-(1-a)*dpcap8)*mem.kappa);
+a8 = fzero(sol89,[0 1],optimset('TolX',solver.tola));
+dp2ph8 = dpk8 - (1-a8)*dpcap8;
 
-function flow78(m,T8,a8,z8,doth8,pk8,dp2ph8,hvapK8) %-------------------- flow78
-%FLOW78     Two-phase flow within the membrane.
-% Does not terminate, goes through to z = 0.
-% p7 > psat(T7) ?
-%  |- yes: front57 -> flow45  (non-wetting, liq. film in front of membrane)
-%  |- no:  front37 -> flow13  (saturated or unsaturated vapor in front)
+% Below follows the part from FLOW12>FLOW78
 
-% integrate two-phase flow (differential-algebraic eqs.)
-% eqs.: m*h + q = const; m*h = m(hgk - (1-xdot)hvapK); hgK ist the enthalpy of
-% the vapor phase at pk, hg(T,pk(T));
-% with q = -k dT/dz = (-k/(dpk/dT)) dp/dz = m nu k /((dpk/dT) kappa)
-% abbreviations: nu, k = nu2ph, k2ph
-% dT/dz = -m nu/(dpk/dT kappa)
-% m(hgK-(1-xdot)hvapK) + m nu k/((dpk/dT) kappa)
-%  = m(hgK8-(1-xdot8)hvapK8) + m nu8 k8/(dpkdT8 kappa)
-% ( = m*hgK8 + doth8 - m*hvapK8,  see front89: doth8 = m*xdot*hvapK8 + q8 ).
-% dimensionless
-% z = z8*zw; T = (z8 m nu8/(dpkdT8 kappa)*Tw + T8;
-% dimensionless eqs:
-% dTw/dzw = -(nu/(dpk/dT)) (dpk/dT)8/nu8;  nu8 = nu2ph(T8,a8);
-%
-% Correction, 16 April 2009.
+% Below, hgK returns the enthalpy of the vapor phase at T, pk(T) with respect to
+% the enthalpy of the vapor phase at T2, pk(T2). Hence,
+% m*h = m(hgk - (1-xdot)hvapK). (Compare to above, m*h = m*xdot*hvapK.)
 % Solve
 %   (1) m(hgK - (1-xdot)hvapK) + q = m*hgK8 + doth8 - m*hvapK8
 %   (2) q = -k dT/dz
-%   (3) dp/dz = -m nu/kappa = dp2phdT*dT/dz + dp2hpda*da/dz.
+%   (3) dp/dz = -m nu/kappa = dp2phdT*dT/dz + dp2phda*da/dz.
+% HOWEVER, CHECK THIS OUT - TODO!
+% Presently, da/dz is set to 0, hence dp2ph/dT = -m nu2ph/kappa, and
+% q = -k2ph dT/dz = (-k2ph/(dp2ph/dT)) dp/dz = m nu2ph k2ph/((dp2ph/dT) kappa).
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
-nu8 = nu2ph(T8,pk8,a8); % tmp1 = nu8/(dpkdT8*mem.kappa);
+nu8 = fs.nu2ph(T8,pk8,a8);
 pscale = m*z8*nu8/mem.kappa; % zscale = z8;
 Tscale = pscale/dp2ph8;
 mkTdim = @(Tw) Tscale.*Tw + T8;
 coeff1 = -dp2ph8/nu8;
-%coeff2 = hgK(T8) - (1-xdot(T8,pk8,a8))*hvapK8 + k2ph(T8,a8)*tmp1;
-coeff2 = hgK(T8) + doth8/m - hvapK8; %+ q9/m;
-step78 = -min(odemaxstep(pscale,maxpperstep),odemaxstep(Tscale,maxTperstep));
-%disp(sprintf('T8 = %6.2f K, Tscale = %6.2f',T8,Tscale));
+coeff2 = fs.hgK(T8) + doth8/m - hvapK8;
+step78 = -min(solver.odemaxstep(pscale,solver.maxpperstep), ...
+	      solver.odemaxstep(Tscale,solver.maxTperstep));
 
 %  INTEGRATE
 % integrate the dimensionless equations; step78/16 is necessary for large
 % pressure drops on the order of 2 bar.
-options=odeset('InitialSlope',[-1;0],'RelTol',rtol,...
+options=odeset('InitialSlope',[-1;0],'RelTol',solver.rtol,...
   'Mass',[1 0;0 0],'MStateDependence','none','MassSingular','yes',...
   'Refine',1,'InitialStep',step78/16,'MaxStep',step78); %,'OutputFcn',@odeplot);
 sol78 = ode23t(@int78w,[1 0],[0 a8],options);
 
 function dy = int78w(z,y)
   Tw = y(1); a = y(2); T = mkTdim(Tw);
-  [pk dpk hvK dpcap] = hvapK(T);
-  nu = nu2ph(T,pk,a);
+  [pk, dpk, hvK, dpcap] = fs.hvapK(T);
+  nu = fs.nu2ph(T,pk,a);
   dp2ph = dpk - (1-a)*dpcap;
   dTw = coeff1*nu/dp2ph;
-  da = hgK(T) - (1-xdot(T,pk,a))*hvK ...
-     + nu*k2ph(T,a)/(dp2ph*mem.kappa) - coeff2;
-  dy = [dTw;da];
+  da = fs.hgK(T) - (1-fs.xdot(T,pk,a))*hvK ...
+       + nu*fs.k2ph(T,a)/(dp2ph*mem.kappa) - coeff2;
+  dy = [dTw; da];
 end
 
 %  ASSIGN LAST POINT
-% dimensionalize last point, here T7, a7
+% dimensionalize last point, here T, a, z
 last = size(sol78.x,2);
 T7 = mkTdim(sol78.y(1,last));  a7 = sol78.y(2,last);  z7 = z8*sol78.x(last);
-% z7 = 0;  % p7 = pk(T7);
+if a7 > 1 || a7 < 0
+  error(['Two-phase flow vanished, a = %.1f. ' ...
+         'Implement a termination condition.'], a7);
+end
+
+[pk7, dpk7, hvapK7, dpcap7, pcap7] = fs.hvapK(T7);
+% This might become flsetup.q2ph
+q7 = m*fs.nu2ph(T7,pk7,a7)*fs.k2ph(T7,a7)/((dpk7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
+doth7 = q7 + m*fs.xdot(T7,pk7,a7)*hvapK7;
+pliq7 = pk7 - pcap7;
 
 %  WRITE SOLUTION
 % if wanted, write the solution
 if writesolution
   % allocate space for all points; assign last point
   T78(last) = T7; a78(last) = a7; z78(last) = z7;
+  % MOVE THIS TO FLSETUP, EVENTUALLY
+  % CALCULATE q2ph, there
   % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
-  [pk, pcap] = flsetup.pkpcap(T7);
-  p78(last) = pk - (1-a7)*pcap;
+  p78(last) = pk7 - (1-a7)*pcap7;
   last = last - 1;
   T78(1:last) = mkTdim(sol78.y(1,1:last)); a78(1:last) = sol78.y(2,1:last);
   z78(1:last) = z8*sol78.x(1:last);
+  % MOVE THIS TO FLSETUP, EVENTUALLY
+  % Move this to flsetup; Calculate at the very end of a computation, once.
   % pk is not vektorizable; Gives a result, but probably wrong numbers.
   for i = 1:last
     [pk, pcap] = flsetup.pkpcap(T78(i));
     p78(i) = pk - (1-a78(i))*pcap;
   end
-  % vielleicht q78 berechnen? q2ph?
-  writetostruct('78-',{'z','T','p','a','color'},{z78,T78,p78,a78,twophcolor});
+  flow = writeflow(flow,{'z','T','p','a','color'},{z78,T78,p78,a78,'g'});
 end
 
-%  DECIDE AND CALL NEXT
-if fl.info.theta > 90 % equivalent: theta > 90 or p7 > s.ps(T7), costheta < 0
-  % yes: front57 -> flow45 (non-wetting, liq. flow in front of membrane)
-  [T5 p5 q5] = front57(m,T7,a7);
-  flow45(m,T5,p5,q5);
-else % theta > 90 % curv <=0, p7 <=s.ps(T7)
-  % no:  front37 -> flow13  (saturated or unsaturated vapor in front)
-  [T3 p3 q3] = front37(m,T7,a7);
-  flow13(m,T3,p3,q3,0);
-end
-end %---------------------------------------------------------------- end flow78
+end %----------------------------------------------------- end integratetwophase
 
-function [T3 p3 q3] = front37(m,T7,a7) %-------------------------------- front37
-%FRONT37    Partial condensation at z = 0.
-% With mh + q = const,
-%   m hvapK + q3 = m xdot7 hvapK + q7,
-%   q3 = q7 + m*(xdot-1)*hvapK, for q7 see front89
-T3 = T7;
-%p3 = pkelv(T7); % p3 = p7;
-[p3 dpkdT7 hvapK7 dpcap7] = hvapK(T7);
-q7 = m*nu2ph(T7,p3,a7)*k2ph(T7,a7)/((dpkdT7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
-q3 = q7 + m*(xdot(T7,p3,a7)-1)*hvapK7;
-end  %-------------------------------------------------------------- end front37
-
-function [T5 p5 q5] = front57(m,T7,a7) %-------------------------------- front57
-%FRONT57    Partial evaporation at z = 0.
-% Liquid film in front, occurs for non-wetting.
-% With mh + q = const,
-%   q5 = m xdot7 hvapK + q7,
-T5 = T7;
-%p7 = pk(T7);
-[p7 dpkdT7 hvapK7 dpcap7 pcap7] = hvapK(T7);
-p5 = p7 - pcap7;
-q7 = m*nu2ph(T7,p7,a7)*k2ph(T7,a7)/((dpkdT7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
-q5 = q7 + m*xdot(T7,p7,a7)*hvapK7;
-end  %-------------------------------------------------------------- end front57
-
-function flow13(m,T3,p3,q3,z3) %----------------------------------------- flow13
-%FLOW13     Vapor flow in front of the membrane.
+%-------------------------------------------------------------------- ifreevapor
+function [T1,p1,q1,zscale,flow] = ifreevapor(m,T3,p3,q3,z3,flow,s,solver)
+%IFREEVAPOR Integrate vapor flow in free space - a copy of FLOW12>FLOW13.
 % Yields the upstream state. Only the temperature changes.
 
 % m h + q = const => m cp dT + dq = 0,  with dh = cp dT + (dh/dp) dp, dp = 0.
@@ -1003,10 +734,7 @@ function flow13(m,T3,p3,q3,z3) %----------------------------------------- flow13
 %   Tw(qw=1) = 0, zw(qw=1) = 1.
 
 %  ASSIGN WHAT IS ALREADY KNOWN
-fl.sol.p1 = p3; fl.sol.T3 = T3;
-
-%  DO NOT COMPUTE, IF NOT NECESSARY
-if partialsolution, return; end
+p1 = p3;
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
@@ -1014,9 +742,9 @@ cp3 = s.cpg(T3,p3);
 Tscale =  q3/(m*cp3); % qscale = q3;
 
 % DONE ALREADY?
-if abs(Tscale) < rtol
+if abs(Tscale) < solver.rtol
   %  THE END
-  fl.sol.q1 = q3;
+  q1 = q3;
   return
 end
 k3 = s.kg(T3);
@@ -1027,11 +755,11 @@ mkTdim = @(Tw) Tscale.*Tw + T3;
 % make initial conditions dimensionless; integrate
 % step size depends on the temperature variation
 % integration steps
-step13 = -odemaxstep(Tscale,maxTperstep);
+step13 = -solver.odemaxstep(Tscale,solver.maxTperstep);
 %T6w = 0; p6w = 0; q6w = 1; z6w = 1;  % O(dTw/dzw) = 1; O(dpw/dzw) = 1;
 % Tw(zw=1) = 0, qw(zw=1) = 1; Analytical solution: Tw(zw=0) = 1, dTw/dzw = -1.
-options = odeset('RelTol',rtol,'AbsTol',rtol,'Refine',1,'InitialStep',step13,...
-  'MaxStep',step13);
+options = odeset('RelTol',solver.rtol,'AbsTol',solver.rtol,'Refine',1,...
+  'InitialStep',step13,'MaxStep',step13);
 sol13 = ode45(@int13q,[1 0],[0 1],options);
 
 function dy = int13q(qw,y)
@@ -1055,7 +783,7 @@ q1 = 0; % we integrate with q as independent variable, until q = 0.
 %  WRITE SOLUTION
 % if wanted, write the solution
 if writesolution
-  T13(last) = T1; p13(1:last) = p3; q13(last) = q1;
+  T13(last) = T1; p13(1:last) = p1; q13(last) = q1;
   last = last - 1;
   T13(1:last) = mkTdim(sol13.y(1,1:last)); q13(1:last) = q3*sol13.x(1:last);
   % plotted is the characteristic scale, (exp((z-z3)/zscale) - 1)zscale + z3
@@ -1066,18 +794,14 @@ if writesolution
   % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
   % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
   % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
-  writetostruct('13-',{'z','T','p','q','a','color'},{z13,T13,p13,q13,1,vapcolor});
-  fl.sol.zscale = zscale;
+  flow = writeflow(flow,{'z','T','p','a','q','color'},{z13,T13,p13,1,q13,'r'});
 end
 
-%  THE END
-fl.sol.T1 = T1; fl.sol.q1 = q1; % here, but not above, q1 is always zero
+end %------------------------------------------------------------ end ifreevapor
 
-end %---------------------------------------------------------------- end flow13
-
-function flow45(m,T5,p5,q5) %-------------------------------------------- flow45
-%FLOW45     Liquid film in front of the membrane.
-%  | -> front34 -> flow13
+function [T4,p4,q4,z4,flow] = ifreeliquid(m,T5,p5,q5,flow,s,solver)% ifreeliquid
+%IFREELIQUID Integrate liquid flow in free space - a copy of FLOW12>FLOW45.
+% Only valid for z5 = 0.
 
 % Only the temperature changes, see flow13:
 %   dq/dz = - m cp dT/dz, or   dq/dz = m*cp/k q,
@@ -1098,13 +822,11 @@ function flow45(m,T5,p5,q5) %-------------------------------------------- flow45
 %   dq/dT = -m cp,   dqw/dTw = -cp m*(T4-T5)/q5
 %   dz/dT = -k/q,  dzw/dTw = -k/k5 1/qw.
 
-if partialsolution, fl.sol.p1 = p5; return; end
-
 %  ASSIGN LAST POINT
 % we already know part of the solution; needed for characteristic scales.
 p4 = p5; T4 = s.Ts(p5);
 
-if isempty(T4), fl.sol.p1 = p5; return; end
+if isempty(T4), warning('Empty Ts in liquid film calculation?'); return; end
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
@@ -1113,12 +835,12 @@ Tscale = T4 - T5; % qscale = q5; % must be q5 > 0
 zscale = Tscale*k5/q5;
 mkTdim = @(Tw) Tscale.*Tw + T5;
 coeff1 = -m*Tscale/q5;
-step45 = -odemaxstep(Tscale,maxTperstep);
+step45 = -solver.odemaxstep(Tscale,solver.maxTperstep);
 
 %  INTEGRATE
 % integrate from Tw5 to Tw4, i.e. from 0 to 1.
-options = odeset('RelTol',rtol,...
-  'Refine',1,'InitialStep',step45,'MaxStep',step45);
+options = odeset('RelTol',solver.rtol,'Refine',1,...
+		 'InitialStep',step45,'MaxStep',step45);
 %sol45 = ode45(@int45,[Tw5 Tw4],[qw5 zw5],options);
 sol45 = ode45(@int45,[0 1],[1 0],options);
 
@@ -1130,8 +852,8 @@ function dy = int45(Tw,y)
 end
 
 %  ASSIGN LAST POINT
-% dimensionalize and assign actual state, here T4, p4, q4, z4
-% T4, p4 assigned already above
+% dimensionalize and assign actual state, here T, p, q, z
+% T, p assigned already above
 last = size(sol45.x,2);
 q4 = q5*sol45.y(1,last); z4 = zscale*sol45.y(2,last);
 
@@ -1143,79 +865,20 @@ if writesolution
   last = last - 1;
   T45(1:last) = mkTdim(sol45.x(1:last)); q45(1:last) = q5*sol45.y(1,1:last);
   z45(1:last) = zscale*sol45.y(2,1:last);
-  writetostruct('45-',{'z','T','p','q','a','color'},{z45,T45,p45,q45,0,liqcolor});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},{z45,T45,p45,0,q45,'b'});
 end
 
-%  CALL NEXT
-T3 = T4; p3 = p4; z3 = z4; q3 = q4 - m*s.hvap(T3); %==================== front34
-flow13(m,T3,p3,q3,z3);
+end %----------------------------------------------------------- end ifreeliquid
 
-end %---------------------------------------------------------------- end flow45
+function flow = writeflow(flow,vars,values) %------------------------- writeflow
+%WRITEFLOW  Write the solution to the flowstruct.
 
-function [T3 p3 q3] = front35(m,T5,p5,q5) %----------------------------- front35
-%FRONT35    Condensation at upstream end of membrane.
-% Kelvin's eq. + Young-Laplace eq.; radius of curvature must be found.
-%   ln(p3/psat(T3)) = -pcap/(s.rho*R*T); pcap = p3 - p5;
-% Hence, solve the implicit eq.
-%   ln(p3/psat(T3)) = -(p3-p5)/(s.rho*R*T);
-% Initial guess: With the first order approx. ln(p3/psat3) = p3/psat3 - 1,
-% p3/psat3 -1 = (p5-p3)/(s.rho*R*T), hence
-%   p3/psat3 =  (p5 + rho*R*T) / (psat3 + rho*R*T).
-% Newton iteration:
-%   F(x) = ln(p3/psat3) + (p3-p5)/rho*R*T,   F'(x) = 1/x + psat3/rho*R*T.
-% hvapK .. see rkelv; Eq. (14) in [Loimer, 2005];
-% See also front62.
-T3 = T5;
-psat3 = s.ps(T3);  [drho3 rho3] = s.drho(T3);
-rhoRT = rho3*s.R*T3;
-% initial guess
-p3 = (p5 + rhoRT)/(psat3+rhoRT); % p3 here really is p3/psat3
-% setup newton
-ps_rhoRT = psat3/rhoRT; p5_rhoRT = p5/rhoRT;
-function [F dF] = sol35(x)
-  F = log(x) + x*ps_rhoRT - p5_rhoRT; % F = log(x) + (x*psat3-p5)/rhoRT;
-  dF = 1/x + ps_rhoRT;                % dF = 1/x + psat3/rhoRT;
-end
-p3 = newton(@sol35,p3,1e-12)*psat3; % ln of x approx. 1 - res must be very small
-% evaporation enthalpy
-hvapK3 = hvapKraw(T3,p3,psat3,p3-p5,rho3,drho3);
-q3 = q5 - m*hvapK3;
-end %--------------------------------------------------------------- end front35
-
-function [T8 a8 doth8 pk8 dp2ph8 hvapK8] = front85(m,T5,p5,q5) %-------- front85
-%FRONT85    Full condensation of two-phase mixture within the membrane.
-% Find a8 that solves
-%    m*xdot*hvapK + q8 =  q5.
-% With q8 =  k*nu*m/((dpk/dT)*kap), (see front89), we have
-%  0 =! q5/m - xdot*hvapK - k*nu/((dpk/dT)*kap).
-% doth8 = q8 + m*xdot*hvapK8 = q5
-T8 = T5; doth8 = q5;
-[pk8 dpk8 hvapK8 dpcap8] = hvapK(T8);
-sol85 = @(a) q5/m - xdot(T8,pk8,a)*hvapK8 ...
-   - k2ph(T8,a)*nu2ph(T8,pk8,a)/((dpk8-(1-a)*dpcap8)*mem.kappa);
-a8 = fzero(sol85,[0 1],optimset('TolX',tola));
-dp2ph8 = dpk8 - (1-a8)*dpcap8;
-end %--------------------------------------------------------------- end front85
-
-function writetostruct(name,vars,values) %------------------------ writetostruct
-%WRITETOSTRUCT Write the solution to the flowstruct.
-
-% COMMON VARIABLE FL
-% some information on the integration path
-fl.sol.states = [name fl.sol.states];
-
-fl.sol.len = fl.sol.len - 1;
-j = -fl.sol.len;
+j = length(flow) + 1;
 last = size(vars,2);
 for i = 1:last
-  fl.flow(j).(vars{i}) = values{i};
+  flow(j).(vars{i}) = values{i};
 end
-end %--------------------------------------------------------- end writesolution
-
-end %%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
-
-
-%%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
+end %------------------------------------------------------------- end writeflow
 
 function x = newton(fun,x0,res,iter) %----------------------------------- newton
 %NEWTON     Newton iteration. Controls tolerance in the solution.
@@ -1242,7 +905,7 @@ if nargin < 3, res = 1e-12; end
 
 x = x0;
 for i = 1:iter
-  [y dy] = fun(x);
+  [y, dy] = fun(x);
   dx = y/dy;
   x = x - dx;
   if abs(dx) < res, return; end
