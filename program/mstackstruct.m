@@ -1,4 +1,4 @@
-function ms = mstackstruct(theta,s,mem,f) %------------------------ mstackstruct
+function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %MSTACKSTRUCT Construct a membrane stack structure MS.
 %  MSTACKSTRUCT(THETA,SUBSTANCE,MEMBRANE,FMODEL) constructs a structure which
 %  describes a stack of individual membranes, each of which may consist of
@@ -53,7 +53,10 @@ function ms = mstackstruct(theta,s,mem,f) %------------------------ mstackstruct
 if isscalar(theta)
   for i = nmembranes:-1:1
     [thetacell{i}{1:nlayers(i)}] = deal(theta);
+    ntheta = nlayers;
   end
+else
+  [thetacell, ~, ntheta] = expand2cell(theta);
 end
 
 if length(f) == 1
@@ -66,9 +69,9 @@ else
   [fcell, ~, nflay] = expand2cell(f);
 end
 
-if ~isequal(nlayers, nflay) % implicitly also checks nfmem, nmembranes
-  error('Membran layers %s and fmodel %s arguments are not of the same size',...
-     inputname(3), inputname(4));
+if ~isequal(nlayers, nflay, ntheta) % implicitly also checks nfmem, nmembranes
+  error(['Membran layers %s, fmodel %s and contact angle %s arguments are '...
+	 'not of the same size'], inputname(2), inputname(3), inputname(1));
 end
 
 % Allocate ms.membrane(nmembranes)
@@ -84,7 +87,7 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'freesetup',[],'substance',s,'membrane',membranes);
+  'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -121,7 +124,7 @@ end %----------------------------------------------------------- end expand2cell
 
 
 function printsetup(ms) %-------------------------------------------- printsetup
-fprintf('Substance: %s.\n  -1-\n',ms.substance.name);
+fprintf('  -1-\n');
 nmembranes = length(ms.membrane);
 for i = 1:nmembranes
   nlayers = length(ms.membrane(i).layer);
