@@ -833,9 +833,11 @@ function [T4,p4,q4,z4,flow] = ifreeliquid(m,T5,p5,q5,flow,s,solver)% ifreeliquid
 
 %  ASSIGN LAST POINT
 % we already know part of the solution; needed for characteristic scales.
-p4 = p5; T4 = s.Ts(p5);
+T4 = s.Ts(p5);
 
 if isempty(T4), warning('Empty Ts in liquid film calculation?'); return; end
+
+p4 = s.ps(T4); % not p4 = p5, instead tolerate a minute pressure glitch
 
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
