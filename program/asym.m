@@ -1,4 +1,4 @@
-function [p1, ms] = asym(m,state,ms,solver)
+function [p1,ms] = asym(m,state,ms,solver)
 %ASYM       Flow through a porous medium consisting of several layers.
 %  ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the solution for the flow of a fluid
 %  at a downstream state STATE through an assemblage of membranes described by
@@ -7,7 +7,16 @@ function [p1, ms] = asym(m,state,ms,solver)
 %
 %  [P1,MSTACKSTRUCT] = ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the upstream
 %  pressure P1 and a MSTACKSTRUCT describing the solution.
-
+%
+%  Restrictions: The upstream state must be a gaseous phase, because the liquid
+%  film and the temperature boundary layer integrators upstream of the membrane
+%  (ifreevapor, ifreeliquid) use termination conditions that work only with an
+%  gaseous upstream state.
+%  The vapor phase integrator (integratevapor) always starts at the downstream
+%  end of a layer.
+%  For a two-phase upstream state, integration direction would have to be
+%  downstream.
+%
 %  See also DOWNSTREAMSTATE, MSTACKSTRUCT, FLOWSETUP, SOLVERSTRUCT.
 
 if solver.writesolution
@@ -288,7 +297,7 @@ function interface_vapliq %-----------------------------------------------------
   hvapK12 = fs.hvapKraw(T2,p2,psat,p1-p2,rho2,drho2);
   % hvapKraw(T,pk,psat,pcap,rho,drho)
   q1 = q2 - m*hvapK12;
-  state1 = avaporstate(T2,p1,q1);
+  state1 = state2.avapor(T2,p1,q1);
 end %---------------------------------------------------------------------------
 
 function interface_2phliq %-----------------------------------------------------
@@ -332,7 +341,7 @@ function [state,z,flow] = integrate(state,z,flow,matrix,flsetup,m,s,solver)
 % about the state-struct.
 switch state.phase
   case 'g' % gaseous
-    [T,p,q,z,flow] = integratevapor(m, state.T, state.p, state.q, z, flow, ...
+    [T,p,q,z,flow] = integratevapor(m, state.T, state.p, state.q, flow, ...
 				    matrix,flsetup,s,solver);
     % Update the state.
     % Another possibility is to construct a new state, state=state.avapor(T,p,q)
@@ -782,7 +791,7 @@ q1 = 0; % we integrate with q as independent variable, until q = 0.
 
 %  WRITE SOLUTION
 % if wanted, write the solution
-if writesolution
+if solver.writesolution
   T13(last) = T1; p13(1:last) = p1; q13(last) = q1;
   last = last - 1;
   T13(1:last) = mkTdim(sol13.y(1,1:last)); q13(1:last) = q3*sol13.x(1:last);
@@ -859,7 +868,7 @@ q4 = q5*sol45.y(1,last); z4 = zscale*sol45.y(2,last);
 
 %  WRITE SOLUTION
 % if wanted, write the solution
-if writesolution
+if solver.writesolution
   T45(last) = T4; p45(1:last) = p4; q45(last) = q4; z45(last) = z4;
 % i could do T45(1) = T5; T45(2:last-1) = ...
   last = last - 1;

@@ -4,7 +4,7 @@ function [m,ms] = mnumadiabat(T1,p1,p2,s,ms)
 %  MSTACKSTRUCT(THETA,MEM,FMODEL) and calculates the mass flow.
 
 % Calculate the downstream temperature
-T2 = s.intjt(T1,p2,p2);
+T2 = s.intjt(T1,p1,p2);
 
 % Set the downstream state, downstreamstate(T2,p2,q2,a2,s,m)
 state2 = downstreamstate(T2,p2,[],0,s); % thus, m is empty

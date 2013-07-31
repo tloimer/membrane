@@ -128,7 +128,7 @@ end %----------------------------------------------------------- end expand2cell
 function ms = writeflowsetups(T1,T2,s,ms) %--------------------- writeflowsetups
 %WRITEFLOWSETUPS Write flow setup structs to the membrane struct.
 %  MS = WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) writes flow setup structures to each
-%  layer in the membrane struct MS.
+%  layer in the membrane struct MS. The substance is written to ms.substance.
 
 % cycle through all membranes
 nmembranes = length(ms.membrane);
@@ -141,6 +141,8 @@ for i = 1:nmembranes
       s,ms.membrane(i).layer(j).matrix,ms.membrane(i).layer(j).fmodel);
   end
 end
+ms.substance = s;
+ms.freesetup = flowsetup(s);
 end %------------------------------------------------------- end writeflowsetups
 
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
