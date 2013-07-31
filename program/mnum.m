@@ -129,8 +129,7 @@ if nargin < 9
       end % p1 > plo
     else % theta > 90
       % for non-wetting fluid near saturation use linear theory
-      flin = mlinear(p1,p2,T1,theta,s,mem,f);
-      mguess = flin.lin.m;
+      mguess = mlinear(p1,p2,T1,theta,s,mem,f);
     end % theta
   else % isempty(fl.calc), therefore: psat1 = Inf
     % for unsaturated vapor or gas, use gaseous fluid flow
@@ -425,6 +424,5 @@ end
     end
   end
 % Calculate the mass flux for p1 = psat(T1) according to linear theory.
-  flin = mlinear(psat1,psat1-p12,T1,theta,s,mem,f);
-  calc.mlinp1sat = flin.lin.m;
+  calc.mlinp1sat = mlinear(psat1,psat1-p12,T1,theta,s,mem,f);
 end %------------------------------------------------------------ end flcalcvars
