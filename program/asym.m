@@ -17,6 +17,10 @@ function [p1,ms] = asym(m,state,ms,solver)
 %  For a two-phase upstream state, integration direction would have to be
 %  downstream.
 %
+%  ASYM>FRONT should probably be a subfunction or nested function in STATE,
+%  STATE1 = STATE2.FRONT(STATE2,...). However, algorithms in FRONT and INTEGRATE
+%  are partially similar, therefore they are kept in one place.
+%
 %  See also DOWNSTREAMSTATE, MSTACKSTRUCT, FLOWSETUP, SOLVERSTRUCT.
 
 if solver.writesolution
@@ -37,7 +41,7 @@ freesetup = ms.freesetup; % free space flow setup
 for i = nmembranes:-1:1
   nlayers = length(ms.membrane(i).layer);
 
-  % Cycle over all layers in one membrane 
+  % Cycle over all layers in one membrane
   for j = nlayers:-1:1
     % Start is the downstream end of the last layer of the last membrane;
     % Then, at the end of each layer.
@@ -73,7 +77,7 @@ for i = nmembranes:-1:1
       [state,z,flow] = integratefree(state,z,flow,m,s,solver);
     end
     % the last call to integratefree must have called ifreevapor and return zscale.
-    ms.membrane.zscale = z;
+    ms.membrane(i).zscale = z;
     ms.membrane(i).flow = flow;
   end
 
