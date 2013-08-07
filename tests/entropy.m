@@ -1,4 +1,8 @@
-addpath('program');
+%ENTROPY Compare entropy calculated in substance.m with tabulated values from
+%  NIST, http://webbook.nist.gov/chemistry/fluid .
+if ~exist('substance.m')
+  addpath('../program');
+end
 % Test entropy
 butgsT300 = 1e3*[2.9120 2.8119 2.7529 2.7108 2.6779 2.6509 2.6278 2.6077 ...
 	2.5899 2.5738 2.5591 2.5456 2.5331 2.5215 2.5105 2.5002 2.4905 ...
@@ -20,6 +24,7 @@ slref = b.s(300,psat300,0,300);
 
 close all;
 
+figure('Name',mfilename);
 plot(butgpT300, butgsT300-butgsT300(end),'-+',...
      butgpT300, b.s(300,butgpT300,1,300)-sgref,'-o');
 ylabel('s [J/kgK]');
@@ -27,7 +32,7 @@ xlabel('p [bar]');
 legend('Nist','matlab');
 title('vapor phase');
 
-figure;
+figure('Name',mfilename);
 plot(butlpT300, butlsT300-butlsT300(1),'-+',...
      butlpT300, b.s(300,butlpT300,0,300)-slref,'-o');
 ylabel('s [J/kgK]');

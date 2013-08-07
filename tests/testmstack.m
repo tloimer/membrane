@@ -74,6 +74,7 @@ for j = 1:lenpred
 end
 
 % Plot it.
+figure('Name',mfilename);
 plot(pred,m(2,:),'kx',pred,m(1,:),'k+');
 legend('butane','isobutane','Location','Best'); legend('boxoff');
 xlabel('p_1/p_{sat}');
@@ -89,4 +90,4 @@ for j = 1:lenpred
   fprintf('.\n');
 end
 
-print('-deps2',['tests/' mfilename '.eps']);
+print('-deps2',[mfilename '.eps']);

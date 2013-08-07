@@ -8,6 +8,7 @@ load /home/tloimer/projects/11jms/matlab3/results1105
 %   kappa, kapKK, kapll, n, Ccc, mguess, mlinp1sat
 
 global VERBOSE
+figure('Name',mfilename);
 
 % FigureDefaults
 set(0,'DefaultAxesFontName','Times','DefaultAxesFontSize',8,...
@@ -95,4 +96,4 @@ legend('calc. mnum','calc. mstack','Location','NorthWest');
 legend('boxoff');
 box('on');
 
-print('-deps2',['tests/' mfilename '.eps']);
+print('-deps2',[mfilename '.eps']);

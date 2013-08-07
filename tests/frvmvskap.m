@@ -14,6 +14,8 @@
 % enthält: kap_kc, kappac, psat1, pK1, T2calc, mexp, mgas, miso, mcalc, fl0,
 %   kappa, kapKK, kapll, n, Ccc, mguess, mlinp1sat
 
+figure('Name',mfilename);
+
 % FigureDefaults
 set(0,'DefaultAxesFontName','Times','DefaultAxesFontSize',8,...
    'DefaultTextFontSize',8);
@@ -92,4 +94,4 @@ legend('mnum', 'mstack', 'Location','NorthEast');
 legend('boxoff');
 %box('on');
 
-print('-deps2',['tests/' mfilename '.eps']);
+print('-deps2',[mfilename '.eps']);
