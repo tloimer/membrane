@@ -1,7 +1,13 @@
 function [m,ms] = mnumadiabat(T1,p1,p2,s,ms)
-%MNUMADIABAT Mass flow under adiabatic conditions
-%  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) expects a MSTACKSTRUCT MS and calculates
-%  the mass flow.
+%MNUMADIABAT Mass flux under adiabatic conditions.
+%  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) returns the mass flux. The membrane struct
+%  MS is constructed with MSTACKSTRUCT.
+%
+%  [M,MS] = MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
+%
+%  Calls ASYM.
+%
+%  See also ASYM, MSTACKSTRUCT, SUBSTANCE.
 
 % Check the upstream state
 if s.ps(T1) < p1
