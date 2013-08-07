@@ -29,6 +29,7 @@ fcount = 1;
 %      |
 %
 
+% mguess is too small, pnow is negative
 while pnow < 0
 % Here, 2, we double the distance.
   mnew = mnow - 2*pnow*(mnow-mold)/(pnow-pold);
@@ -42,8 +43,33 @@ end
 minterval = [mold mnow];
 pinterval = [pold pnow];
 
+% Now the interval could be [0 mguess]; but we can not run with m = 0.
+% Look for an interval [m>0 mguess].
+% Simply intersect a straight line between (0,pold) and (mnow,pnow) with
+% pres = 0; presumably, pres = shoot(m) is concave
+if mold == 0 % if ~mold
+  if VERBOSE > 0
+    fprintf([upper(mfilename) ': Looking for m > 0, after %d iterations.\n'],...
+	    fcount);
+  end
+  % pnow is used as plow, henceforth
+  while pnow > 0
+    mnow = mnow - pnow*mnow/(pnow-pold);
+    pnow = shoot(mnow);
+    % only once provide for a convec function shoot(m)
+    if pnow > 0
+      mnow = mnow/2;
+      pnow = shoot(mnow);
+    end
+    fcount = fcount + 1;
+    if fcount > 50, error([upper(mfilename) ': More than 50 iterations!']); end
+  end
+  minterval(1) = mnow;
+  pinterval(1) = pnow;
+end
+
 if VERBOSE > 0
   fprintf([upper(mfilename) ': Found an interval, %.3g - %.3g kg/m2s.\n'],...
-    mold,mnow);
+	  minterval(1), minterval(2));
   fprintf([upper(mfilename) ': %u function calls.\n'],fcount);
 end
