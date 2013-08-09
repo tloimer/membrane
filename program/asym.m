@@ -226,14 +226,18 @@ end
 %--- nested functions ----------------------------------------- nested functions
 
 function [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion
+%HEATFLUXCRITERION Return whether a fluid can become vapor or liquid upstreams.
+  [qmin, qmax, hvapK1, dpk1, dpcap1] = fs.qminqmax(m,T2);
+  % canbecomevapor = q1 >= qmin    ---> flow   vapor 1 | state 2 <--- compute
+  % canbecomeliquid = q1 <= qmax   ---> flow  liquid 1 | any state 2
   % The heat flux q1 is, depending on the phase change tabulated below,
   % vap  vap   q1 = q2
   % vap  liq   q1 = q2 - m*hvapK
   % liq  vap   q1 = q2 + m*hvapK
   % liq  liq   q1 = q2
-  % A vapor is possible for q1 > qmin, hence with the first two lines above
-  [qmin, qmax, hvapK1, dpk1, dpcap1] = fs.qminqmax(m,T2);
-  canbecomevapor = q2 - (1-a2)*m*hvapK1 >= qmin;
+  % allow a tad negative q1, which is necessary for the flow in free space,
+  % with the  -0.001*m*hvapK1  term!
+  canbecomevapor = q2 - (1-a2)*m*hvapK1 >= qmin - 0.001*m*hvapK1;
   % A liquid is possible for q1 < qmax, the last two lines above give
   canbecomeliquid = q2 + a2*m*hvapK1 <= qmax;
   % For complete phase change, xdot is not necessary, a2 can be used instead.
@@ -298,7 +302,7 @@ function interface_vapliq %-----------------------------------------------------
     dF = 1/x + ps_rhoRT;
   end
   p1 = newton(@sol35,p1,1e-15) * psat;
-  hvapK12 = fs.hvapKraw(T2,p2,psat,p1-p2,rho2,drho2);
+  hvapK12 = fs.hvapKraw(T2,p1,psat,p1-p2,rho2,drho2);
   % hvapKraw(T,pk,psat,pcap,rho,drho)
   q1 = q2 - m*hvapK12;
   state1 = state2.avapor(T2,p1,q1);
@@ -390,6 +394,10 @@ switch state.phase
     state.T = T;
     state.p = p;
     state.q = q;
+  case '2' % two-phase
+    % two-phase in front - occured, as long as the heatfluxcriterion did not
+    % allow   q1 >= qmin - minute correction   (instead of q1 >= qmin.)
+    warning('Two-phase flow in free space.');
   otherwise
     error('Can not integrate phase %c in free space.', state.phase);
 end
@@ -700,31 +708,26 @@ if a7 > 1 || a7 < 0
 end
 
 [pk7, dpk7, hvapK7, dpcap7, pcap7] = fs.hvapK(T7);
-% This might become flsetup.q2ph
-q7 = m*fs.nu2ph(T7,pk7,a7)*fs.k2ph(T7,a7)/((dpk7-(1-a7)*dpcap7)*mem.kappa); %q2ph?
+% This is repeated in flsetup.q2ph; Here, though, hvapK is also needed.
+q7 = m*fs.nu2ph(T7,pk7,a7)*fs.k2ph(T7,a7)/((dpk7-(1-a7)*dpcap7)*mem.kappa);
 doth7 = q7 + m*fs.xdot(T7,pk7,a7)*hvapK7;
 pliq7 = pk7 - pcap7;
 
 %  WRITE SOLUTION
 % if wanted, write the solution
-if writesolution
+if solver.writesolution
   % allocate space for all points; assign last point
-  T78(last) = T7; a78(last) = a7; z78(last) = z7;
-  % MOVE THIS TO FLSETUP, EVENTUALLY
-  % CALCULATE q2ph, there
+  T78(last) = T7; a78(last) = a7; z78(last) = z7; q78(last) = q7;
   % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
   p78(last) = pk7 - (1-a7)*pcap7;
   last = last - 1;
   T78(1:last) = mkTdim(sol78.y(1,1:last)); a78(1:last) = sol78.y(2,1:last);
   z78(1:last) = z8*sol78.x(1:last);
-  % MOVE THIS TO FLSETUP, EVENTUALLY
-  % Move this to flsetup; Calculate at the very end of a computation, once.
-  % pk is not vektorizable; Gives a result, but probably wrong numbers.
+  % pk, q2ph, is not vektorizable; Gives a result, but probably wrong numbers.
   for i = 1:last
-    [pk, pcap] = flsetup.pkpcap(T78(i));
-    p78(i) = pk - (1-a78(i))*pcap;
+    [q78(i), p78(i)] = fs.q2ph(m,T78(i),a78(i));
   end
-  flow = writeflow(flow,{'z','T','p','a','color'},{z78,T78,p78,a78,'g'});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},{z78,T78,p78,a78,q78,'g'});
 end
 
 end %----------------------------------------------------- end integratetwophase

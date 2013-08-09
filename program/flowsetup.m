@@ -19,6 +19,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
 %    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
 %    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg].
+%    FS.q2ph(m,T,a)       Heat flux, and two-phase pressure in two-phase flow.
 %    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid.
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT.
 %    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow).
@@ -33,7 +34,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %  See also SUBSTANCE, MEMBRANE, FMODEL.
 
 flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
-  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'qminqmax',[],...
+  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'q2ph',[],'qminqmax',[],...
   'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],'nu2ph',[],...
   'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
@@ -124,6 +125,7 @@ flsetup.pkpcap = @pkpcap;
 flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
+flsetup.q2ph = @q2ph; % Also works in free space of for theta = 90.
 flsetup.qminqmax = @qminqmax;
 % solhhK needs to exist, to be 'deval'uated
 % set further below
@@ -252,6 +254,26 @@ function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   dhldp = (1 + T*drho)/rho;
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
 end %-------------------------------------------------------------- end hvapKraw
+
+function [q,p2ph,pk,pcap] = q2ph(m,T,a) %---------------------------------- q2ph
+%Q2PH       Heat flux in two-phase flow.
+%  [Q,P2PH,PK,PCAP] = Q2PH(M,T,A) Return heat flux Q [W/m2], two-phase pressure
+%  P2PH = PK - (1-A)*PCAP, PK and PCAP, PCAP = pgas - pliq.
+
+%  The bulk of this is copied from hvapK.
+%  8<--  % copy from hvapk
+[psat dps] = s.ps(T);
+[dsig sigma] = s.dsig(T);
+[drho rho] = s.drho(T);
+pk_ps = flsetup.kelv(T,sigma,rho);
+pk = pk_ps*psat;
+pcap = flsetup.curv*sigma;
+dpcap = pcap*dsig;
+dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
+%  8<--
+q = m*flsetup.nu2ph(T,pk,a)*flsetup.k2ph(T,a)/((dpk-(1-a)*dpcap)*mem.kappa);
+p2ph = pk - (1-a)*pcap;
+end %------------------------------------------------------------------ end q2ph
 
 function [qmin qmax hvapK dpk dpcap] = qminqmax(m,T) %----------------- qminqmax
 %QMINQMAX   Minimum and maximum heat flux for vapor and liquid flow, respectively.

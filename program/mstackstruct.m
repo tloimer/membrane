@@ -228,9 +228,9 @@ nmembranes = length(ms.membrane);
 for i = 1:nmembranes
   % Print the condition far upstream of each membrane - if there is a change with
   % respect to the values at the membrane front
-  [isup,Tup,pup,upcolor,isfilm] = upstreamflow(ms.membrane(i));
+  [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(ms.membrane(i));
   if isup
-    printstate(Tup,pup,upcolor);
+    printstate(Tup,pup,aup,upcolor);
     if isfilm
       fprintf('    at liquid film, T =%+6.2f K\n',...
 	      ms.membrane(i).flow(1).T(end) - ms.T2);
@@ -260,13 +260,14 @@ fprintf('Downstream state: T2 = %.2f K, p2 = %.3g kPa (psat = %.3g kPa, pred = %
 
 %--- nested functions ------------------------------------- nested functions ---
 
-function [isup,Tup,pup,upcolor,isfilm] = upstreamflow(amembrane) %--------------
+function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane) %----------
   isfilm = false;
   if isstruct(amembrane.flow) && ~isempty(amembrane.flow(end).T)
     isup = true;
     Tup = amembrane.flow(end).T(end);
     % flow.p is silently assumed to also exist
     pup = amembrane.flow(end).p(end);
+    aup = amembrane.flow(end).a(end);
     upcolor = amembrane.flow(end).color;
     if length(amembrane.flow) == 2
       isfilm = true;
@@ -275,6 +276,7 @@ function [isup,Tup,pup,upcolor,isfilm] = upstreamflow(amembrane) %--------------
     isup = false;
     Tup = amembrane.layer(1).flow(end).T(end);
     pup = amembrane.layer(1).flow(end).p(end);
+    aup = amembrane.layer(1).flow(end).a(end);
     upcolor = amembrane.layer(1).flow(end).color;
   end
 end % --------------------------------------------------------------------------
@@ -284,26 +286,31 @@ function printendstate(flow) %--------------------------------------------------
 
   % Could also do printstate(flow(end).T(end)) and call printendstate(...flow)
   % instead of printendstate(...flow(end).
-  printstate(flow.T(end),flow.p(end),flow.color);
+  printstate(flow.T(end),flow.p(end),flow.a(end),flow.color);
 end %---------------------------------------------------------------------------
 
 function printstartstate(flow) %------------------------------------------------
 % PRINTSTARTSTATE Print downstream state within a given flow region.
-  printstate(flow.T(1),flow.p(1),flow.color);
+  printstate(flow.T(1),flow.p(1),flow.a(1),flow.color);
 end %---------------------------------------------------------------------------
 
-function printstate(T,p,color) %------------------------------------------------
+function printstate(T,p,a,color) %------------------------------------------------
+strtwo = ' pred = %.2f, %s\n';
   switch color
     case 'r'
       phasestring = 'gaseous';
+      var = p/ms.substance.ps(T);
     case 'b'
       phasestring = 'liquid';
+      var = p/ms.substance.ps(T);
     case 'g'
       phasestring = 'two-phase';
+      strtwo = '   a = %.3f, %s\n';
+      var = a;
     otherwise
       phasestring = 'phase?';
   end
-  fprintf('%20sT =%+6.2f K, p = %.3g kPa, pred = %.2f, %s\n', ' ',...
-	  T-ms.T2, p/1e3, p/ms.substance.ps(T), phasestring);
+  fprintf(['%20sT =%+6.2f K, p = %.3g kPa,' strtwo], ' ',...
+	  T-ms.T2, p/1e3, var, phasestring);
 end %---------------------------------------------------------------------------
 end %--------------------------------------------------------- end printsolution
