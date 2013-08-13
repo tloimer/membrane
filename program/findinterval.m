@@ -10,8 +10,24 @@ global VERBOSE
 % Initialize
 mold = 0; pold = pzero;
 mnow = mguess;
-pnow = shoot(mguess);
-fcount = 1;
+overshoot = true;
+fcount = 0;
+while overshoot
+  try
+    fcount = fcount + 1;
+    pnow = shoot(mnow);
+    overshoot = false;
+  catch err
+    % this happens most probably, when the temperature is overshoot (by too high
+    % mass flux)
+    if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
+      warning('Overshoot in interval search');
+      mnow = mnow/2;
+    else
+      rethrow(err);
+    end
+  end
+end
 
 % pres ^
 %      |            * new value, we double the distance to the intersection
@@ -32,11 +48,22 @@ fcount = 1;
 % mguess is too small, pnow is negative
 while pnow < 0
 % Here, 2, we double the distance.
-  mnew = mnow - 2*pnow*(mnow-mold)/(pnow-pold);
+  madd = - 2*pnow*(mnow-mold)/(pnow-pold);
   mold = mnow; pold = pnow;
-  mnow = mnew;
-  pnow = shoot(mnow);
-  fcount = fcount + 1;
+  mnow = mnow + madd;
+  try
+    pnow = shoot(mnow);
+    fcount = fcount + 1;
+  catch err
+    if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
+      warning('Reduce added distance');
+      mnow = mnow - madd/2;
+      pnow = shoot(mnow);
+      fcount = fcount + 2;
+    else
+      rethrow(err);
+    end
+  end
   if fcount > 50, error([upper(mfilename) ': More than 50 iterations!']); end
 end
 
@@ -56,7 +83,7 @@ if mold == 0 % if ~mold
   while pnow > 0
     mnow = mnow - pnow*mnow/(pnow-pold);
     pnow = shoot(mnow);
-    % only once provide for a convec function shoot(m)
+    % only once provide for a convex function shoot(m)
     if pnow > 0
       mnow = mnow/2;
       pnow = shoot(mnow);
