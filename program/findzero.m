@@ -40,7 +40,7 @@ if size(a,2) ~= 2 %DEBUG || true(); %DEBUG
   % No interval found.
   % also plot the result for mvap and mliq
   %mvap = p12*mem.kappa/(flsetup.nuapp(T2,(p1+p2)/2)*mem.L);
-  p%vap = presiduum(mvap,solver);
+  %pvap = presiduum(mvap,solver);
   % No, really no interval found.
   disp(sprintf('MNUM: No interval found! mguess = %g',mguess));
   %disp('  Call MNUM with a guess for the mass flow,');
