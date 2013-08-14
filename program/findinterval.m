@@ -1,4 +1,4 @@
-function [minterval pinterval] = findinterval(shoot,mguess,pzero);
+function [minterval,pinterval] = findinterval(shoot,mguess,pzero)
 %FINDINTERVAL Find an interval for the mass flux in which pres changes sign.
 %  FINDINTERVAL(FUNCTION,MGUESS,PZERO) returns an interval for M  in which the
 %  function FUNCTION changes sign. MGUESS is the first guess, PZERO is the
