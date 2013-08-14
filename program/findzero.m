@@ -1,31 +1,22 @@
-function b = findzero(presiduum,mguess,p1tol,solver)
-%FINDZERO  Find the zero of a function PRESIDUUM(M,SOLVER)
-%  M = FINDZERO(PRESIDUUM,MGUESS,PTOL,SOLVER) finds a zero to the function
-%  PRESIDUUM(M,SOLVER). FINDZERO returns a solution where the function value is
-%  smaller than PTOL. During iteration, the accuracy of the solver is increased.
+function b = findzero(presiduum,mguess,p1tol)
+%FINDZERO  Find the zero of a function PRESIDUUM(M)
+%  M = FINDZERO(PRESIDUUM,MGUESS,PTOL) finds a zero to the function PRESIDUUM(M).
+%  FINDZERO returns a solution where the function value is smaller than PTOL.
 %  FINDZERO uses a scalar value MGUESS as an initial guess, an interval MGUESS =
 %  [M1 M2] as an interval in which the function changes sign, or an array MGUESS
 %  = [M1 M2; PRES(M1) PRES(M2)] as an interval with the function values provided.
-%  The provided function values must have been calculated with SOLVER('crude')!
 %
-%  See also FZERO, SOLVER, MNUMADIABAT.
+%  See also FZERO, MNUMADIABAT.
 
 %  INITIALIZE
 % Information is plotted for trace > 1. Iteration results for trace > 2.
 trace = 1;
 global VERBOSE; if VERBOSE > 0, trace = trace + VERBOSE; end
-savesolver = solver;
-
-%  ASSIGN CRUDE SOLVER TOLERANCES
-% During iteration, use crude tolerances.
-solver = solverstruct('crude');
-% defaults: solver.writesolution = false;
-%	    solver.fullsolution = false; solver.partialsolution = true;
 
 % INITIALIZE, DEPENDING ON MGUESS
 if isscalar(mguess)
   % SEARCH AN INTERVAL
-  a(1) = mguess; fa(1) = presiduum(a(1),solver); fcount = 1;
+  a(1) = mguess; fa(1) = presiduum(a(1)); fcount = 1;
 
   % Now look, in which direction we have to search for pres =  0.
   if fa(1) > 0, fac = 0.5; else fac = 1.4; end
@@ -33,7 +24,7 @@ if isscalar(mguess)
   for i = 2:6
     old = i - 1;
     a(i) = a(old)*fac;
-    fa(i) = presiduum(a(i),solver);
+    fa(i) = presiduum(a(i));
     fcount = fcount + 1;
     if (fa(old) < 0) == (fa(i) > 0) || fa(i) == 0
       % found an interval.
@@ -58,7 +49,7 @@ if isscalar(mguess)
       b = input(['  Provide an interval [mflux mflux] or try\n' ...
 		 '  several points [mflux mflux mflux ...]: ']);
       lenb = size(b,2); fb = b;
-      for i = 1:lenb,  fb(i) = presiduum(b(i),solver);  end
+      for i = 1:lenb,  fb(i) = presiduum(b(i));  end
       % reuse old as figure handle; save a possible different current figure.
       old = get(0,'CurrentFigure');
       figure(fac);
@@ -75,8 +66,8 @@ if isscalar(mguess)
   b = a(2); a = a(1); fb = fa(2); fa = fa(1);
 elseif size(mguess) == [1 2]
   % GOT AN INTERVAL
-  a = mguess(1);  fa = presiduum(a,solver);
-  b = mguess(2);  fb = presiduum(b,solver);
+  a = mguess(1);  fa = presiduum(a);
+  b = mguess(2);  fb = presiduum(b);
   fcount = 2;
   if (fa > 0) ~= (fb > 0)
     if fa == 0
@@ -95,15 +86,20 @@ elseif size(mguess) == [2 2]
   % AN INTERVAL WITH FUNCTION VALUES
   a = mguess(1,1);  fa = mguess(2,1);
   b = mguess(1,2);  fb = mguess(2,2);
+  if trace > 1
+    % check function values
+    fanew = presiduum(a);  fbnew = presiduum(b);
+    if trace > 1
+      fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
+    end
+    if (fanew > 0) == (fbnew > 0), error('Wrong interval, damned!'); end
+    fcount = 2;
+  end
   fcount = 0;
 else
   error('Wrong size of mguess, [%d %d]. Must be scalar, [1 2] or [2 2].\n',...
 	size(mguess));
 end
-lowprecision = true;
-
-% if a == 0 or b == 0, the while-loop is run once, lowprecision set to false, and the
-% result re-calculated.
 
 % Use tolerance larger than computer epsilon, because toler below is computed
 % with respect to abs(b), not max(abs(b),1).
@@ -131,14 +127,15 @@ while fb ~= 0 && a ~= b
     m = 0.5*(c - b);
     toler = 2.0*tol*abs(b); %max(abs(b),1.0);
     if (abs(fb) < p1tol) || (abs(m) <= toler) % || (fb == 0.0)
-        if lowprecision
-	  if trace > 1
-	    fprintf(['p1calc - p1 = %g Pa, m = %g kg/m2s. We jumped over '...
-		     '100xp1tol.\n'], fb, b);
-	  end
-	else
-          break
+      if abs(fb) >= p1tol
+	% did not converge to the required function value tolerance
+	warning(['Convergence criterion, %.3g Pa, not satisfied. ',...
+		 'p1calc - p1 = %.3g Pa.\n'], p1tol,fb);
+	if trace > 1
+	  fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
 	end
+      end
+      break
     end
     if trace > 2
         fprintf('%5.0f   %13.6g %13.6g        %s\n',fcount, b, fb, procedure);
@@ -181,17 +178,7 @@ while fb ~= 0 && a ~= b
     elseif b > c, b = b - toler;
     else b = b + toler;
     end
-		% avoid an infinite loop, see abs(m) above
-    if lowprecision && ( abs(fb) < 100*p1tol || abs(m) <= toler )
-      % Continue with the demanded solver tolerance
-      solver = savesolver;
-      lowprecision = false;
-      if trace > 1
-	fprintf(['p1calc - p1 = %g Pa, m = %g kg/m2s. Switched to '...
-		 'required precision.\n'], fb, a);
-      end
-    end
-    fb = presiduum(b,solver);
+    fb = presiduum(b);
     fcount = fcount + 1;
 end % Main loop
 

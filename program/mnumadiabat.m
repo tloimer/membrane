@@ -35,7 +35,7 @@ ms.q2 = state2.q; % = 0
 ms = ms.writeflowsetups(T1,T2,s,ms);
 
 % Find an interval for m where the residual pressure, p1sol - p1, changes sign.
-solver = solverstruct('crude');
+solver = solverstruct(accuracy);
 presiduum = @(m) asym(m,state2,ms,solver) - p1;
 
 % findinterval.m uses m = 0 as one point, hence rather err towards large mass
@@ -48,14 +48,14 @@ end
 [minterval,pinterval] = findinterval(presiduum,mguess,p2-p1);
 
 % previously, used crude solver for findinterval(), then accurate solver
-solver = solverstruct('accurate');
+%solver = solverstruct('accurate');
 %presiduum = @(m) asym(m,state2,ms,solver) - p1;
 
 %m = fzero(presiduum,minterval);
 
-% findzero needs a different call to presiduum
-presiduum = @(m,solver) asym(m,state2,ms,solver) - p1;
-m = findzero(presiduum,[minterval; pinterval],(p1-p2)/1000,solver);
+% findzero needed a different call to presiduum
+%presiduum = @(m,solver) asym(m,state2,ms,solver) - p1;
+m = findzero(presiduum,[minterval; pinterval],(p1-p2)/1000);
 
 % Now write the solution
 ms.m = m;
