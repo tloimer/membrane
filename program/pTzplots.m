@@ -1,12 +1,30 @@
-function pTzplots(fl,name,ispgfplot)
-%PTZPLOTS   Plot p-z and T-z diagrams.
-%  PTZPLOTS(NAME,FLOWSTRUCT,ISPGFPLOT) plots a p-z diagram and a T-z diagram. If
-%  ISPGFPLOT is true, two pgfplot-files are created with the names
-%  pNAME.pgfplot and TNAME.pgfplot, respectively.
+function pTzplots(fl,name,ispgfplot,isqplot,vpos)
+%PTZPLOTS   Plot p-z, T-z and, optionally, q-z diagrams.
+%  PTZPLOTS(FLOWSTRUCT) Plot a p-z and a T-z diagramm.
+%  PTZPLOTS(FLOWSTRUCT,NAME,ISPGFPLOT,ISQPLOT,VPOS) plots a p-z, a T-z and,
+%  optionally, a q-z diagram. NAME, ISPGFPLOT, ISQPLOT and VPOS are all optional.
+%  If ISPGFPLOT is true, two pgfplot-files are created with the names
+%  pNAME.pgfplot and TNAME.pgfplot, respectively. With ISQPLOT being true, a q-z
+%  plot is created. VPOS gives the vertical position of the figure's bottom on
+%  the screen:
 
 %fl.info.T1, .p1, .p2, .substance, .membrane, .fmodel, .flsetup
 %fl.sol.T2, .T1, .len, .colors
 %fl.calc.psat1, .pK1, .n
+
+if nargin < 5
+  vpos = 535;
+  if nargin < 4
+    isqplot = false;
+    if nargin < 3
+      ispgfplot = false;
+      if nargin < 2
+	name = [];
+      end
+    end
+  end
+end
+
 
 % The number of line-parts.
 nflow = -fl.sol.len;
@@ -37,6 +55,7 @@ end
 % only used for the plot limits, immediately below
 Tflat = [fl.flow(1:end).T];
 pflat = [fl.flow(1:end).p];
+if isqplot, qflat = [fl.flow(1:end).q]; end
 
 % The temperature range
 margin = 2; step = 2;
@@ -50,6 +69,13 @@ pmin = floor( (min(pflat)-margin)/step ) * step;
 pmax = pmax / 1e5;
 pmin = pmin / 1e5;
 
+% q-range
+if isqplot
+  margin = 5; step = 10;
+  qmax = ceil( (max(qflat)+margin)/step ) * step;
+  qmin = floor( (min(qflat)-margin)/step ) * step;
+end
+
 % z-range
 step = 0.2; margin = 0.1;
 Tzmin = floor((-3*zscale/L-margin)/step) * step;
@@ -59,6 +85,8 @@ zmax = 1.1;
 %%%	THE PLOTS	%%%
 Tname = [name 'Tz'];
 pname = [name 'pz'];
+if isqplot, qname = [name 'qz']; end
+
 % pgfplots
 if ispgfplot
   % T-z diagram
@@ -94,7 +122,7 @@ if ispgfplot
 else
 % matlab-plots
   % T-z diagram
-  figure('Name',['T-z diagram:  ' Tname]);
+  figure('Name',['T-z diagram:  ' Tname],'OuterPosition',[100 vpos 562 504]);
   %plot(zflat,T,'k*');
   plot(zfront/L,fl.flow(nflow).T,'Color',fl.flow(nflow).color,...
 	'LineStyle','-','Marker','*');
@@ -106,7 +134,7 @@ else
 	'Marker','*','LineStyle','-');
   end
   % p-z diagram
-  figure('Name',['p-z diagram:  ' pname]);
+  figure('Name',['p-z diagram:  ' pname],'OuterPosition',[720 vpos 562 504]);
   plot(zfront/L,fl.flow(nflow).p/1e5,'Color',fl.flow(nflow).color,...
 	'LineStyle','-','Marker','*');
   xlim([pzmin zmax]);
@@ -118,4 +146,20 @@ else
     line(fl.flow(i).z/L,fl.flow(i).p/1e5,'Color',fl.flow(i).color,...
 	'Marker','*','LineStyle','-');
   end
+  % q-z diagram
+  if isqplot
+    figure('Name',['q-z diagram:  ' qname],'OuterPosition',[1340 vpos 562 504]);
+    plot(zfront/L,fl.flow(nflow).q,'Color',fl.flow(nflow).color,...
+	  'LineStyle','-','Marker','*');
+    xlim([Tzmin zmax]);
+    ylim([qmin qmax]);
+    xlabel('z/L');
+    ylabel('q [W/m2]');
+    % hold on; plot..; hold off ginge auch, ohne xlim, ylim setzen zu müssen
+    for i = nflow-1:-1:1
+      line(fl.flow(i).z/L,fl.flow(i).q,'Color',fl.flow(i).color,...
+	  'Marker','*','LineStyle','-');
+    end
+  end
+end
 end
