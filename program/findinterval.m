@@ -99,4 +99,16 @@ if VERBOSE > 0
   fprintf([upper(mfilename) ': Found an interval, %.3g - %.3g kg/m2s.\n'],...
 	  minterval(1), minterval(2));
   fprintf([upper(mfilename) ': %u function calls.\n'],fcount);
+
+  if VERBOSE > 2
+    % Plot pressure-residuum versus mass flux over the found mass flux interval
+    mm = [minterval(1):(minterval(2)-minterval(1))/11:minterval(2) minterval(2)];
+    pp = mm;
+    for i = 1:length(mm)
+      pp(i) = shoot(mm(i));
+    end
+    fprintf('%12.6g kg/m2s,  %12.6g Pa\n',[mm; pp]);
+    figure('Name',upper(mfilename));
+    plot(mm,pp,'k*');
+  end
 end
