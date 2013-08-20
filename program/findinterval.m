@@ -19,7 +19,7 @@ while overshoot
     overshoot = false;
   catch err
     % this happens most probably, when the temperature is overshoot (by too high
-    % mass flux)
+    % mass flux). overshoot remains true
     if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
       warning('Overshoot in interval search');
       mnow = mnow/2;

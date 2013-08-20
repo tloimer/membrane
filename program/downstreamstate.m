@@ -105,6 +105,7 @@ function state = statestruct %-------------------------------------- statestruct
 %    STATE.p        Pressure [Pa]
 %    STATE.a        Vapor volume fraction
 %    STATE.q        Heat flux [W/m2]
+%    STATE.vapliqequilibrium  True, if vapor or liquid flow terminated prematurely
 %    STATE.doth     Flux of enthalpy [W/m2]
 %    STATE.phase    Phase letter: 'l', 'g' or '2'.
 %    STATE.hvapK    Enthaply of vaporization at curved interface
@@ -121,7 +122,7 @@ function state = statestruct %-------------------------------------- statestruct
 %           DOWNSTREAMSTATE>ATWOPHASE.
 
 state = ...
-  struct('T',[],'p',[],'a',[],'q',[],'doth',[],'phase',[],'hvapK',[],'pk',[],...
-    'pliq',[],'dpk',[],'dpcap',[],'avapor',@avapor,'aliquid',@aliquid,...
-    'atwophase',@atwophase);
+  struct('T',[],'p',[],'a',[],'q',[],'vapliqequilibrium',false,'doth',[],...
+    'phase',[],'hvapK',[],'pk',[],'pliq',[],'dpk',[],'dpcap',[],...
+    'avapor',@avapor,'aliquid',@aliquid,'atwophase',@atwophase);
 end %----------------------------------------------------------- end statestruct

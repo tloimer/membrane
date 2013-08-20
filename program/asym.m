@@ -163,46 +163,70 @@ q2 = state2.q;
 
 switch state2.phase
   case 'g' % gaseous
-    if p2 < pk1 % mustbecomegaseous
-      % nointerface
-      state1 = state2;
-    elseif p2 > pk1 % mustbecomeliquid
-      interface_liqvap;
-    else % p2 == pk1, gaseous, liquid or two-phase possible
-      % pk1 and pcap1 are calculated again - this does not happen too often, anyway
+    % First deal with the signal p2 == pk1 (within computer accuracy). This
+    % signal is only triggered within a membrane layer.
+    if state2.vapliqequilibrium % p2 == pk1, to within computer accuracy
       [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
-      if canbecomevapor
-	% nointerface
-	state1 = state2;
-	if canbecomeliquid
-	  warning('Double solution possible. Here, vapor remains vapor.');
-	end
-      elseif canbecomeliquid
+      if canbecomeliquid
 	interface_liqvap;
       else
 	interface_2phvap;
       end
+    else
+      % the logic based on numerically correct comparisons follows
+      if p2 < pk1 % mustbecomegaseous
+	% nointerface
+	state1 = state2;
+      elseif p2 > pk1 % mustbecomeliquid
+	interface_liqvap;
+      else % p2 == pk1, gaseous, liquid or two-phase possible
+	% pk1 and pcap1 are calculated again - this does not happen too often, anyway
+	[canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
+	if canbecomevapor
+	  % nointerface
+	  state1 = state2;
+	  if canbecomeliquid
+	    warning('Double solution possible. Here, vapor remains vapor.');
+	  end
+	elseif canbecomeliquid
+	  interface_liqvap;
+	else
+	  interface_2phvap;
+	end
+      end
     end
 
   case 'l' % liquid
-    if p2 > pk1 - pcap1 % mustbecomeliquid
-      % nointerface
-      state1 = state2;
-    elseif p2 < pk1 - pcap1 % mustbecomegaseous
-      interface_vapliq;
-    else % gaseous, liquid or two-phase possible
-      % pk1 and pcap1 are calculated again - this does not happen too often, anyway
+    % Deal with the signal p2 == pk1 -pcap1. This may be true only within
+    % computer accuraca, and it is raises only within a memrane layer.
+    if state2.vapliqequilibrium % p2 == pk1 - pcap1, to within computer accuracy
       [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
-      if canbecomeliquid
-	% nointerface
-        state1 = state2;
-	if canbecomevapor
-	  warning('Double solution possible. Here, liquid remains liquid.');
-	end
-      elseif canbecomevapor
+      if canbecomevapor
 	interface_vapliq;
       else
 	interface_2phliq;
+      end
+    else
+      % Signal exception is treated, continue with correct logic
+      if p2 > pk1 - pcap1 % mustbecomeliquid
+	% nointerface
+	state1 = state2;
+      elseif p2 < pk1 - pcap1 % mustbecomegaseous
+	interface_vapliq;
+      else % gaseous, liquid or two-phase possible
+	% pk1 and pcap1 are calculated again - this does not happen too often, anyway
+	[canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
+	if canbecomeliquid
+	  % nointerface
+	  state1 = state2;
+	  if canbecomevapor
+	    warning('Double solution possible. Here, liquid remains liquid.');
+	  end
+	elseif canbecomevapor
+	  interface_vapliq;
+	else
+	  interface_2phliq;
+	end
       end
     end
 
@@ -349,16 +373,18 @@ function [state,z,flow] = integrate(state,z,flow,matrix,flsetup,m,s,solver)
 % about the state-struct.
 switch state.phase
   case 'g' % gaseous
-    [T,p,q,z,flow] = integratevapor(m, state.T, state.p, state.q, flow, ...
-				    matrix,flsetup,s,solver);
+    [T,p,q,z,flow,state.vapliqequilibrium] = integratevapor(...
+	m, state.T, state.p, state.q, state.vapliqequilibrium, flow, matrix,flsetup,s,solver);
+    % Above, state.vapliqequilibrium is constructed and, possibly, set; Another
+    % possibility is:   if z > 0, state.vapliqequilibrium = true; end
     % Update the state.
     % Another possibility is to construct a new state, state=state.avapor(T,p,q)
     state.T = T;
     state.p = p;
     state.q = q;
   case 'l' % liquid
-    [T,p,q,z,flow] = integrateliquid(m, state.T, state.p, state.q, z, flow, ...
-				    matrix,flsetup,s,solver);
+    [T,p,q,z,flow,state.vapliqequilibrium] = integrateliquid(...
+	m, state.T, state.p, state.q, z, state.vapliqequilibrium, flow, matrix,flsetup,s,solver);
     % Update the state.
     state.T = T;
     state.p = p;
@@ -404,7 +430,8 @@ end
 end %--------------------------------------------------------- end integratefree
 
 %---------------------------------------------------------------- integratevapor
-function [T9,p9,q9,z9,flow] = integratevapor(m,T2,p2,q2,flow,mem,fs,s,solver)
+function [T9,p9,q9,z9,flow,vapliqequilibrium] = integratevapor(m,T2,p2,q2,...
+					vapliqequilibrium,flow,mem,fs,s,solver)
 %INTEGRATEVAPOR Vapor flow within the membrane - a copy of FLOW12>FLOW92
 
 % TODO: z is not referred to! It is assumed z = mem.L.
@@ -504,6 +531,14 @@ last = size(sol92.x,2);
 %  [T9 p9 q9 z9] = mkdimensional(sol92.ye(1,end),sol92.ye(2,end),...
 %    sol92.ye(3,end),sol92.xe(end));
 
+% but necessary: RAISE A SIGNAL IF INTEGRATION TERMINATED PREMATURELY
+% This means, p9 == pK, but because of mkdimensional() within computer accuracy
+% In contrast to what the documentation makes believe, the field .ie is always
+% present, but empty when no termination event occured.
+if ~isempty(sol92.ie) % integration terminated by event function term92w
+  vapliqequilibrium = true;
+end
+
 %  WRITE SOLUTION
 % if wanted, write the solution
 if solver.writesolution
@@ -524,7 +559,8 @@ end
 end %-------------------------------------------------------- end integratevapor
 
 %--------------------------------------------------------------- integrateliquid
-function [T5,p5,q5,z5,flow] = integrateliquid(m,T6,p6,q6,z6,flow,mem,fs,s,solver)
+function [T5,p5,q5,z5,flow,vapliqequilibrium] = integrateliquid(m,T6,p6,q6,z6,...
+					vapliqequilibrium,flow,mem,fs,s,solver)
 %INTEGRATELIQUID Liquid flow within the membrane - a copy of FLOW12>FLOW56.
 % Termination condition: p = pk(T) - pcap, valid: p > pk(T) - pcap,
 
@@ -616,6 +652,11 @@ end
 last = size(sol56.x,2);
 T5 = mkTdim(sol56.y(1,last));  p5 = mkpdim(sol56.y(2,last));
 q5 = calcq(T5,p5); z5 = sol56.x(last)*z6; % z5 = 0;
+
+% RAISE A SIGNAL IF INTEGRATION TERMINATED PREMATURELY, see integratevapor
+if ~isempty(sol56.ie) % integration terminated by event function term56w
+  vapliqequilibrium = true;
+end
 
 %  WRITE SOLUTION
 % if wanted, write the solution
