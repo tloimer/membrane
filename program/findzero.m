@@ -37,7 +37,7 @@ if isscalar(mguess)
   % Plot search, if no interval found
   if size(a,2) ~= 2
     % No interval found.
-    fprintf('MNUM: No interval found! mguess = %g\n',mguess);
+    fprintf('%s: No interval found! mguess = %g\n', mfilename,mguess);
     fprintf('  Mass flow [kg/m2s]: '); disp(a);
     fprintf('  p_res [Pa]:  '); disp(fa);
     % reuse fac as figure handle
@@ -72,11 +72,11 @@ elseif size(mguess) == [1 2]
   if (fa > 0) ~= (fb > 0)
     if fa == 0
       b = a;
-      if trace > 1, fprintf('Hit a zero!\n'); end
+      if trace > 1, fprintf('%s: Hit a zero!\n',mfilename); end
       return
     end
     if fb == 0
-      if trace > 1, fprintf('Found an exact zero!\n'); end
+      if trace > 1, fprintf('%s: Found an exact zero!\n',mfilename); end
       return
     end
     error(['Interval endpoints do not differ in sign.\n mguess = '...
@@ -86,12 +86,11 @@ elseif size(mguess) == [2 2]
   % AN INTERVAL WITH FUNCTION VALUES
   a = mguess(1,1);  fa = mguess(2,1);
   b = mguess(1,2);  fb = mguess(2,2);
-  if trace > 1
+  if trace > 3
     % check function values
     fanew = presiduum(a);  fbnew = presiduum(b);
-    if trace > 1
-      fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
-    end
+    fprintf('%s: Check given interval boundaries.\n', mfilename);
+    fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
     if (fanew > 0) == (fbnew > 0), error('Wrong interval, damned!'); end
     fcount = 2;
   end

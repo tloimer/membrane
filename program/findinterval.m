@@ -21,7 +21,9 @@ while overshoot
     % this happens most probably, when the temperature is overshoot (by too high
     % mass flux). overshoot remains true
     if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
-      warning('Overshoot in interval search');
+      if VERBOSE > 0
+	fprintf('%s: Reduce mass flux. Probably too large initial guess.\n', mfilename);
+      end
       mnow = mnow/2;
     else
       rethrow(err);
@@ -56,7 +58,9 @@ while pnow < 0
     fcount = fcount + 1;
   catch err
     if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
-      warning('Reduce added distance');
+      if VERBOSE > 0
+	fprintf('%s: Too large mass flux. Reduce added distance.\n', mfilename);
+      end
       mnow = mnow - madd/2;
       pnow = shoot(mnow);
       fcount = fcount + 2;
@@ -64,7 +68,7 @@ while pnow < 0
       rethrow(err);
     end
   end
-  if fcount > 50, error([upper(mfilename) ': More than 50 iterations!']); end
+  if fcount > 50, error('More than 50 iterations!'); end
 end
 
 minterval = [mold mnow];
@@ -76,8 +80,7 @@ pinterval = [pold pnow];
 % pres = 0; presumably, pres = shoot(m) is concave
 if mold == 0 % if ~mold
   if VERBOSE > 0
-    fprintf([upper(mfilename) ': Looking for m > 0, after %d iterations.\n'],...
-	    fcount);
+    fprintf('%s: Looking for m > 0, after %d iterations.\n', mfilename,fcount);
   end
   % pnow is used as plow, henceforth
   while pnow > 0
@@ -89,16 +92,15 @@ if mold == 0 % if ~mold
       pnow = shoot(mnow);
     end
     fcount = fcount + 1;
-    if fcount > 50, error([upper(mfilename) ': More than 50 iterations!']); end
+    if fcount > 50, error('More than 50 iterations!'); end
   end
   minterval(1) = mnow;
   pinterval(1) = pnow;
 end
 
 if VERBOSE > 0
-  fprintf([upper(mfilename) ': Found an interval, %.3g - %.3g kg/m2s.\n'],...
-	  minterval(1), minterval(2));
-  fprintf([upper(mfilename) ': %u function calls.\n'],fcount);
+  fprintf('%s: Found an interval, %.3g - %.3g kg/m2s.\n', mfilename,minterval);
+  fprintf('%s: %u function calls.\n', mfilename,fcount);
 
   if VERBOSE > 2
     % Plot pressure-residuum versus mass flux over the found mass flux interval
