@@ -213,9 +213,10 @@ function printsolution(ms) %-------------------------------------- printsolution
 
 % Print the substance and upstream condition
 psat = ms.substance.ps(ms.T1);
-fprintf(['%s, T1 = %.2f K, p1 = %.3g kPa (psat = %.3g kPa, pred = %.2f). '...
-	 'm = %.3g kg/m2s.\n'],...
-	ms.substance.name, ms.T1, ms.p1in/1e3, psat/1e3, ms.p1in/psat, ms.m);
+fprintf(['Fluid: %s, mass flux %.4g g/m2s, p1 - p2 = %.3g kPa.\n'...
+	 'Upstream state: T1 = %.2f K, p1 = %.3g kPa (psat = %.3g kPa, '...
+	 'pred = %.2f).\n\n'], ms.substance.name, ms.m*1e3,...
+	 (ms.p1in-ms.p2)/1e3, ms.T1, ms.p1in/1e3, psat/1e3, ms.p1in/psat);
 % Print information on the iteration accuracy;
 % Get the calculated solution, not the provided values.
 [~,Tup,pup] = upstreamflow(ms.membrane(1));
@@ -239,7 +240,7 @@ for i = 1:nmembranes
   if isup
     printstartstate(ms.membrane(i).flow(1));
   end
-  fprintf('______ Membrane %d____________________________________________________________\n',i);
+  fprintf('______ Membrane %d_______________________________________________________\n',i);
   nlayers = length(ms.membrane(i).layer);
   for j = 1:nlayers
     layer = ms.membrane(i).layer(j);
@@ -249,14 +250,14 @@ for i = 1:nmembranes
 	    layer.matrix.L*1e3, layer.matrix.km, layer.theta);
     printstartstate(layer.flow(1));
     if j < nlayers
-      fprintf('    -----------------------------------------------------------------------\n');
+      fprintf('    --------------------------------------------------------------------\n');
     end
   end
-  fprintf('_____________________________________________________________________________\n\n');
+  fprintf('________________________________________________________________________\n\n');
 end
 psat = ms.substance.ps(ms.T2); % Overwrite psat
-fprintf('Downstream state: T2 = %.2f K, p2 = %.3g kPa (psat = %.3g kPa, pred = %.2f)\n',...
-	ms.T2, ms.p2/1e3, psat/1e3, ms.p2/psat);
+fprintf(['Downstream state: T2 = %.2f K, p2 = %.3g kPa (psat = %.3g kPa, '...
+	 'pred = %.2f).\n'], ms.T2, ms.p2/1e3, psat/1e3, ms.p2/psat);
 
 %--- nested functions ------------------------------------- nested functions ---
 
