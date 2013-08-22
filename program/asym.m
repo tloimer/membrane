@@ -238,6 +238,12 @@ switch state2.phase
     else % state2.pk == pk1 % two-phase stays two-phase;
       % nointerface
       state1 = state2;
+      % if, during iteration, there is two-phase flow upstream of the membrane
+      % (which is possible for theta = 90), do not leave state.p empty - it will
+      % be passed to presiduum, eventually, and findzero fails.
+      % For theta = 90, p = pk is even correct.
+      % TODO: what happens if there is two-phase flow between membranes in a stack?
+      state1.p = state2.pk;
       % at the end of the two-phase integrator, all auxiliary two-phase
       % variables (dpk, dpcap) must also be set. Therefore, these variables must
       % also be set at the end of free space (i.e., at the downstream front).
@@ -337,6 +343,9 @@ function interface_2phliq %-----------------------------------------------------
   % (dpk, dpcap, ...), so they need not calculated twice.
   doth12 = q2;
   state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
+  % set a (dummy) pressure, if the liquid integrator just stops at the upstream
+  % membrane front, and theta = 90; Then, this pressure is even correct.
+  % state1.p = pk1;
 end %---------------------------------------------------------------------------
 
 function interface_2phvap %-----------------------------------------------------
@@ -344,6 +353,9 @@ function interface_2phvap %-----------------------------------------------------
   % the temperature and flux of enthalpy.
   doth12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
   state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
+  % set a (dummy) pressure, if the vapor integrator just stops at the upstream
+  % membrane front, and theta = 90; Then, this pressure is even correct.
+  % state1.p = pk1;
 end %---------------------------------------------------------------------------
 
 function interface_liq2ph %-----------------------------------------------------
