@@ -38,7 +38,7 @@ if isscalar(mguess)
   if size(a,2) ~= 2
     % No interval found.
     fprintf('%s: No interval found! mguess = %g\n', mfilename,mguess);
-    fprintf('  Mass flow [kg/m2s]: '); disp(a);
+    fprintf('  Mass flow [g/m2s]: '); disp(a*1e3);
     fprintf('  p_res [Pa]:  '); disp(fa);
     % reuse fac as figure handle
     fac = figure('Name','Search for Interval','NumberTitle','off');
@@ -80,7 +80,7 @@ elseif size(mguess) == [1 2]
       return
     end
     error(['Interval endpoints do not differ in sign.\n mguess = '...
-	   '[%.4g %.4g] kg/m2s, p1calc - p1 = [%.4g %.4g] Pa.\n'], a,b,fa,fb);
+	   '[%.4g %.4g] g/m2s, p1calc - p1 = [%.4g %.4g] Pa.\n'], a*1e3,b*1e3,fa,fb);
   end
 elseif size(mguess) == [2 2]
   % AN INTERVAL WITH FUNCTION VALUES
@@ -90,7 +90,7 @@ elseif size(mguess) == [2 2]
     % check function values
     fanew = presiduum(a);  fbnew = presiduum(b);
     fprintf('%s: Check given interval boundaries.\n', mfilename);
-    fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
+    fprintf('  m = %13.9g g/m2s,  p1calc - p1 = %9.6g Pa.\n', [a*1e3 b*1e3; fa fb]);
     if (fanew > 0) == (fbnew > 0), error('Wrong interval, damned!'); end
     fcount = 2;
   end
@@ -131,7 +131,7 @@ while fb ~= 0 && a ~= b
 	warning(['Convergence criterion, %.3g Pa, not satisfied. ',...
 		 'p1calc - p1 = %.3g Pa.\n'], p1tol,fb);
 	if trace > 1
-	  fprintf('  m = %13.9g kg/m2s,  p1calc - p1 = %9.6g Pa.\n', [a b; fa fb]);
+	  fprintf('  m = %13.9g g/m2s,  p1calc - p1 = %9.6g Pa.\n', [a*1e3 b*1e3; fa fb]);
 	end
       end
       break

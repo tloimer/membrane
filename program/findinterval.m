@@ -99,7 +99,7 @@ if mold == 0 % if ~mold
 end
 
 if VERBOSE > 0
-  fprintf('%s: Found an interval, %.3g - %.3g kg/m2s.\n', mfilename,minterval);
+  fprintf('%s: Found an interval, %.3g - %.3g g/m2s.\n', mfilename,minterval*1e3);
   fprintf('%s: %u function calls.\n', mfilename,fcount);
 
   if VERBOSE > 2
@@ -109,7 +109,7 @@ if VERBOSE > 0
     for i = 1:length(mm)
       pp(i) = shoot(mm(i));
     end
-    fprintf('%12.6g kg/m2s,  %12.6g Pa\n',[mm; pp]);
+    fprintf('%12.6g g/m2s,  %12.6g Pa\n',[mm*1e3; pp]);
     figure('Name',upper(mfilename));
     plot(mm,pp,'k*');
   end
