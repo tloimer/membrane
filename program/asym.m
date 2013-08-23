@@ -814,6 +814,8 @@ Tscale =  q3/(m*cp3); % qscale = q3;
 if abs(Tscale) < solver.rtol
   %  THE END
   q1 = q3;
+  T1 = T3;
+  zscale = [];
   return
 end
 k3 = s.kg(T3);
