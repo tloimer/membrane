@@ -263,7 +263,9 @@ fprintf(['Downstream state: T2 = %.2f K, p2 = %.3g kPa (psat = %.3g kPa, '...
 
 function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane) %----------
   isfilm = false;
-  if isstruct(amembrane.flow) && ~isempty(amembrane.flow(end).T)
+  % isstruct(amembrane.flow) failed, because .flow may be a 0x0 struct;
+  % But exist(0x0 struct) is false.
+  if exist('amembrane.flow') && ~isempty(amembrane.flow(end).T)
     isup = true;
     Tup = amembrane.flow(end).T(end);
     % flow.p is silently assumed to also exist
