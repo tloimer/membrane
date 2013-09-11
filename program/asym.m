@@ -198,7 +198,7 @@ switch state2.phase
 
   case 'l' % liquid
     % Deal with the signal p2 == pk1 -pcap1. This may be true only within
-    % computer accuraca, and it is raises only within a memrane layer.
+    % computer accuracy, and it is raised only within a membrane layer.
     if state2.vapliqequilibrium % p2 == pk1 - pcap1, to within computer accuracy
       [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion;
       if canbecomevapor
@@ -810,12 +810,19 @@ p1 = p3;
 cp3 = s.cpg(T3,p3);
 Tscale =  q3/(m*cp3); % qscale = q3;
 
-% DONE ALREADY?
+%  SKIP CALCULATION OF THE THERMAL BOUNDARY LAYER
+% solver.writesolution is used as a signal that the final solution is computed
+% ( Could also do: if abs(...) && ~solver.writesolution - to skip computation
+%   only during iteration. )
 if abs(Tscale) < solver.rtol
   %  THE END
-  q1 = q3;
+  q1 = 0;
   T1 = T3;
   zscale = [];
+  if solver.writesolution
+    warning(['Did not calculate the thermal boundary layer, set q to zero '...
+	     'instead of q = %.3g W/m2K'], q3);
+  end
   return
 end
 k3 = s.kg(T3);
@@ -887,11 +894,13 @@ function [T4,p4,q4,z4,flow] = ifreeliquid(m,T5,p5,q5,flow,s,solver)% ifreeliquid
 % Because m*cp*(T4-T5)/q5, with q5 approx hvap, dqw/dzw is small.
 % Initial conditions: At z5 = 0: Tw5 = 0, qw5 = 1, to be integrated
 % approximately to zw4 = -1.
-% Instead of zw, i could use T as independent variable and integrate between T5
-% and T4. Advantage: no termination condition necessary and i do not need to
-% guess a large enough range of z.
+% Instead of zw, use T as independent variable and integrate between T5 and T4.
+% Advantage: no termination condition necessary and no need to guess a large
+% enough range of z.
 %   dq/dT = -m cp,   dqw/dTw = -cp m*(T4-T5)/q5
 %   dz/dT = -k/q,  dzw/dTw = -k/k5 1/qw.
+% TODO, Disadvantage: Only valid for a vapor upstream of the membrane, to
+% generalize use termination conditions q = 0 and T < Ts(p).
 
 %  ASSIGN LAST POINT
 % we already know part of the solution; needed for characteristic scales.
