@@ -68,17 +68,17 @@ for i = nmembranes:-1:1
   % TODO: here, rewrite by checking for q == 0
   if i > 1 || solver.fullsolution
     flow = zeroflowstruct;
-    % this might either be a liquid film, or the gaseous temperature boundary layer
+    % this might either be a liquid film, the gaseous temperature boundary
+    % layer, or two-phase flow;
     [state,z,flow] = integratefree(state,z,flow,m,s,solver);
-    % THIS ONLY WORKS FOR GASEOUS PHASE UPSTREAM
-    % How could the reaching of the end state more generally be tested?
-    if state.phase ~= 'g'
+    while state.q ~= 0
       state = front(state,freesetup,m,s);
-      % THIS MUST BE THE THERMAL BOUNDARY LAYER
       [state,z,flow] = integratefree(state,z,flow,m,s,solver);
     end
-    % the last call to integratefree must have called ifreevapor and return zscale.
-    ms.membrane(i).zscale = z;
+    % if the last call to integratefree called ifreevapor, zscale is returned
+    if state.phase == 'g'
+      ms.membrane(i).zscale = z;
+    end
     ms.membrane(i).flow = flow;
   end
 
@@ -450,8 +450,15 @@ switch state.phase
     % allow   q1 >= qmin - minute correction   (instead of q1 >= qmin.)
     dotx = state.doth/(m*state.hvapK);
     % 1 - dotx < 0.001 (dotx > 0.999) should have been caught in front, case '2'
-    % TODO: write ifreetwophase - just pass forward variables;
     warning('Two-phase flow in free space, 1 - dotx = %.3g.', 1 - dotx);
+    state.q = 0; % This is the signal for the upstream front code to terminate.
+    % state.p was set in the front, state.p = state.pk.
+    % This should be:
+    % f = fmodel('plug'); a = f.a(dotx,s.v(state.T,..),1/s.rho(...))
+    % homogeneous flow model: inverse function to f.xdot
+    a = dotx./(1 + dotx.*(1-1./(s.rho(state.T).*s.v(state.T,state.p))));
+    flow = writeflow(flow,{'z','T','p','a','q','color'},...
+		     {0,state.T,state.p,a,state.q,'g'});
   otherwise
     error('Can not integrate phase %c in free space.', state.phase);
 end
