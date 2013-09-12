@@ -119,11 +119,11 @@ function state1 = front(state2,fs,m,s) %---------------------------------- front
 %    STATE2.a,
 %    STATE2.q.
 %  If STATE2.phase is '2', STATE2 must in addition contain
-%    STATE2.doth,
+%    STATE2.q_mh,
 %    STATE2.hvapK,
 %    STATE2.pk,
 %    STATE2.pliq.
-%  Note, that STATE2.a is not needed, STATE2.doth and STATE2.hvapk is used
+%  Note, that STATE2.a is not needed, STATE2.q_mh and STATE2.hvapk is used
 %  instead.
 %
 %Output
@@ -136,7 +136,7 @@ function state1 = front(state2,fs,m,s) %---------------------------------- front
 %    STATE1.a,
 %    STATE1.q.
 %  If STATE1.phase is '2', STATE1 contains in addition
-%    STATE1.doth,
+%    STATE1.q_mh,
 %    STATE1.hvapK,
 %    STATE1.pk,
 %    STATE1.dpk,
@@ -239,15 +239,15 @@ switch state2.phase
     else % state2.pk == pk1
       % The two-phase heatfluxcriterion
       [qmin,qmax,hvapK1,dpk1,dpcap1] = fs.qminqmax(m,T2);
-      % qvapor would be state2.doth - m*hvapK1, because qvap + m*hvapK = doth
-      % similarly: qliq = state2.doth ( hvapK1 == state2.hvapK )
+      % qvapor would be state2.q_mh - m*hvapK1, because qvap + m*hvapK = q_mh
+      % similarly: qliq = state2.q_mh ( hvapK1 == state2.hvapK )
       % Allow a tad negative q1 for vapor flow in free space. The negative q1
       % corresponds to 1-dotx < 0.001. See also case '2' in integratefree below
-      % dotx = state.doth/(m*state.hvapK);
-      % doth = q + m*dotx*hvapK, must be smaller or equal to m*hvapK
-      if state2.doth - m*state2.hvapK >= qmin || state2.doth/(m*state2.hvapK) > 0.999
+      % dotx = state.q_mh/(m*state.hvapK);
+      % q_mh = q + m*dotx*hvapK, must be smaller or equal to m*hvapK
+      if state2.q_mh - m*state2.hvapK >= qmin || state2.q_mh/(m*state2.hvapK) > 0.999
 	interface_vap2ph;
-      elseif state2.doth <= qmax
+      elseif state2.q_mh <= qmax
 	interface_liq2ph;
       else % two-phase flow
 	% nointerface
@@ -287,7 +287,7 @@ function [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion
 end %---------------------------------------------------------------------------
 
 % Convention: pcap = p_vapor - p_liquid.
-% heat balance: doth = q + m h = const.
+% heat balance: q_mh = q + m h = const.
 
 function interface_liqvap %-----------------------------------------------------
   %
@@ -354,8 +354,8 @@ end %---------------------------------------------------------------------------
 function interface_2phliq %-----------------------------------------------------
   % Solve for q1 and a1 in the integrator, not here. Also, pass a few variables
   % (dpk, dpcap, ...), so they need not calculated twice.
-  doth12 = q2;
-  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
+  q_mh12 = q2;
+  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,dpk1,dpcap1);
   % set a (dummy) pressure, if the liquid integrator just stops at the upstream
   % membrane front, and theta = 90; Then, this pressure is even correct.
   % state1.p = pk1;
@@ -364,8 +364,8 @@ end %---------------------------------------------------------------------------
 function interface_2phvap %-----------------------------------------------------
   % Solve for q1 and a1 in the integrator. Two-phase flow is fully determined by
   % the temperature and flux of enthalpy.
-  doth12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
-  state1 = state2.atwophase(T2,doth12,hvapK1,pk1,dpk1,dpcap1);
+  q_mh12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
+  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,dpk1,dpcap1);
   % set a (dummy) pressure, if the vapor integrator just stops at the upstream
   % membrane front, and theta = 90; Then, this pressure is even correct.
   % state1.p = pk1;
@@ -376,7 +376,7 @@ function interface_liq2ph %-----------------------------------------------------
   % of the 2ph-region might border to the liquid in part1. liq-liq, so, no
   % pressure difference
   p1 = state2.pliq;
-  q1 = state2.doth;
+  q1 = state2.q_mh;
   state1 = state2.aliquid(T2,p1,q1);
 end %---------------------------------------------------------------------------
 
@@ -384,7 +384,7 @@ function interface_vap2ph %-----------------------------------------------------
   % in general, here p1 = p2vap; for reason, see interface_liq2ph.
   % For memfree: pk2 = p2, pcap2 = 0, hvapk2 = s.hvap(T2).
   p1 = state2.pk;
-  q1 = state2.doth - m*state2.hvapK;
+  q1 = state2.q_mh - m*state2.hvapK;
   state1 = state2.avapor(T2,p1,q1);
 end %---------------------------------------------------------------------------
 
@@ -415,10 +415,10 @@ switch state.phase
     state.p = p;
     state.q = q;
   case '2' % two-phase
-    [T,doth,hvapK,pk,pliq,z,flow] = integratetwophase(m,state.T,state.doth, ...
+    [T,q_mh,hvapK,pk,pliq,z,flow] = integratetwophase(m,state.T,state.q_mh, ...
      state.hvapK,state.pk,state.dpk,state.dpcap,z,flow,matrix,flsetup,solver);
     state.T = T;
-    state.doth = doth;
+    state.q_mh = q_mh;
     state.hvapK = hvapK;
     state.pk = pk;
     state.pliq = pliq;
@@ -448,7 +448,7 @@ switch state.phase
   case '2' % two-phase
     % two-phase in front - occured, as long as the heatfluxcriterion did not
     % allow   q1 >= qmin - minute correction   (instead of q1 >= qmin.)
-    dotx = state.doth/(m*state.hvapK);
+    dotx = state.q_mh/(m*state.hvapK);
     % 1 - dotx < 0.001 (dotx > 0.999) should have been caught in front, case '2'
     warning('Two-phase flow in free space, 1 - dotx = %.3g.', 1 - dotx);
     state.q = 0; % This is the signal for the upstream front code to terminate.
@@ -712,21 +712,21 @@ end
 end %------------------------------------------------------- end integrateliquid
 
 %------------------------------------------------------------- integratetwophase
-function [T7,doth7,hvapK7,pk7,pliq7,z7,flow] = integratetwophase(m,T8,doth8,...
+function [T7,q_mh7,hvapK7,pk7,pliq7,z7,flow] = integratetwophase(m,T8,q_mh8,...
 				hvapK8,pk8,dpk8,dpcap8,z8,flow,mem,fs,solver)
 %INTEGRATETWOPHASE Two-phase flow - copy of FLOW12>FRONT89 and FLOW12>FLOW78.
 
 % The part below is from FLOW12>FRONT89
 
 % Solve
-%   (1) xdot9*hvapK9 + q8/m = doth8/m,
+%   (1) xdot9*hvapK9 + q8/m = q_mh8/m,
 %   (2) q8 = -k2ph*dT/dz.
 % With dp/dz = -m*nu/kappa, dp/dz = dp2ph/dz = dp2ph/dT*dT/dz + dp2ph/da*da/dz.
 %  UNDER THE ASSUMPTION  da/dz = 0 (somewhat arbitrarily, i believe)
 % follows q/m = k2ph*nu2ph/(kappa*dp2ph/dT)
 % Remark: Eq. (1) above sets the enthalpy of the liquid at T8 and pliq8 to zero.
 % Eq. (1) follows from m*h + q = const.
-sol89 = @(a) doth8/m - fs.xdot(T8,pk8,a)*hvapK8 ...
+sol89 = @(a) q_mh8/m - fs.xdot(T8,pk8,a)*hvapK8 ...
   - fs.k2ph(T8,a)*fs.nu2ph(T8,pk8,a)/((dpk8-(1-a)*dpcap8)*mem.kappa);
 a8 = fzero(sol89,[0 1],optimset('TolX',solver.tola));
 dp2ph8 = dpk8 - (1-a8)*dpcap8;
@@ -737,7 +737,7 @@ dp2ph8 = dpk8 - (1-a8)*dpcap8;
 % the enthalpy of the vapor phase at T2, pk(T2). Hence,
 % m*h = m(hgk - (1-xdot)hvapK). (Compare to above, m*h = m*xdot*hvapK.)
 % Solve
-%   (1) m(hgK - (1-xdot)hvapK) + q = m*hgK8 + doth8 - m*hvapK8
+%   (1) m(hgK - (1-xdot)hvapK) + q = m*hgK8 + q_mh8 - m*hvapK8
 %   (2) q = -k dT/dz
 %   (3) dp/dz = -m nu/kappa = dp2phdT*dT/dz + dp2phda*da/dz.
 % HOWEVER, CHECK THIS OUT - TODO!
@@ -751,7 +751,7 @@ pscale = m*z8*nu8/mem.kappa; % zscale = z8;
 Tscale = pscale/dp2ph8;
 mkTdim = @(Tw) Tscale.*Tw + T8;
 coeff1 = -dp2ph8/nu8;
-coeff2 = fs.hgK(T8) + doth8/m - hvapK8;
+coeff2 = fs.hgK(T8) + q_mh8/m - hvapK8;
 step78 = -min(solver.odemaxstep(pscale,solver.maxpperstep), ...
 	      solver.odemaxstep(Tscale,solver.maxTperstep));
 
@@ -786,7 +786,7 @@ end
 [pk7, dpk7, hvapK7, dpcap7, pcap7] = fs.hvapK(T7);
 % This is repeated in flsetup.q2ph; Here, though, hvapK is also needed.
 q7 = m*fs.nu2ph(T7,pk7,a7)*fs.k2ph(T7,a7)/((dpk7-(1-a7)*dpcap7)*mem.kappa);
-doth7 = q7 + m*fs.xdot(T7,pk7,a7)*hvapK7;
+q_mh7 = q7 + m*fs.xdot(T7,pk7,a7)*hvapK7;
 pliq7 = pk7 - pcap7;
 
 %  WRITE SOLUTION

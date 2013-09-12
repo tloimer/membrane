@@ -44,10 +44,10 @@ switch a2
   otherwise
     % p2 == s.ps(T2);
     homogeneous = fmodel('plug');
-    % doth is relative to the enthalpy of the liquid at T2!
+    % q_mh is relative to the enthalpy of the liquid at T2!
     hvap = s.hvap(T2);
-    doth = q2 + m*homogeneous.xdot(a2,s.v(T2,p2),1/s.rho(T2))*hvap;
-    state = atwophase(T2,doth,hvap,p2,0,0);
+    q_mh = q2 + m*homogeneous.xdot(a2,s.v(T2,p2),1/s.rho(T2))*hvap;
+    state = atwophase(T2,q_mh,hvap,p2,0,0);
     % state.pliq is needed for the front, but not at the beginning (downstream
     % end) of the two-phase integrator. Therefore, atwophase does not set pliq.
     state.pliq = p2;
@@ -83,13 +83,13 @@ function state = aliquid(T,p,q) %--------------------------------------- aliquid
   state.phase = 'l';
 end %--------------------------------------------------------------- end aliquid
 
-function state = atwophase(T,doth,hvapK,pk,dpk,dpcap) %--------------- atwophase
+function state = atwophase(T,q_mh,hvapK,pk,dpk,dpcap) %--------------- atwophase
 % ATWOPHASE Construct and return the struct STATE of a two-phase mixture.
 %
-%  STATE = ATWOPHASE(T,DOTH,HVAPK,PK,DPK,DPCAP)
+%  STATE = ATWOPHASE(T,Q_MH,HVAPK,PK,DPK,DPCAP)
   state = statestruct;
   state.T = T;
-  state.doth = doth;
+  state.q_mh = q_mh;
   state.phase = '2';
   state.hvapK = hvapK;
   state.pk = pk;
@@ -106,7 +106,7 @@ function state = statestruct %-------------------------------------- statestruct
 %    STATE.a        Vapor volume fraction
 %    STATE.q        Heat flux [W/m2]
 %    STATE.vapliqequilibrium  True, if vapor or liquid flow terminated prematurely
-%    STATE.doth     Flux of enthalpy [W/m2]
+%    STATE.q_mh     Flux of heat plus flux of enthalpy [W/m2]
 %    STATE.phase    Phase letter: 'l', 'g' or '2'.
 %    STATE.hvapK    Enthaply of vaporization at curved interface
 %    STATE.pk       Pressure of the vapor, in a two-phase mixture [Pa]
@@ -122,7 +122,7 @@ function state = statestruct %-------------------------------------- statestruct
 %           DOWNSTREAMSTATE>ATWOPHASE.
 
 state = ...
-  struct('T',[],'p',[],'a',[],'q',[],'vapliqequilibrium',false,'doth',[],...
+  struct('T',[],'p',[],'a',[],'q',[],'vapliqequilibrium',false,'q_mh',[],...
     'phase',[],'hvapK',[],'pk',[],'pliq',[],'dpk',[],'dpcap',[],...
     'avapor',@avapor,'aliquid',@aliquid,'atwophase',@atwophase);
 end %----------------------------------------------------------- end statestruct
