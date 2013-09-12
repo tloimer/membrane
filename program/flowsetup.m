@@ -125,7 +125,7 @@ flsetup.pkpcap = @pkpcap;
 flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
-flsetup.q2ph = @q2ph; % Also works in free space of for theta = 90.
+flsetup.q2ph = @q2ph; % Also works in free space or for theta = 90.
 flsetup.qminqmax = @qminqmax;
 % solhhK needs to exist, to be 'deval'uated
 % set further below

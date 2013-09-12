@@ -209,7 +209,9 @@ end %------------------------------------------------------------ end printsetup
 
 function printsolution(ms) %-------------------------------------- printsolution
 %PRINTSOLUTION Print temperatures and pressures at special locations.
-%  MSANY.PRINTSOLUTION(MS) Print the solution stored in MS.
+%  MSANY.PRINTSOLUTION(MS) Print the solution stored in the membranestruct MS.
+%  The upstream and downstream states in each flow regime are printed. This is
+%  equivalent to the upstream and downstream state at each front.
 
 % Print the substance and upstream condition
 psat = ms.substance.ps(ms.T1);
@@ -285,9 +287,6 @@ end % --------------------------------------------------------------------------
 
 function printendstate(flow) %--------------------------------------------------
 % PRINTENDSTATE Print upstream state within a given flow region.
-
-  % Could also do printstate(flow(end).T(end)) and call printendstate(...flow)
-  % instead of printendstate(...flow(end).
   printstate(flow.T(end),flow.p(end),flow.a(end),flow.color);
 end %---------------------------------------------------------------------------
 
