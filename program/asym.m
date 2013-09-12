@@ -65,6 +65,7 @@ for i = nmembranes:-1:1
   % calculate the temperature far upstream
   % but not necessarily for the upstream-most layer of the upstream-most membrane
   % if i == 1 && solver.partialsolution, else  ... integratefree(..);  end
+  % TODO: here, rewrite by checking for q == 0
   if i > 1 || solver.fullsolution
     flow = zeroflowstruct;
     % this might either be a liquid film, or the gaseous temperature boundary layer
@@ -235,18 +236,30 @@ switch state2.phase
       interface_liq2ph;
     elseif state2.pk < pk1 % mustbecomevapor
       interface_vap2ph;
-    else % state2.pk == pk1 % two-phase stays two-phase;
-      % nointerface
-      state1 = state2;
-      % if, during iteration, there is two-phase flow upstream of the membrane
-      % (which is possible for theta = 90), do not leave state.p empty - it will
-      % be passed to presiduum, eventually, and findzero fails.
-      % For theta = 90, p = pk is even correct.
-      % TODO: what happens if there is two-phase flow between membranes in a stack?
-      state1.p = state2.pk;
-      % at the end of the two-phase integrator, all auxiliary two-phase
-      % variables (dpk, dpcap) must also be set. Therefore, these variables must
-      % also be set at the end of free space (i.e., at the downstream front).
+    else % state2.pk == pk1
+      % The two-phase heatfluxcriterion
+      [qmin,qmax,hvapK1,dpk1,dpcap1] = fs.qminqmax(m,T2);
+      % qvapor would be state2.doth - m*hvapK1, because qvap + m*hvapK = doth
+      % similarly: qliq = state2.doth ( hvapK1 == state2.hvapK )
+      % Allow a tad negative q1 for vapor flow in free space. The negative q1
+      % corresponds to 1-dotx < 0.001. See also case '2' in integratefree below
+      % dotx = state.doth/(m*state.hvapK);
+      % doth = q + m*dotx*hvapK, must be smaller or equal to m*hvapK
+      if state2.doth - m*state2.hvapK >= qmin || state2.doth/(m*state2.hvapK) > 0.999
+	interface_vap2ph;
+      elseif state2.doth <= qmax
+	interface_liq2ph;
+      else % two-phase flow
+	% nointerface
+	state1 = state2;
+	state1.dpk = dpk1;
+	state1.dpcap = dpcap1;
+	% if, during iteration, there is two-phase flow upstream of the membrane
+	% (which is possible for theta = 90), do not leave state.p empty - it
+	% will be passed to presiduum, eventually, and findzero fails.
+	% For theta = 90, p = pk is even correct.
+	state1.p = state2.pk;
+      end
     end
 
   otherwise
@@ -257,7 +270,7 @@ end
 
 function [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion
 %HEATFLUXCRITERION Return whether a fluid can become vapor or liquid upstreams.
-  [qmin, qmax, hvapK1, dpk1, dpcap1] = fs.qminqmax(m,T2);
+  [qmin,qmax,hvapK1,dpk1,dpcap1] = fs.qminqmax(m,T2);
   % canbecomevapor = q1 >= qmin    ---> flow   vapor 1 | state 2 <--- compute
   % canbecomeliquid = q1 <= qmax   ---> flow  liquid 1 | any state 2
   % The heat flux q1 is, depending on the phase change tabulated below,
@@ -435,7 +448,10 @@ switch state.phase
   case '2' % two-phase
     % two-phase in front - occured, as long as the heatfluxcriterion did not
     % allow   q1 >= qmin - minute correction   (instead of q1 >= qmin.)
-    warning('Two-phase flow in free space.');
+    dotx = state.doth/(m*state.hvapK);
+    % 1 - dotx < 0.001 (dotx > 0.999) should have been caught in front, case '2'
+    % TODO: write ifreetwophase - just pass forward variables;
+    warning('Two-phase flow in free space, 1 - dotx = %.3g.', 1 - dotx);
   otherwise
     error('Can not integrate phase %c in free space.', state.phase);
 end
