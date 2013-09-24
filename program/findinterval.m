@@ -61,9 +61,26 @@ while pnow < 0
       if VERBOSE > 0
 	fprintf('%s: Too large mass flux. Reduce added distance.\n', mfilename);
       end
-      mnow = mnow - madd/2;
-      pnow = shoot(mnow);
-      fcount = fcount + 2;
+      toolarge = true;
+      fcount = fcount + 1;
+      while toolarge
+        mnow = mnow - madd;
+       	madd = madd/2;
+	mnow = mnow + madd;
+	try
+	  pnow = shoot(mnow);
+	  toolarge = false;
+	  fcount = fcount + 1;
+	catch err
+	  if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
+	    fcount = fcount + 1;
+  if fcount > 50, error('More than 50 iterations, decreasing added mass flux!'); end
+	    continue;
+	  else
+	    rethrow(err);
+	  end
+	end
+      end
     else
       rethrow(err);
     end
