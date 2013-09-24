@@ -24,6 +24,7 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.colors          Colors to plot liquid, gaseous and two-phase flow.
 %    MS.printsetup      Print the membrane and layer structure.
 %    MS.printsolution   Print the solution, e.g., after mnumadiabat is called.
+%    MS.plotsolution    Plot temperature and pressure distributions
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
@@ -47,7 +48,7 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.MEMBRANE.LAYER.calc
 %    MS.MEMBRANE.LAYER.flow
 %  MS.MEMBRANE.LAYER.flow is a struct, the length of which corresponds to the
-%  individual flow regimes in or in front of a layer.
+%  individual flow regimes in a layer.
 %
 %  See also ASYM, FMODEL, MEMBRANE, MSTACKSTRUCT>WRITEFLOWSETUPS, SUBSTANCE.
 
@@ -93,7 +94,7 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'printsolution',@printsolution,'singlemstofl',@singlemstofl,...
+  'printsolution',@printsolution,'plotsolution',@plotsolution,'singlemstofl',@singlemstofl,...
   'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
   'freesetup',[],'substance',[],'membrane',membranes);
 
@@ -238,8 +239,6 @@ for i = 1:nmembranes
       fprintf('    at liquid film, T =%+6.2f K\n',...
 	      ms.membrane(i).flow(1).T(end) - ms.T2);
     end
-  end
-  if isup
     printstartstate(ms.membrane(i).flow(1));
   end
   fprintf('______ Membrane %d_______________________________________________________\n',i);
@@ -262,28 +261,6 @@ fprintf(['Downstream state: T2 = %.2f K, p2 = %.3g kPa (psat = %.3g kPa, '...
 	 'pred = %.2f).\n'], ms.T2, ms.p2/1e3, psat/1e3, ms.p2/psat);
 
 %--- nested functions ------------------------------------- nested functions ---
-
-function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane) %----------
-  isfilm = false;
-  % isstruct(amembrane.flow) failed, because .flow may be a 0x0 struct;
-  if length(amembrane.flow) > 0 && ~isempty(amembrane.flow(end).T)
-    isup = true;
-    Tup = amembrane.flow(end).T(end);
-    % flow.p is silently assumed to also exist
-    pup = amembrane.flow(end).p(end);
-    aup = amembrane.flow(end).a(end);
-    upcolor = amembrane.flow(end).color;
-    if length(amembrane.flow) == 2
-      isfilm = true;
-    end
-  else
-    isup = false;
-    Tup = amembrane.layer(1).flow(end).T(end);
-    pup = amembrane.layer(1).flow(end).p(end);
-    aup = amembrane.layer(1).flow(end).a(end);
-    upcolor = amembrane.layer(1).flow(end).color;
-  end
-end % --------------------------------------------------------------------------
 
 function printendstate(flow) %--------------------------------------------------
 % PRINTENDSTATE Print upstream state within a given flow region.
@@ -315,3 +292,187 @@ strtwo = ' pred = %.2f, %s\n';
 	  T-ms.T2, p/1e3, var, phasestring);
 end %---------------------------------------------------------------------------
 end %--------------------------------------------------------- end printsolution
+
+%------------------------------------------------------------------ upstreamflow
+function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane)
+  isfilm = false;
+  % isstruct(amembrane.flow) failed, because .flow may be a 0x0 struct;
+  if length(amembrane.flow) > 0 && ~isempty(amembrane.flow(end).T)
+    isup = true;
+    Tup = amembrane.flow(end).T(end);
+    % flow.p is silently assumed to also exist
+    pup = amembrane.flow(end).p(end);
+    aup = amembrane.flow(end).a(end);
+    upcolor = amembrane.flow(end).color;
+    if length(amembrane.flow) == 2
+      isfilm = true;
+    end
+  else
+    isup = false;
+    Tup = amembrane.layer(1).flow(end).T(end);
+    pup = amembrane.layer(1).flow(end).p(end);
+    aup = amembrane.layer(1).flow(end).a(end);
+    upcolor = amembrane.layer(1).flow(end).color;
+  end
+end % --------------------------------------------------------- end upstreamflow
+
+function plotsolution(ms) %---------------------------------------- plotsolution
+%PLOTSOLUTION Plot temperature and pressure distribution.
+
+mark = '+';
+drawingarea = get(0,'ScreenSize'); % [left bottom width height]
+% left margin 57, right margin 23, top margin 23, bottom margin 27
+drawingarea = drawingarea + [57 27 -80 -50];
+spacing = 9;
+height = floor((drawingarea(4)-spacing)/2);
+bpos = drawingarea(2);
+tpos = drawingarea(2) + drawingarea(4) - height;
+
+% Count the total number of layers, including front layers.
+% The number of membranes.
+nmembranes = length(ms.membrane);
+% This is a vector of layers in each membrane. Sum(nlayers) is the total number
+% of layers.
+nlayers = zeros(1,nmembranes);
+isup = false(1,nmembranes);
+pmin = ms.p2;
+for i = 1:nmembranes
+  % Here, at difference to the code in upstreamflow, the emptyness of .flow is
+  % not checked; The plot-command then exits with error anyway.
+  % Add the number of possible upstream layers
+  if length(ms.membrane(i).flow) > 0
+    nlayers(i) = nlayers(i) + 1;
+    isup(i) = true;
+  end
+  nlayers(i) = nlayers(i) + length(ms.membrane(i).layer);
+  for j = 1:length(ms.membrane(i).layer)
+    pmin = min([pmin ms.membrane(i).layer(j).flow(1:end).p]);
+%  pmin = min([pmin ms.membrane(i).layer(j).flow(1:end).p(1)]);
+  end
+end
+
+ntotal = sum(nlayers);
+if ntotal > 2
+  drawingwidth = drawingarea(3);
+elseif ntotal == 2
+  drawingwidth = drawingarea(3)/2;
+else % ntotal == 1
+  drawingwidth = drawingarea(3)/3;
+end
+
+lpos = floor(drawingarea(1) + drawingarea(3) - drawingwidth);
+%drawingwidth = floor(drawingwidth);
+
+% width of one layer = (drawingwidth - (nmembranes - 1)*spacing)/ntotal;
+% width of each figure = nlayers(i)*(width of one layer);
+widths = round(nlayers*(drawingwidth - (nmembranes-1)*spacing)/ntotal);
+
+Tmax = max([ms.T1 ms.membrane(1).layer(1).flow(end).T(end)]);
+Tlim = [floor(ms.T2) ceil(Tmax)];
+plim = [floor(pmin/1e4) ceil(ms.p1in/1e4)]*1e4;
+
+% Now walk through the membranes, and plot all layers
+for i = 1:nmembranes
+  ht = figure('Name','Temperature','OuterPosition',[lpos tpos widths(i) height]);
+  hp = figure('Name','Pressure',   'OuterPosition',[lpos bpos widths(i) height]);
+  lpos = lpos + widths(i) + spacing;
+
+  % Plot the first layer, probably with the front boundary layer(s)
+  jl = ms.membrane(i).layer(1);
+  L = jl.matrix.L;
+  if isup(i)
+    first = [1 2];
+    sp = subplot(1,nlayers(i),first);
+    nflow = length(ms.membrane(i).flow);
+    plot(ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).p/1e5,...
+	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+    xlim([ms.membrane(i).flow(nflow).z(end)/L 1]);
+    ylim(plim/1e5);
+    figure(ht);
+    st = subplot(1,nlayers(i),first);
+    plot(ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).T,...
+	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+    xlim([ms.membrane(i).flow(nflow).z(end)/L 1]);
+    ylim(Tlim);
+    for k = nflow-1:-1:1
+      line(ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).T,...
+	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
+    end
+    figure(hp);
+    subplot(sp);
+    for k = nflow-1:-1:1
+      line(ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).p/1e5,...
+	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
+    end
+    % The first line in the layer.
+    nflow = length(jl.flow);
+    line(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
+	 'LineStyle','-','Marker',mark);
+    figure(ht);
+    subplot(st);
+    line(jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
+	 'LineStyle','-','Marker',mark);
+  else
+    first = 1;
+    sp = subplot(1,nlayers(i),first);
+    nflow = length(jl.flow);
+    plot(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
+	 'LineStyle','-','Marker',mark);
+    ylim(plim/1e5);
+    xlim([0 1]);
+    figure(ht);
+    st = subplot(1,nlayers(i),first);
+    plot(jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
+	 'LineStyle','-','Marker',mark);
+    ylim(Tlim);
+    xlim([0 1]);
+  end
+
+  % Put the remaining flow elements in the first layer
+  for k = nflow-1:-1:1
+    line(jl.flow(k).z/L,jl.flow(k).T,'Color',jl.flow(k).color,...
+	 'LineStyle','-','Marker',mark);
+  end
+  subplot(sp);
+  for k = nflow-1:-1:1
+    line(jl.flow(k).z/L,jl.flow(k).p/1e5,'Color',jl.flow(k).color,...
+	 'LineStyle','-','Marker',mark);
+  end
+
+  % At last, the remaining layers
+  nl = length(ms.membrane(i).layer);
+  if nl == 1, return; end
+
+  for j = 2:nl
+    figure(ht);
+    st = subplot(1,nlayers(i),first(end)+j-1);
+
+    jl = ms.membrane(i).layer(j);
+    L = jl.matrix.L;
+    nflow = length(jl.flow);
+    plot(jl.flow(nflow).z/L,jl.flow(nflow).T,...
+	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
+    ylim(Tlim);
+    xlim([0 1]);
+    figure(hp);
+    sp = subplot(1,nlayers(i),first(end)+j-1);
+    plot(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,...
+	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
+    ylim(plim/1e5);
+    xlim([0 1]);
+    if nflow > 1
+      for k = nflow-1:-1:1
+	line(jl.flow(k).z/L,jl.flow(k).p/1e5,...
+	     'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
+      end
+      figure(ht);
+      subplot(st);
+      for k = nflow-1:-1:1
+	line(jl.flow(k).z/L,jl.flow(k).T,...
+	     'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
+      end
+    end
+  end
+end
+
+end %---------------------------------------------------------- end plotsolution
