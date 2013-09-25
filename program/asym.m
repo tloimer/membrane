@@ -53,7 +53,7 @@ for i = nmembranes:-1:1
       state = front(state, ms.membrane(i).layer(j).flsetup, m, s);
       % [state, z, flow] = integrate(state, z, matrix, flsetup, m, s, solver);
       [state,z,flow] = integrate(state,z,flow,ms.membrane(i).layer(j).matrix,...
-        ms.membrane(i).layer(j).flsetup, m,s,solver);
+				 ms.membrane(i).layer(j).flsetup, m,s,solver);
     end
     % Arrived at the upstream end of a layer
     ms.membrane(i).layer(j).flow = flow;
@@ -780,7 +780,7 @@ last = size(sol78.x,2);
 T7 = mkTdim(sol78.y(1,last));  a7 = sol78.y(2,last);  z7 = z8*sol78.x(last);
 if a7 > 1 || a7 < 0
   error(['Two-phase flow vanished, a = %.1f. ' ...
-         'Implement a termination condition.'], a7);
+	 'Implement a termination condition.'], a7);
 end
 
 [pk7, dpk7, hvapK7, dpcap7, pcap7] = fs.hvapK(T7);

@@ -24,7 +24,7 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.colors          Colors to plot liquid, gaseous and two-phase flow.
 %    MS.printsetup      Print the membrane and layer structure.
 %    MS.printsolution   Print the solution, e.g., after mnumadiabat is called.
-%    MS.plotsolution    Plot temperature and pressure distributions
+%    MS.plotsolution    Plot temperature and pressure distributions.
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
@@ -317,7 +317,7 @@ function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane)
 end % --------------------------------------------------------- end upstreamflow
 
 function plotsolution(ms) %---------------------------------------- plotsolution
-%PLOTSOLUTION Plot temperature and pressure distribution.
+%PLOTSOLUTION Plot temperature and pressure distributions.
 
 mark = '+';
 drawingarea = get(0,'ScreenSize'); % [left bottom width height]
@@ -347,7 +347,6 @@ for i = 1:nmembranes
   nlayers(i) = nlayers(i) + length(ms.membrane(i).layer);
   for j = 1:length(ms.membrane(i).layer)
     pmin = min([pmin ms.membrane(i).layer(j).flow(1:end).p]);
-%  pmin = min([pmin ms.membrane(i).layer(j).flow(1:end).p(1)]);
   end
 end
 
@@ -382,8 +381,8 @@ for i = 1:nmembranes
   L = jl.matrix.L;
   if isup(i)
     first = [1 2];
-    sp = subplot(1,nlayers(i),first);
     nflow = length(ms.membrane(i).flow);
+    sp = subplot(1,nlayers(i),first);
     plot(ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).p/1e5,...
 	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
     xlim([ms.membrane(i).flow(nflow).z(end)/L 1]);
@@ -414,8 +413,8 @@ for i = 1:nmembranes
 	 'LineStyle','-','Marker',mark);
   else
     first = 1;
-    sp = subplot(1,nlayers(i),first);
     nflow = length(jl.flow);
+    sp = subplot(1,nlayers(i),first);
     plot(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
 	 'LineStyle','-','Marker',mark);
     ylim(plim/1e5);
@@ -428,7 +427,7 @@ for i = 1:nmembranes
     xlim([0 1]);
   end
 
-  % Put the remaining flow elements in the first layer
+  % Put the remaining flow elements in the first layer into the existing plot.
   for k = nflow-1:-1:1
     line(jl.flow(k).z/L,jl.flow(k).T,'Color',jl.flow(k).color,...
 	 'LineStyle','-','Marker',mark);
@@ -444,12 +443,11 @@ for i = 1:nmembranes
   if nl == 1, return; end
 
   for j = 2:nl
-    figure(ht);
-    st = subplot(1,nlayers(i),first(end)+j-1);
-
     jl = ms.membrane(i).layer(j);
     L = jl.matrix.L;
     nflow = length(jl.flow);
+    figure(ht);
+    st = subplot(1,nlayers(i),first(end)+j-1);
     plot(jl.flow(nflow).z/L,jl.flow(nflow).T,...
 	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
     ylim(Tlim);

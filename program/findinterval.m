@@ -54,37 +54,39 @@ while pnow < 0
   mold = mnow; pold = pnow;
   mnow = mnow + madd;
   try
-    pnow = shoot(mnow);
     fcount = fcount + 1;
+    pnow = shoot(mnow);
   catch err
-    if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
+    if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval') %...
+       %  || strcmp(err.identifier,'MATLAB:badCellRef')
       if VERBOSE > 0
 	fprintf('%s: Too large mass flux. Reduce added distance.\n', mfilename);
       end
       toolarge = true;
-      fcount = fcount + 1;
       while toolarge
-        mnow = mnow - madd;
-       	madd = madd/2;
+	mnow = mnow - madd;
+	madd = madd/2;
 	mnow = mnow + madd;
 	try
+	  fcount = fcount + 1;
 	  pnow = shoot(mnow);
 	  toolarge = false;
-	  fcount = fcount + 1;
 	catch err
-	  if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval')
-	    fcount = fcount + 1;
-  if fcount > 50, error('More than 50 iterations, decreasing added mass flux!'); end
+	  if strcmp(err.identifier,'MATLAB:deval:SolOutsideInterval') %...
+	     % || strcmp(err.identifier,'MATLAB:badCellRef')
+	    if fcount > 50
+	      error('More than 50 iterations, decreasing added mass flux!');
+	    end
 	    continue;
 	  else
 	    rethrow(err);
 	  end
-	end
-      end
+	end % end try-catch
+      end % end while
     else
       rethrow(err);
     end
-  end
+  end % end try-catch
   if fcount > 50, error('More than 50 iterations!'); end
 end
 
