@@ -16,17 +16,25 @@ pu3 = membrane(6e-6,0.6,1.38,'tube',3,8.1,2e-3);
 psmems = {{pu1 pu2 pu3}}; pms = mstackstruct(0,psmems,f); pmsorig = pms;
 prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
 
-psat1 = but.ps(T1); % approx. 2.7e
+psat1 = but.ps(T1); % approx. 2.07e5 for butane
 
 poben = [1.1:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
 % Plot with p1 - p2 = 0.5 bar.
-for i = 1:length(poben)
-  mf(i) = mnumadiabat(T1,poben(i),poben(i)-0.5e5,but,pms);
-  mr(i) = mnumadiabat(T1,poben(i),poben(i)-0.5e5,but,pmr);
+deltap = 0.5e5;
+for i = 2:length(poben)
+  mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,but,pms);
+  mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,but,pmr);
 end
+[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pms);
+[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pmr);
+
+fprintf('Direction separation - support layer');
+printpcondensation(pms);
+fprintf('Direction support - separation layer');
+printpcondensation(pmr);
 
 twoplots(1);
 
@@ -34,10 +42,18 @@ poben = [1.1:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
-for i = 1:length(poben)
+deltap = 1e5;
+for i = 2:length(poben)
   mf(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,but,pms);
   mr(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,but,pmr);
 end
+[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pms);
+[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pmr);
+
+fprintf('\nDirection separation - support layer');
+printpcondensation(pms);
+fprintf('Direction support - separation layer');
+printpcondensation(pmr);
 
 twoplots(3);
 
@@ -47,12 +63,41 @@ poben = [1.6:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.6:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
-for i = 1:length(poben)
+deltap = 1.5e5;
+for i = 2:length(poben)
   mf(i) = mnumadiabat(T1,poben(i),poben(i)-1.5e5,but,pms);
   mr(i) = mnumadiabat(T1,poben(i),poben(i)-1.5e5,but,pmr);
 end
+[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pms);
+[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pmr);
+
+fprintf('\nDirection separation - support layer');
+printpcondensation(pms);
+fprintf('Direction support - separation layer');
+printpcondensation(pmr);
 
 twoplots(5);
+
+poben = [1.1:0.01:psat1/1e5 psat1/1e5]*1e5;
+%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
+mf = poben; mr = poben;
+
+% Plot with p1 - p2 = 0.5 bar.
+deltap = 0.1e5;
+for i = 2:length(poben)
+  mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,but,pms);
+  mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,but,pmr);
+end
+[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pms);
+[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,but,pmr);
+
+fprintf('\nDirection separation - support layer');
+printpcondensation(pms);
+fprintf('Direction support - separation layer');
+printpcondensation(pmr);
+
+twoplots(7);
+
 
 % Default PaperUnits are centimeters
 fprintf(['In the eps-files, change\n'...
@@ -92,5 +137,17 @@ xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio flow direction A/B');
 print('-deps2',sprintf('figure%u.eps',i+1));
 end %-------------------------------------------------------------- end twoplots
+
+function printpcondensation(ms) %---------------------------- printpcondensation
+% Print relative pressure values from linear theory, when condensation starts
+[dpk,pk] = ms.membrane(1).layer(1).flsetup.dpkdT(T1);
+dpfl = ms.membrane(1).layer(1).flow(end).p(end) ...
+       - ms.membrane(1).layer(1).flow(1).p(1);
+n = ms.substance.jt(T1,poben(1)) * dpk;
+fprintf(', delta p = %.1f bar.\n',deltap/1e5);
+fprintf(['  pk/psat = %.2f, (dT/dp)_h(dpk/dT) = %.2f, (p1-p2)/psat = %.2f,\n'...
+  '  pdiff(first layer)/psat = %.2f. pcrel(p1-p2) = %.2f, pcrel(fl) = %.2f.\n'],...
+  pk/psat1,n,deltap/psat1,dpfl/psat1,(pk-n*deltap)/psat1,(pk-n*dpfl)/psat1);
+end %---------------------------------------------------- end printpcondensation
 
 end %%% END FIGURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FIGURES %%%
