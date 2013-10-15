@@ -154,6 +154,8 @@ end %------------------------------------------------------- end writeflowsetups
 
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
 %MFLUXLIQUID Mass flux for the flow of liquid through the membrane stack.
+%  Returns the gaseous mass flux, if the fluid can not condense.
+
 %  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
 
 % With m = (kappa_i/nu) * (p_i - p_(i-1)) / L_i,   p0 |XX| p1 |XXX| p2 ... |X| pn
@@ -169,7 +171,16 @@ for i = 1:length(ms.membrane)
 		 /ms.membrane(i).layer(j).matrix.kappa;
   end
 end
-m = (p1-p2)/s.nul(T1)/sumL_kappa; % = (p1-p2)/(s.nul(T1)*sumL_kappa)
+try
+  m = (p1-p2)/s.nul(T1)/sumL_kappa; % = (p1-p2)/(s.nul(T1)*sumL_kappa)
+catch err
+  if strcmp(err.identifier,'MATLAB:badCellRef') % probably caused by T > T_crit
+  % a very rough estimate for the gas flux
+    m = (p1-p2)/s.v(T1,(p1+p2)/2)/sumL_kappa;
+  else
+    rethrow(err)
+  end
+end
 end %----------------------------------------------------------- end mfluxliquid
 
 function fl = singlemstofl(ms) %----------------------------------- singlemstofl
