@@ -1,8 +1,9 @@
-function public()
-%PUBLIC      Create figures for presumably J. Membr. Sci. 2014.
+function mflow()
+%MFLOW       Create figures for presumably J. Membr. Sci. 2014.
 
 if ~exist('substance.m'), addpath('../../program'); end
 
+%Setup the flow problem
 T1 = 293.15;
 %s = substance('butane');
 s = substance('isobutane');
@@ -16,11 +17,11 @@ pu3 = membrane(6e-6,0.6,36,'tube',3,8.1,2e-3);
 psmems = {{pu1 pu2 pu3}}; pms = mstackstruct(0,psmems,f); pmsorig = pms;
 prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
 
-psat1 = s.ps(T1); % approx. 2.07e5 for butane
+psat1 = s.ps(T1);
 
 % Plot with p1 - p2 = 0.1 bar.
 
-poben = [1.5:0.01:psat1/1e5 psat1/1e5]*1e5;
+poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
@@ -41,7 +42,7 @@ twoplots(1);
 
 % Plot with p1 - p2 = 0.5 bar.
 
-poben = [1.5:0.01:psat1/1e5 psat1/1e5]*1e5;
+poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
@@ -60,7 +61,7 @@ printpcondensation(pmr);
 
 twoplots(3);
 
-poben = [1.5:0.01:psat1/1e5 psat1/1e5]*1e5;
+poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
@@ -117,6 +118,8 @@ else
   fprintf('Changed the eps-files!\n');
 end
 
+fprintf('# xelatex %1$s.tex && rm %1$s.log %1$s.aux\n',mfilename);
+
 %- NESTED FUNCTIONS --------------------------------------- NESTED FUNCTIONS ---
 
 function twoplots(i) %------------------------------------------------- twoplots
@@ -130,7 +133,7 @@ set(hl(1),'LineWidth',0.3);
 set(hl(2),'LineWidth',0.5);
 xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux [gm^{\fontsize{6}-2}s^{\fontsize{6}-1}]');
-xlim([0.6 1]);
+xlim([0.7 1]);
 %ylim([0.004 0.016]);
 legend('separation layer upstream (flow direction A)',...
        'separation layer downstream (flow direction B)')
@@ -143,7 +146,7 @@ set(gca,'FontName','Times','FontSize',7);
 set(hl(:),'LineWidth',0.3);
 xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio flow direction A/B');
-xlim([0.6 1]);
+xlim([0.7 1]);
 print('-deps2',sprintf('%s%u.eps',mfilename,i+1));
 end %-------------------------------------------------------------- end twoplots
 
@@ -159,4 +162,4 @@ fprintf(['  pk/psat = %.2f, (dT/dp)_h(dpk/dT) = %.2f, (p1-p2)/psat = %.2f,\n'...
   pk/psat1,n,deltap/psat1,dpfl/psat1,(pk-n*deltap)/psat1,(pk-n*dpfl)/psat1);
 end %---------------------------------------------------- end printpcondensation
 
-end %%% END FIGURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FIGURES %%%
+end %%% END2.1GURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FIGURES %%%

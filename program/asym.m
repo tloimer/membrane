@@ -458,7 +458,7 @@ switch state.phase
     % homogeneous flow model: inverse function to f.xdot
     a = dotx./(1 + dotx.*(1-1./(s.rho(state.T).*s.v(state.T,state.p))));
     flow = writeflow(flow,{'z','T','p','a','q','color'},...
-		     {0,state.T,state.p,a,state.q,'g'});
+			  {0,state.T,state.p,a,state.q,'g'});
   otherwise
     error('Can not integrate phase %c in free space.', state.phase);
 end
@@ -588,7 +588,7 @@ if solver.writesolution
     Kn92(i) = fs.knudsen(T92(i),p92(i));
   end
   flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
-    {z92,T92,p92,1,q92,Kn92,'r'});
+			{z92,T92,p92,ones(1,last+1),q92,Kn92,'r'});
 end
 
 end %-------------------------------------------------------- end integratevapor
@@ -706,7 +706,8 @@ if solver.writesolution
     q56(i) = calcq(T56(i),p56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-  flow = writeflow(flow,{'z','T','p','a','q','color'},{z56,T56,p56,0,q56,'b'});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},...
+			{z56,T56,p56,zeros(1,last+1),q56,'b'});
 end
 
 end %------------------------------------------------------- end integrateliquid
@@ -895,7 +896,8 @@ if solver.writesolution
   % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
   % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
   % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
-  flow = writeflow(flow,{'z','T','p','a','q','color'},{z13,T13,p13,1,q13,'r'});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},...
+			{z13,T13,p13,ones(1,last+1),q13,'r'});
 end
 
 end %------------------------------------------------------------ end ifreevapor
@@ -970,7 +972,8 @@ if solver.writesolution
   last = last - 1;
   T45(1:last) = mkTdim(sol45.x(1:last)); q45(1:last) = q5*sol45.y(1,1:last);
   z45(1:last) = zscale*sol45.y(2,1:last);
-  flow = writeflow(flow,{'z','T','p','a','q','color'},{z45,T45,p45,0,q45,'b'});
+  flow = writeflow(flow,{'z','T','p','a','q','color'},...
+			{z45,T45,p45,zeros(1,last+1),q45,'b'});
 end
 
 end %----------------------------------------------------------- end ifreeliquid
