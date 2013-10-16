@@ -123,7 +123,7 @@ function twoplots(i) %------------------------------------------------- twoplots
 % the figure is always less wide than given! add 6 mm, instead of
 % PaperPosition [0 0 8.9 5]; Perfectly 16x9 would be: 8.8 4.95
 % Plot with p1 - p2 = 1 bar.
-figure('PaperPosition',[0 0 10.3 5],'PaperSize',[10.3 5]);
+figure('PaperPosition',[0 0 9.9 5],'PaperSize',[9.9 5]);
 hl = plot(poben/psat1,mf*1e3,'k-',poben/psat1,mr*1e3,'k:');
 set(gca,'FontName','Times','FontSize',7,'OuterPosition',[0 0 1 1]);
 set(hl(1),'LineWidth',0.3);
@@ -137,7 +137,7 @@ legend('separation layer upstream (flow direction A)',...
 legend('Location','NorthWest'); legend('boxoff');
 print('-deps2',sprintf('%s%u.eps',mfilename,i));
 
-figure('PaperPosition',[0 0 10.3 5],'PaperSize',[10.3 5]);
+figure('PaperPosition',[0 0 9.9 5],'PaperSize',[9.9 5]);
 hl = plot(poben/psat1,mf./mr,'k-');
 set(gca,'FontName','Times','FontSize',7);
 set(hl(:),'LineWidth',0.3);
