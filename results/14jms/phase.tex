@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage{graphics}
+\usepackage{lmodern}
+%\usepackage[1]{fontenc}
+\usepackage{fontspec}
+\usepackage[a4paper,hmargin=1.2cm,tmargin=2cm,bmargin=3cm]{geometry}
+
+\pagestyle{headings}
+\parindent0pt\raggedright
+
+\begin{document}
+{\Large Isobutane, $d_1 = 10$~nm, $L_1 = 20$~µm, $d_2 =
+100$~nm, $L_2 = 150$~µm, $d_3 = 6$~µm, $L_3 = 2$~mm. Vapor volume fraction
+$\alpha$ in the membrane layers.}
+\bigskip
+
+\long\def\putphase#1#2#3{\def\inpres{#3}\def\peqone{1}
+ \ifx\inpres\peqone\def\pref{1.0}\else\def\pref{0.#3}\fi
+  \parbox{0.48\linewidth}{\includegraphics{phase#1#2-#3A}\\
+  Flow direction A, $p_1-p_2 = #1.#2$~bar, $p_1/p_\mathrm{sat} = \pref$.}
+  \parbox{0.48\linewidth}{\includegraphics{phase#1#2-#3B}\\
+   Flow direction B, $p_1-p_2= #1.#2$~bar, $p_1/p_\mathrm{sat} = \pref$.}
+  \bigskip\par}
+
+\centerline{Pressure difference 0.1~bar.}
+\bigskip
+
+\putphase01{84}
+\putphase01{85}
+\putphase01{90}
+\putphase01{99}
+\putphase011
+\newpage
+
+\centerline{Pressure difference 0.5~bar.}
+\bigskip
+
+\putphase05{84}
+\putphase05{90}
+\putphase05{95}
+\putphase05{97}
+\putphase051
+\newpage
+
+\centerline{Pressure difference 1.0~bar.}
+\bigskip
+
+\putphase10{78}
+\putphase10{83}
+\putphase10{88}
+\putphase10{93}
+\putphase101
+\end{document}

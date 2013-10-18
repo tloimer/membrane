@@ -19,7 +19,24 @@ prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
 
 psat1 = s.ps(T1);
 
+produce(0.1e5,0.836);
+produce(0.1e5,0.85);
+produce(0.1e5,0.9);
+produce(0.1e5,0.99);
+produce(0.1e5,1);
+
 produce(0.5e5,0.84);
+produce(0.5e5,0.9);
+produce(0.5e5,0.95);
+produce(0.5e5,0.97);
+produce(0.5e5,1);
+
+produce(1e5,0.78);
+produce(1e5,0.83);
+produce(1e5,0.88);
+produce(1e5,0.93);
+produce(1e5,1);
+
 
 %-- NESTED FUNCTIONS -------------------------------------- NESTED FUNCTIONS ---
 
@@ -39,7 +56,7 @@ pms = pmsorig;
 plotphase(pms,[id 'A']);
 pmr = pmrorig;
 [mr,pmr] = mnumadiabat(T1,p1,p1-deltap,s,pmr);
-plotphase(pms,[id 'B']);
+plotphase(pmr,[id 'B']);
 end %--------------------------------------------------------------- end produce
 
 end %%% END PHASE.M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END PHASE.M %%%
