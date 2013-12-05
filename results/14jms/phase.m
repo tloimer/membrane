@@ -19,11 +19,11 @@ prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
 
 psat1 = s.ps(T1);
 
-produce(0.1e5,0.836);
-produce(0.1e5,0.85);
-produce(0.1e5,0.9);
-produce(0.1e5,0.99);
-produce(0.1e5,1);
+%produce(0.1e5,0.836);
+%produce(0.1e5,0.85);
+%produce(0.1e5,0.9);
+%produce(0.1e5,0.99);
+%produce(0.1e5,1);
 
 produce(0.5e5,0.84);
 produce(0.5e5,0.9);
@@ -31,11 +31,11 @@ produce(0.5e5,0.95);
 produce(0.5e5,0.97);
 produce(0.5e5,1);
 
-produce(1e5,0.78);
-produce(1e5,0.83);
-produce(1e5,0.88);
-produce(1e5,0.93);
-produce(1e5,1);
+%produce(1e5,0.78);
+%produce(1e5,0.83);
+%produce(1e5,0.88);
+%produce(1e5,0.93);
+%produce(1e5,1);
 
 
 %-- NESTED FUNCTIONS -------------------------------------- NESTED FUNCTIONS ---
@@ -54,9 +54,13 @@ p1 = prel*psat1;
 pms = pmsorig;
 [mf,pms] = mnumadiabat(T1,p1,p1-deltap,s,pms);
 plotphase(pms,[id 'A']);
+pms.printsolution(pms,'phase');
+fprintf('\n');
 pmr = pmrorig;
 [mr,pmr] = mnumadiabat(T1,p1,p1-deltap,s,pmr);
 plotphase(pmr,[id 'B']);
+pmr.printsolution(pmr,'phase');
+fprintf('\n');
 end %--------------------------------------------------------------- end produce
 
 end %%% END PHASE.M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END PHASE.M %%%
@@ -100,7 +104,6 @@ for i = 1:nlayers
   end
 end
 
-name = sprintf('%s%s.eps',mfilename,id);
-print('-deps2',name);
-fprintf('Export to file %s\n',name);
+print('-dpdf',sprintf('%s%s.pdf',mfilename,id));
+fprintf('Export to file %s%s.pdf\n',mfilename,id);
 end %------------------------------------------------------------- end plotphase

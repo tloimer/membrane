@@ -1,0 +1,314 @@
+>> phase
+Export to file phase05-84A.pdf
+Fluid: isobutane, mass flux 29.24 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 253 kPa (psat = 301 kPa, pred = 0.84).
+
+Iteration accuracy: p1 - p1calc = -0.52 Pa (-2.1e-06 p1),
+                    T1 - T1calc = 0.0028 K (0.0022(T1-T2)).
+
+                    T = +1.24 K, p = 253 kPa, pred = 0.84, gaseous
+                    T = +0.01 K, p = 253 kPa, pred = 0.87, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.01 K, p = -2.94e+03 kPa, pred = -10.13, liquid
+    Layer 1: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.00 K, p = -3.23e+03 kPa, pred = -11.15, liquid
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 250 kPa, pred = 0.86, gaseous
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 203 kPa, pred = 0.70, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 203 kPa, pred = 0.70, gaseous
+    Layer 3: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 203 kPa, pred = 0.70, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.90 K, p2 = 203 kPa (psat = 290 kPa, pred = 0.70).
+
+Export to file phase05-84B.pdf
+Fluid: isobutane, mass flux 9.212 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 253 kPa (psat = 301 kPa, pred = 0.84).
+
+Iteration accuracy: p1 - p1calc = -1.4 Pa (-5.5e-06 p1),
+                    T1 - T1calc = -3.5e-05 K (-2.8e-05(T1-T2)).
+
+                    T = +1.25 K, p = 253 kPa, pred = 0.84, gaseous
+                    T = +0.00 K, p = 253 kPa, pred = 0.87, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 253 kPa, pred = 0.87, gaseous
+    Layer 1: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 253 kPa, pred = 0.87, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 253 kPa, pred = 0.87, gaseous
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 239 kPa, pred = 0.82, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 239 kPa, pred = 0.82, gaseous
+    Layer 3: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 203 kPa, pred = 0.70, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.90 K, p2 = 203 kPa (psat = 290 kPa, pred = 0.70).
+
+Export to file phase05-90A.pdf
+Fluid: isobutane, mass flux 30.27 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 271 kPa (psat = 301 kPa, pred = 0.90).
+
+Iteration accuracy: p1 - p1calc = 33 Pa (0.00012 p1),
+                    T1 - T1calc = 0.0028 K (0.0022(T1-T2)).
+
+                    T = +1.26 K, p = 271 kPa, pred = 0.90, gaseous
+                    T = +0.01 K, p = 271 kPa, pred = 0.93, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.01 K, p = -1.31e+03 kPa, pred = -4.51, liquid
+    Layer 1: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.00 K, p = -1.61e+03 kPa, pred = -5.56, liquid
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 267 kPa, pred = 0.92, gaseous
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 221 kPa, pred = 0.76, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 221 kPa, pred = 0.76, gaseous
+    Layer 3: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 221 kPa, pred = 0.76, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.89 K, p2 = 221 kPa (psat = 290 kPa, pred = 0.76).
+
+Export to file phase05-90B.pdf
+Fluid: isobutane, mass flux 18.83 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 271 kPa (psat = 301 kPa, pred = 0.90).
+
+Iteration accuracy: p1 - p1calc = -45 Pa (-0.00017 p1),
+                    T1 - T1calc = 0.00032 K (0.00026(T1-T2)).
+
+                    T = +1.26 K, p = 271 kPa, pred = 0.90, gaseous
+                    T = +0.01 K, p = 271 kPa, pred = 0.93, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.01 K, p = 271 kPa, pred = 0.93, gaseous
+    Layer 1: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.01 K, p = 271 kPa, pred = 0.93, gaseous
+    --------------------------------------------------------------------
+                    T = +0.01 K, p = 271 kPa, pred = 0.93, gaseous
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.01 K, p = 243 kPa, pred = 0.84, gaseous
+    --------------------------------------------------------------------
+                    T = +0.01 K, p = -3.86e+03 kPa, pred = -13.32, liquid
+    Layer 3: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.72, vapor volume fraction = 0
+      at z/L = 0.72, vapor volume fraction = 1
+                    T = +0.00 K, p = 221 kPa, pred = 0.76, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.89 K, p2 = 221 kPa (psat = 290 kPa, pred = 0.76).
+
+Export to file phase05-95A.pdf
+Fluid: isobutane, mass flux 31.15 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 286 kPa (psat = 301 kPa, pred = 0.95).
+
+Iteration accuracy: p1 - p1calc = 9.4 Pa (3.3e-05 p1),
+                    T1 - T1calc = 0.0012 K (0.00093(T1-T2)).
+
+                    T = +1.27 K, p = 286 kPa, pred = 0.95, gaseous
+                    T = +0.01 K, p = 286 kPa, pred = 0.99, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.01 K, p = -22.7 kPa, pred = -0.08, liquid
+    Layer 1: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.00 K, p = -337 kPa, pred = -1.16, liquid
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 282 kPa, pred = 0.97, gaseous
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 236 kPa, pred = 0.82, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 236 kPa, pred = 0.82, gaseous
+    Layer 3: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 236 kPa, pred = 0.81, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.88 K, p2 = 236 kPa (psat = 290 kPa, pred = 0.81).
+
+Export to file phase05-95B.pdf
+Fluid: isobutane, mass flux 49.44 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 286 kPa (psat = 301 kPa, pred = 0.95).
+
+Iteration accuracy: p1 - p1calc = 0.51 Pa (1.8e-06 p1),
+                    T1 - T1calc = 0.0078 K (0.0061(T1-T2)).
+
+                    T = +1.26 K, p = 286 kPa, pred = 0.95, gaseous
+                    T = +0.12 K, p = 286 kPa, pred = 0.98, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.12 K, p = 286 kPa, pred = 0.98, gaseous
+    Layer 1: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.10 K, p = 286 kPa, pred = 0.98, gaseous
+    --------------------------------------------------------------------
+                    T = +0.10 K, p = -122 kPa, pred = -0.42, liquid
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.47, vapor volume fraction = 0
+      at z/L = 0.47, vapor volume fraction = 1
+                    T = +0.02 K, p = 247 kPa, pred = 0.85, gaseous
+    --------------------------------------------------------------------
+                    T = +0.02 K, p = -3.52e+03 kPa, pred = -12.12, liquid
+    Layer 3: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.97, vapor volume fraction = 0
+      at z/L = 0.97, vapor volume fraction = 1
+                    T = +0.00 K, p = 236 kPa, pred = 0.81, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.88 K, p2 = 236 kPa (psat = 290 kPa, pred = 0.81).
+
+Export to file phase05-97A.pdf
+Fluid: isobutane, mass flux 41.86 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 292 kPa (psat = 301 kPa, pred = 0.97).
+
+Iteration accuracy: p1 - p1calc = -0.0025 Pa (-8.5e-09 p1),
+                    T1 - T1calc = 0.011 K (0.0083(T1-T2)).
+
+                    T = +1.26 K, p = 292 kPa, pred = 0.97, gaseous
+    at liquid film, T = +0.27 K, z = -0.00142 mm, z/L1 = -0.07
+                    T = +0.07 K, p = 292 kPa, pred = 1.01, liquid
+______ Membrane 1_______________________________________________________
+                    T = +0.07 K, p = 292 kPa, pred = 1.01, liquid
+    Layer 1: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.05 K, p = -130 kPa, pred = -0.45, liquid
+    --------------------------------------------------------------------
+                    T = +0.05 K, p = -130 kPa, pred = -0.45, liquid
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.31, vapor volume fraction = 0
+      at z/L = 0.31, vapor volume fraction = 1
+                    T = +0.00 K, p = 243 kPa, pred = 0.84, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 243 kPa, pred = 0.84, gaseous
+    Layer 3: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 242 kPa, pred = 0.84, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.88 K, p2 = 242 kPa (psat = 290 kPa, pred = 0.84).
+
+Export to file phase05-97B.pdf
+Fluid: isobutane, mass flux 158.6 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 292 kPa (psat = 301 kPa, pred = 0.97).
+
+Iteration accuracy: p1 - p1calc = 15 Pa (5.2e-05 p1),
+                    T1 - T1calc = 0.032 K (0.025(T1-T2)).
+
+                    T = +1.24 K, p = 292 kPa, pred = 0.97, gaseous
+                    T = +0.59 K, p = 292 kPa, pred = 0.99, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +0.59 K, p = 292 kPa, pred = 0.99, gaseous
+    Layer 1: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.57 K, p = 291 kPa, pred = 0.99, gaseous
+    --------------------------------------------------------------------
+                    T = +0.57 K, p = -32.4 kPa, pred = -0.11, liquid
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.89, vapor volume fraction = 0
+      at z/L = 0.89, vapor volume fraction = 1
+                    T = +0.07 K, p = 260 kPa, pred = 0.89, gaseous
+    --------------------------------------------------------------------
+                    T = +0.07 K, p = -2.35e+03 kPa, pred = -8.08, liquid
+    Layer 3: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.00 K, p = -3.94e+03 kPa, pred = -13.61, liquid
+________________________________________________________________________
+
+Downstream state: T2 = 291.88 K, p2 = 242 kPa (psat = 290 kPa, pred = 0.84).
+
+Export to file phase05-1A.pdf
+Fluid: isobutane, mass flux 42.29 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 301 kPa (psat = 301 kPa, pred = 1.00).
+
+Iteration accuracy: p1 - p1calc = -0.046 Pa (-1.5e-07 p1),
+                    T1 - T1calc = 0.05 K (0.039(T1-T2)).
+
+                    T = +1.23 K, p = 301 kPa, pred = 1.00, gaseous
+    at liquid film, T = +1.28 K, z = -0.00822 mm, z/L1 = -0.41
+                    T = +0.09 K, p = 301 kPa, pred = 1.04, liquid
+______ Membrane 1_______________________________________________________
+                    T = +0.09 K, p = 301 kPa, pred = 1.04, liquid
+    Layer 1: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.07 K, p = -125 kPa, pred = -0.43, liquid
+    --------------------------------------------------------------------
+                    T = +0.07 K, p = -125 kPa, pred = -0.43, liquid
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.46, vapor volume fraction = 0
+      at z/L = 0.46, vapor volume fraction = 1
+                    T = +0.00 K, p = 252 kPa, pred = 0.87, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 252 kPa, pred = 0.87, gaseous
+    Layer 3: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 1
+      at z/L = 0.00, vapor volume fraction = 1
+                    T = +0.00 K, p = 251 kPa, pred = 0.87, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 291.87 K, p2 = 251 kPa (psat = 290 kPa, pred = 0.87).
+
+Export to file phase05-1B.pdf
+Fluid: isobutane, mass flux 299.7 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 301 kPa (psat = 301 kPa, pred = 1.00).
+
+Iteration accuracy: p1 - p1calc = 0.63 Pa (2.1e-06 p1),
+                    T1 - T1calc = 0.053 K (0.042(T1-T2)).
+
+                    T = +1.22 K, p = 301 kPa, pred = 1.00, gaseous
+                    T = +1.29 K, p = 301 kPa, pred = 1.00, gaseous
+______ Membrane 1_______________________________________________________
+                    T = +1.29 K, p = 301 kPa,   a = 1.000, two-phase
+    Layer 1: dia = 6000 nm, L = 2 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 0.38, vapor volume fraction = 1
+      at z/L = 0.38, vapor volume fraction = 1
+                    T = +1.18 K, p = 299 kPa, pred = 0.99, gaseous
+    --------------------------------------------------------------------
+                    T = +1.18 K, p = 169 kPa, pred = 0.56, liquid
+    Layer 2: dia = 100 nm, L = 0.15 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.14 K, p = -56.4 kPa, pred = -0.19, liquid
+    --------------------------------------------------------------------
+                    T = +0.14 K, p = -56.4 kPa, pred = -0.19, liquid
+    Layer 3: dia = 10 nm, L = 0.02 mm, km = 36 W/mK, theta = 0°.
+      at z/L = 1.00, vapor volume fraction = 0
+      at z/L = 0.00, vapor volume fraction = 0
+                    T = +0.00 K, p = -3.08e+03 kPa, pred = -10.62, liquid
+________________________________________________________________________
+
+Downstream state: T2 = 291.87 K, p2 = 251 kPa (psat = 290 kPa, pred = 0.87).
+
+>>

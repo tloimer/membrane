@@ -254,8 +254,14 @@ for i = 1:nmembranes
   if isup
     printstate(Tup,pup,aup,upcolor);
     if isfilm
-      fprintf('    at liquid film, T =%+6.2f K\n',...
+      fprintf('    at liquid film, T =%+6.2f K',...
 	      ms.membrane(i).flow(1).T(end) - ms.T2);
+      if strcmp(pa,'phase')
+        fprintf(', z = %.3g mm, z/L1 = %.2f\n', ms.membrane(i).flow(1).z(end)*1e3,...
+		ms.membrane(i).flow(1).z(end)/ms.membrane(i).layer(1).matrix.L);
+      else
+	fprintf('\n');
+      end
     end
     printstartstate(ms.membrane(i).flow(1));
   end
