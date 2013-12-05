@@ -219,11 +219,18 @@ fprintf('  -Downstream-\n');
 end %------------------------------------------------------------ end printsetup
 
 
-function printsolution(ms) %-------------------------------------- printsolution
+function printsolution(ms,pa) %----------------------------------- printsolution
 %PRINTSOLUTION Print temperatures and pressures at special locations.
 %  MSANY.PRINTSOLUTION(MS) Print the solution stored in the membranestruct MS.
 %  The upstream and downstream states in each flow regime are printed. This is
 %  equivalent to the upstream and downstream state at each front.
+%
+%  MSANY.PRINTSOLUTION(MS,'phase') In addition to the above, print the locations
+%  of the fronts of phase change.
+
+if nargin == 1
+  pa='none'
+end
 
 % Print the substance and upstream condition
 psat = ms.substance.ps(ms.T1);
@@ -260,6 +267,12 @@ for i = 1:nmembranes
     fprintf(['    Layer %d: dia = %.0f nm, L = %.2g mm, km = %.3g W/mK, '...
 	     'theta = %.0f°.\n'], j, layer.matrix.dia*1e9,...
 	    layer.matrix.L*1e3, layer.matrix.km, layer.theta);
+    if strcmp(pa,'phase') % a quick hack
+      fprintf('      at z/L = %.2f, vapor volume fraction = %.2g\n',...
+	      layer.flow(end).z(1)/layer.matrix.L, layer.flow(end).a(1));
+      fprintf('      at z/L = %.2f, vapor volume fraction = %.2g\n',...
+	      layer.flow(1).z(end)/layer.matrix.L, layer.flow(1).a(end));
+    end
     printstartstate(layer.flow(1));
     if j < nlayers
       fprintf('    --------------------------------------------------------------------\n');
