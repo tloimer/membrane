@@ -126,9 +126,19 @@ function twoplots(i) %------------------------------------------------- twoplots
 % the figure is always less wide than given! add 6 mm, instead of
 % PaperPosition [0 0 8.9 5]; Perfectly 16x9 would be: 8.8 4.95
 % Plot with p1 - p2 = 1 bar.
-figure('PaperPosition',[0 0 9.9 5],'PaperSize',[9.9 5]);
+
+createfigr = @() figure('PaperUnits','points','PaperPosition',[0 0 254 144],...
+			'PaperSize',[254 144],'OuterPosition',[100 100 330 280]);
+  % I took a figure, did set(gcf..,) set(gca,..), set 'Units' to 'points' and
+  % get(gca,'TightInset'), get(gca,'Position') - from which I calculated the
+  % necessary Position and PaperPosition values.
+  % TightInset is left 30, bottom 25, right 3, top 6. rounded up a bit
+  % The outer position is probably necessary for the .fig-file.
+setaxes = @(ah) set(ah,'Units','points','Position',[33 28 216 108],...
+			'FontName','Times','FontSize',7);
+f1 = createfigr();
 hl = plot(poben/psat1,mf*1e3,'k-',poben/psat1,mr*1e3,'k:');
-set(gca,'FontName','Times','FontSize',7,'OuterPosition',[0 0 1 1]);
+setaxes(gca);
 set(hl(1),'LineWidth',0.3);
 set(hl(2),'LineWidth',0.5);
 xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
@@ -138,16 +148,22 @@ xlim([0.7 1]);
 legend('separation layer upstream (flow direction A)',...
        'separation layer downstream (flow direction B)')
 legend('Location','NorthWest'); legend('boxoff');
-print('-deps2',sprintf('%s%u.eps',mfilename,i));
+output(f1,i);
 
-figure('PaperPosition',[0 0 9.9 5],'PaperSize',[9.9 5]);
+f2 = createfigr();
 hl = plot(poben/psat1,mf./mr,'k-');
-set(gca,'FontName','Times','FontSize',7);
+setaxes(gca);
 set(hl(:),'LineWidth',0.3);
 xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio flow direction A/B');
 xlim([0.7 1]);
-print('-deps2',sprintf('%s%u.eps',mfilename,i+1));
+output(f2,i+1);
+
+function output(h,i)
+  oname = sprintf('%s%u',mfilename,i);
+  print('-deps2','-tiff',[oname '.eps']);
+  saveas(h,oname,'fig');
+end
 end %-------------------------------------------------------------- end twoplots
 
 function printpcondensation(ms) %---------------------------- printpcondensation
@@ -162,4 +178,4 @@ fprintf(['  pk/psat = %.2f, (dT/dp)_h(dpk/dT) = %.2f, (p1-p2)/psat = %.2f,\n'...
   pk/psat1,n,deltap/psat1,dpfl/psat1,(pk-n*deltap)/psat1,(pk-n*dpfl)/psat1);
 end %---------------------------------------------------- end printpcondensation
 
-end %%% END2.1GURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FIGURES %%%
+end %%% ENDFIGURES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FIGURES %%%

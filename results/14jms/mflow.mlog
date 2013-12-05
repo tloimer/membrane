@@ -1,21 +1,20 @@
->> public
+>> mflow
 
 Direction separation - support layer, delta p = 0.1 bar.
-  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.19, (p1-p2)/psat = 0.03,
+  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.20, (p1-p2)/psat = 0.03,
   pdiff(first layer)/psat = 0.02. pcrel(p1-p2) = 0.83, pcrel(fl) = 0.83.
 Direction support - separation layer, delta p = 0.1 bar.
   pk/psat = 1.00, (dT/dp)_h(dpk/dT) = 0.22, (p1-p2)/psat = 0.03,
   pdiff(first layer)/psat = 0.00. pcrel(p1-p2) = 0.99, pcrel(fl) = 1.00.
 Direction separation - support layer, delta p = 0.5 bar.
-  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.19, (p1-p2)/psat = 0.17,
-  pdiff(first layer)/psat = 0.11. pcrel(p1-p2) = 0.80, pcrel(fl) = 0.82.
+  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.20, (p1-p2)/psat = 0.17,
+  pdiff(first layer)/psat = 0.11. pcrel(p1-p2) = 0.80, pcrel(fl) = 0.81.
 Direction support - separation layer, delta p = 0.5 bar.
   pk/psat = 1.00, (dT/dp)_h(dpk/dT) = 0.22, (p1-p2)/psat = 0.17,
   pdiff(first layer)/psat = 0.00. pcrel(p1-p2) = 0.96, pcrel(fl) = 1.00.
-
 Direction separation - support layer, delta p = 1.0 bar.
-  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.19, (p1-p2)/psat = 0.33,
-  pdiff(first layer)/psat = 0.21. pcrel(p1-p2) = 0.77, pcrel(fl) = 0.80.
+  pk/psat = 0.84, (dT/dp)_h(dpk/dT) = 0.20, (p1-p2)/psat = 0.33,
+  pdiff(first layer)/psat = 0.22. pcrel(p1-p2) = 0.77, pcrel(fl) = 0.79.
 Direction support - separation layer, delta p = 1.0 bar.
   pk/psat = 1.00, (dT/dp)_h(dpk/dT) = 0.22, (p1-p2)/psat = 0.33,
   pdiff(first layer)/psat = 0.00. pcrel(p1-p2) = 0.93, pcrel(fl) = 1.00.
@@ -25,4 +24,5 @@ and approx. at line 68, change
 /DO { [.5 dpi2point mul 4 dpi2point mul] 0 setdash } bdef  to
 /DO { [.1 dpi2point mul 2 dpi2point mul] 0 setdash } bdef
 Changed the eps-files!
->>
+# xelatex mflow.tex && rm mflow.log mflow.aux
+>> 

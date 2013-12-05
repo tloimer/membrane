@@ -1,11 +1,13 @@
 \documentclass{minimal}
-\usepackage{graphics}
-\usepackage{lmodern}
-%\usepackage[1]{fontenc}
-\usepackage{fontspec}
+\usepackage{graphics,lmodern,fontspec}
+\usepackage[dmyyyy]{datetime}\renewcommand\dateseparator{.}
 \usepackage[a4paper,hmargin=1.2cm,tmargin=2cm,bmargin=3cm]{geometry}
+\makeatletter\def\@oddfoot{\reset@font File 14jms/mflow.pdf,
+  created \today\ at \currenttime.\hfil\thepage}\makeatother
+
 \begin{document}
-\centerline{Isobutane, $d_1=10$~nm, $L_1 = 20$~µm, $d_2=100$~nm, $L_2=150$~µm.}
+\centerline{\fontsize{12}{10}\selectfont Isobutane, $d_1=10$~nm, $L_1 = 20$~µm,
+$d_2=100$~nm, $L_2=150$~µm. $k_\mathrm m=36$~W/mK.}\bigskip\bigskip
 
 \raggedright\noindent
 \includegraphics{mflow1.eps}
@@ -13,18 +15,18 @@
 Pressure difference 0.1~bar.
 $p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction A}) = 0.83$.
 %$p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction B}) = 0.96$.
-\bigskip
+\bigskip\bigskip
 
-\includegraphics{mflow3.eps}
-\includegraphics{mflow4.eps}\\
-Pressure difference 0.5~bar.\bigskip
+\includegraphics{mflow3}
+\includegraphics{mflow4}\\
+Pressure difference 0.5~bar.
 $p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction A}) = 0.80$.
 %$p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction B}) = 0.91$.
-\bigskip
+\bigskip\bigskip
 
-\includegraphics{mflow5.eps}
-\includegraphics{mflow6.eps}\\
-Pressure difference 1.0~bar.\bigskip
+\includegraphics{mflow5}
+\includegraphics{mflow6}\\
+Pressure difference 1.0~bar.
 $p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction A}) = 0.77$.
 %$p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction B}) = 0.87$.\bigskip
 %$p_\mathrm{cond}/p_\mathrm{sat}(\hbox{direction B}) = 0.99$.
