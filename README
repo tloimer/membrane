@@ -1,3 +1,25 @@
+Get up running:
+
+cd .../tests;
+matlab &
+>> runalltests;
+% See runalltests.m in tests/ and files called therein, e.g., testmnumadiabat.m
+
+Go up hacking:
+
+$ mkdir /tmp/aa; cd ~/asym/matlab
+$ cp -a * /tmp/aa
+$ cd /tmp/aa
+$ rm -r tests/12*
+$ git init --separate-git-dir ~/matlab.git
+$ .
+$ .
+$ .
+$ git status; git log; git show; git diff; git diff --cached; 
+$ git log --oneline --graph --decorate --all -40
+
+
+
 ____folder structure____
 
 Program code, or core program, in matlab/program.
@@ -22,7 +44,7 @@ directory, anyway, no need to control their version.
                |
   12potsdam    o
                |\ branch
-               | \ asym   
+               | \ asym
                |  o
                |  |\ branch
                |  o \ complete
@@ -35,7 +57,15 @@ directory, anyway, no need to control their version.
                |/   \|
   asym         o     o
 
-
+i.e., workflow:
+git checkout -b asym
+ hack..hack..hack
+git commit .. git commit
+git checkout master 
+git merge --no-ff [--no-commit] asym
+# creates a commit with the merge-message "Merge branch 'asym'". Probably use
+git merge --no-ff -m 'Version asym' [--no-commit] asym
+git tag 'asym'
 
 
 __Kern des matlab-Programms, aus ~/projects/11jms/matlab3 kopiert:
@@ -43,28 +73,6 @@ __Kern des matlab-Programms, aus ~/projects/11jms/matlab3 kopiert:
   misotherm.m, Kopie von 12potsdam/calc/matlab/misotherm.m
   zugefügt: findinterval.m, flowsetup.m, flowstruct.m, mstack.m
 
-Changelog:
-  flow12: if partialsolution...  in flow13, flow45 eingefügt; an anderen Stellen
-gelöscht. Flow chart im Kommentar zugefügt.
-  mnum.m: flowsetup, flowstruct entfernt und in separate m-files flowsetup.m,
-flowstruct.m geschrieben.
-
-Neu: findinterval.m, mstack.m
-  mstack.m liefert den selben Massenstrom wie mstack.m - aber nicht all die
-Ausgaben in flowstruct.
-
-mlinearnew.m, mlinpsat.m: Nun, geschrieben, aber dann nicht benötigt.
-
 __Eine utility-function, aus ~/12potsdam/calc/matlab:
-misotherm.m 
+misotherm.m
 Andere utility-functions siehe ../results.
-
-__Tests__  
-> matlab; >> tests;
-output in tests.log kopiert,
-*.eps und tests.log nach tests/120718 kopiert.
-
-stimmen Resultate von mstack.m mit mnum.m überein?
-frvmCcc.m, von 11jms/matlab3/frvmCc.m kopiert und modifiziert
-frvmvskap.m, von 11jms/matlab3/frvmvskap.m kopiert und modifiziert
-testmstack

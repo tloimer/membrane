@@ -1022,10 +1022,10 @@ if T0 ~= 0
   % We have an extended Antoine eq.
   % the initial guess might be too large!
   Ts = min(Ts,Acoeffs(i,1));
-  Ts = newtony(@(T) ps(Acoeffs,T),Ts,p,1e-2);
+  Ts = newtony(@(T) ps(Acoeffs,T),Ts,p,1e-5);
 end
 % RES in NEWTON: With ps ~ 1e5, ps is solved to 7 digits accuracy. Since Ts is
-% then accurate to RES/dps, and dps > 1e3, Ts is accurate to 1e-5.
+% accurate to RES/dps, and dps > 1e3, for RES = 1e-2 Ts is accurate to 1e-5.
 
 function rho = rholandolt(coeffs,T)
 %RHOLANDOLT Liquid density [kg/m3].
@@ -1476,10 +1476,8 @@ x = x0;
 for i = 1:iter
   [y0, dy] = fun(x);
   fy = y0 - y;
-  if abs(fy) < res, return
-  else
-    x = x - fy/dy;
-  end
+  x = x - fy/dy;
+  if abs(fy) < res, return; end
 end
 
 % Be verbose if no solution is found.

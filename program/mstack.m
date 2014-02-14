@@ -238,11 +238,11 @@ while fb ~= 0 && a ~= b
         a = b;    b = c;    c = a;
         fa = fb;  fb = fc;  fc = fa;
     end
-    
+
     % Convergence test and possible exit
     m = 0.5*(c - b);
     toler = 2.0*tol*max(abs(b),1.0);
-    if (abs(fb) < p1tol) || (abs(m) <= toler) % || (fb == 0.0) 
+    if (abs(fb) < p1tol) || (abs(m) <= toler) % || (fb == 0.0)
         if lowprecision
           if trace > 1
             fprintf('We jumped over 100 x p1tol.\n');
@@ -254,7 +254,7 @@ while fb ~= 0 && a ~= b
     if trace > 2
         fprintf('%5.0f   %13.6g %13.6g        %s\n',fcount, b, fb, procedure);
     end
-    
+
     % Choose bisection or interpolation
     if (abs(e) < toler) || (abs(fa) <= abs(fb))
         % Bisection
@@ -284,7 +284,7 @@ while fb ~= 0 && a ~= b
             procedure='bisection';
         end;
     end % Interpolation
-    
+
     % Next point
     a = b;
     fa = fb;

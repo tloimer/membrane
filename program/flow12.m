@@ -431,7 +431,8 @@ function [val,isterm,direction] = term56w(z,y)
   isterm = 1; direction = -1;
   % Tw = y(1);  pw = y(2);
   T = mkTdim(y(1));
-  val = mkpdim(y(2)) + curv*s.sigma(T) - pkelv(T);
+  [pk, pcap] = flsetup.pkpcap(T);
+  val = mkpdim(y(2)) + pcap - pk;
 end
 
 %  ASSIGN LAST POINT
@@ -502,7 +503,7 @@ function [condensation pk9 dpk9 dpcap9 hvapK9 pcap9 q6] = check69or89(m,T9,q9)
 q6 = q9 + m*hvapK9; %========================================== part for front69
 dpkliq9 = dpk9 - dpcap9; %21.April
 % for non-wetting, dpkliq might be negative! Then, condensation is anyway
-% possible. The pressure could stay constant and the Temperature rise, still the
+% possible. The pressure could stay constant and the temperature rise, still the
 % fluid would remain in its liquid state.
 if dpkliq9 <= 0 || m*kmliq(T9)*s.nul(T9)/(dpkliq9*mem.kappa) >= q6
   condensation = true;
@@ -603,13 +604,15 @@ if writesolution
   % allocate space for all points; assign last point
   T78(last) = T7; a78(last) = a7; z78(last) = z7;
   % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
-  p78(last) = pkelv(T7) - (1-a7)*flsetup.curv*s.sigma(T7);
+  [pk, pcap] = flsetup.pkpcap(T7);
+  p78(last) = pk - (1-a7)*pcap;
   last = last - 1;
   T78(1:last) = mkTdim(sol78.y(1,1:last)); a78(1:last) = sol78.y(2,1:last);
   z78(1:last) = z8*sol78.x(1:last);
+  % pk is not vektorizable; Gives a result, but probably wrong numbers.
   for i = 1:last
-    % pkelv is not vektorizable; Gives a result, but probably wrong numbers.
-    p78(i) = pkelv(T78(i)) - (1-a78(i))*flsetup.curv*s.sigma(T78(i));
+    [pk, pcap] = flsetup.pkpcap(T78(i));
+    p78(i) = pk - (1-a78(i))*pcap;
   end
   % vielleicht q78 berechnen? q2ph?
   writetostruct('78-',{'z','T','p','a','color'},{z78,T78,p78,a78,twophcolor});
@@ -834,7 +837,7 @@ function [T3 p3 q3] = front35(m,T5,p5,q5) %----------------------------- front35
 T3 = T5;
 psat3 = s.ps(T3);  [drho3 rho3] = s.drho(T3);
 rhoRT = rho3*s.R*T3;
-% inital guess
+% initial guess
 p3 = (p5 + rhoRT)/(psat3+rhoRT); % p3 here really is p3/psat3
 % setup newton
 ps_rhoRT = psat3/rhoRT; p5_rhoRT = p5/rhoRT;
@@ -892,7 +895,7 @@ function x = newton(fun,x0,res,iter) %----------------------------------- newton
 %
 %  NEWTON(FUN,X0,RES,ITER) finds a solution to F(X) = 0. NEWTON iterates until
 %  X changes less than RES in one step or if more than ITER iterations are done.
-%  Default values are RES = 1e-6 and ITER = 100.
+%  Default values are RES = 1e-12 and ITER = 100.
 %
 %  Example
 %    Given
@@ -904,16 +907,14 @@ function x = newton(fun,x0,res,iter) %----------------------------------- newton
 %  See also the MATLAB-functions function_handle, feval.
 
 if nargin < 4, iter = 100; end
-if nargin < 3, res = 1e-6; end
+if nargin < 3, res = 1e-12; end
 
 x = x0;
 for i = 1:iter
   [y dy] = fun(x);
   dx = y/dy;
-  if abs(dx) < res, return
-  else
-    x = x - dx;
-  end
+  x = x - dx;
+  if abs(dx) < res, return; end
 end
 
 % Be verbose if no solution is found.

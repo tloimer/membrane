@@ -1,16 +1,26 @@
 function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %FLOWSETUP  Setup of flow properties.
-% FS = FLOWSETUP(T2,Tmax,THETA,S,MEM,F) returns a struct FS that contains flow
-% properties.
+%  FS = FLOWSETUP(T2,TMAX,THETA,S,MEM,F) returns a struct FS that contains flow
+%  properties for a combination of contact angle THETA (in degrees), a substance
+%  S, a membrane MEM and a fmodel F. The integral of dh/dp over temperature T is
+%  calculated between T2 and at least TMAX.
+%
+%  FREEFLOW = FLOWSETUP(S) sets the flowstruct FREEFLOW to properties
+%  appropriate for flow through free space. Uses the homogeneous flow model,
+%  FMODEL('plug'). Sets FREEFLOW.hgK and FREEFLOW.intdhdpsatdT to empty matrices.
+%
 %  Fields:
 %    FS.curv              Curvature.
 %    FS.kelv(T,sigma,rho) pK/psat
 %    FS.pkps(T)           pK/psat
 %    FS.pkelv(T)          pK
+%    FS.pkpcap(T)         pk and capillary pressure pcap, returns [pk pcap]
 %    FS.dpkdT(T)          [dpK/dT pk]
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
 %    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
 %    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg].
+%    FS.q2ph(m,T,a)       Heat flux, and two-phase pressure in two-phase flow.
+%    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid.
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT.
 %    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow).
 %    FS.knudsen(T,p)      Knudsen number.
@@ -20,13 +30,30 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.k2ph(T,a)         Heat conductivity of two-phase filled membrane.
 %    FS.xdot(T,pk,a)      Vapor mass flow fraction.
 %    FS.odemaxstep(range,delta) Minimum number of integration steps.
+%
+%  See also SUBSTANCE, MEMBRANE, FMODEL.
 
-flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'dpkdT',[],'hgK',[],...
-  'hvapK',[],'hvapKraw',[],'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],...
-  'nu2ph',[],'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
+flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
+  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'q2ph',[],'qminqmax',[],...
+  'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],'nu2ph',[],...
+  'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
-flsetup.curv = mem.fcurv(cos(theta*pi/180));
-flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
+% set for free space
+if nargin == 1
+  s = T2;
+  theta = 90;
+  mem = membrane('free');
+  f = fmodel('plug');
+  T2 = [];
+  isfreespace = true;
+  issupercritical = false; % No error checks here for free space.
+else
+  issupercritical = ~isfinite(s.ps(T2));
+  isfreespace = strcmp(mem.tname,'free');
+end
+
+% First set what is set in any case.
+% Return early further below.
 
 % Apparent vapor viscosity
 %   nuapp = nug/(1 + beta Kn),  Kn = 3 nug sqrt(pi/(8*R*T)) / dia,
@@ -60,23 +87,52 @@ flsetup.odemaxstep = ... % 1/max(minsteps,...
 % Return Inf or NaN if the fluid is anywhere supercritical.
 % Might be changed with moderate effort to return functions that give exact
 % values.
-if ~isfinite(s.ps(T2))
-  flsetup.pkelv = @(T) Inf;
-  flsetup.hgK = @(T) NaN;
-  flsetup.intdhdpdpsatdT = @(T) NaN;
-  flsetup.hvapK = @(T) 0;
-  flsetup.hvapKraw = @(T,prad,psat,pcap,rho,drho) 0;
-  return
+
+if theta == 90 || isfreespace || issupercritical
+  flsetup.curv = 0;
+  flsetup.kelv = @(T,sigma,rho) 1;
+  if issupercritical
+    flsetup.pkps = @(T) NaN;
+    flsetup.pkelv = @(T) Inf;
+    flsetup.pkpcap = @Infzero;
+    flsetup.dpkdT = @(T) NaN; % should return 2 arguments;
+    flsetup.hgK = @(T) NaN;
+    flsetup.intdhdpdpsatdT = @(T) NaN;
+    flsetup.hvapK = @(T) 0;
+    flsetup.hvapKraw = @(T,prad,psat,pcap,rho,drho) 0;
+    % this should be sufficient, to trigger an error if necessary
+    return
+  elseif isfreespace
+    flsetup.pkps = @(T) 1;
+    flsetup.pkelv = @(T) s.ps(T);
+    flsetup.pkpcap = @psatpcap;
+    flsetup.dpkdT = @dpsatdT;
+    flsetup.hvapK = @hvapsat;
+    flsetup.hvapKraw = @hvapKraw;
+    % simply do not set hgK and intdhdp... for free space
+    flsetup.qminqmax = @(m,T) qminqmaxfree(T);
+    return
+  end
+  % do not return for theta = 90
+else
+  flsetup.curv = mem.fcurv(cos(theta*pi/180));
+  flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
 end
 
-flsetup.dpkdT = @dpkdT;
 flsetup.pkps = @(T) flsetup.kelv(T,s.sigma(T),s.rho(T));
-flsetup.pkelv = @(T) s.ps(T)*flsetup.pkps(T);
-%flsetup.hgK = @(T) deval(solhgK,T);
-%flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
+flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
+flsetup.pkpcap = @pkpcap;
+flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
+flsetup.q2ph = @q2ph; % Also works in free space or for theta = 90.
+flsetup.qminqmax = @qminqmax;
+% solhhK needs to exist, to be 'deval'uated
+% set further below
+%flsetup.hgK = @(T) deval(solhgK,T);
+%flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
+% Calculate hgK and intdhdpsdpsatdT.
 % inttol: relative tolerance for integration
 inttol = 1e-6;
 stepT = 0.4;
@@ -121,12 +177,33 @@ end
 flsetup.hgK = @(T) deval(solhgK,T);
 flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
+%%% NESTED FUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NESTED FUNCTIONS %%%
+
+function [pk, pcap] = pkpcap(T) %---------------------------------------- pkpcap
+%PKPCAP     Vapor pressure at a curved meniscus and capillary pressure.
+%
+% [PK, PCAP] = PKPCAP(T) returns the equilibrium pressure at a curved meniscus,
+% PK, and the capillary pressure due to Young's-Laplace equation.
+sigma = s.sigma(T);
+pk = s.ps(T)*flsetup.kelv(T,sigma,s.rho(T));
+pcap = flsetup.curv*sigma;
+end %---------------------------------------------------------------- end pkpcap
+
+function [psat, pcap] = psatpcap(T) %---------------------------------- psatpcap
+psat = s.ps(T);
+pcap = 0;
+end %-------------------------------------------------------------- end psatpcap
+
+function [infinity, nix] = Infzero(T) %--------------------------------- Infzero
+infinity = Inf;
+nix = 0;
+end %--------------------------------------------------------------- end Infzero
+
 function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
 %
-% [DPK PK] = DPKDT(T) returns the pk and dpk/dT. A copy from HVAPK, for
-% convenience.
-%
+% [DPK PK] = DPKDT(T) returns pk and dpk/dT. A copy from HVAPK, for convenience.
+
 % See below.
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
@@ -135,6 +212,10 @@ pk_ps = flsetup.kelv(T,sigma,rho);
 pk = pk_ps*psat;
 dpk = pk_ps * (dps + psat*flsetup.curv*sigma*(1/T-dsig+drho)/(s.R*rho*T));
 end %----------------------------------------------------------------- end dpkdT
+
+function [dps, psat] = dpsatdT(T) %------------------------------------- dpsatdT
+[psat, dps] = s.ps(T);
+end %--------------------------------------------------------------- end dpsatdT
 
 function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 %HVAPK      Enthalpy of vaporization at a curved interface.
@@ -162,10 +243,72 @@ dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
 hvapK = flsetup.hvapKraw(T,pk,psat,pcap,rho,drho);
 end %----------------------------------------------------------------- end hvapK
 
+function [psat dps hvapK dpcap pcap] = hvapsat(T) %--------------------- hvapsat
+[psat dps] = s.ps(T);
+pcap = 0;
+dpcap = 0;
+hvapK = s.hvap(T);
+end %--------------------------------------------------------------- end hvapsat
+
 function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   dhldp = (1 + T*drho)/rho;
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
 end %-------------------------------------------------------------- end hvapKraw
+
+function [q,p2ph,pk,pcap] = q2ph(m,T,a) %---------------------------------- q2ph
+%Q2PH       Heat flux in two-phase flow.
+%  [Q,P2PH,PK,PCAP] = Q2PH(M,T,A) Return heat flux Q [W/m2], two-phase pressure
+%  P2PH = PK - (1-A)*PCAP, PK and PCAP, PCAP = pgas - pliq.
+
+%  The bulk of this is copied from hvapK.
+%  8<--  % copy from hvapk
+[psat dps] = s.ps(T);
+[dsig sigma] = s.dsig(T);
+[drho rho] = s.drho(T);
+pk_ps = flsetup.kelv(T,sigma,rho);
+pk = pk_ps*psat;
+pcap = flsetup.curv*sigma;
+dpcap = pcap*dsig;
+dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
+%  8<--
+q = m*flsetup.nu2ph(T,pk,a)*flsetup.k2ph(T,a)/((dpk-(1-a)*dpcap)*mem.kappa);
+p2ph = pk - (1-a)*pcap;
+end %------------------------------------------------------------------ end q2ph
+
+function [qmin qmax hvapK dpk dpcap] = qminqmax(m,T) %----------------- qminqmax
+%QMINQMAX   Minimum and maximum heat flux for vapor and liquid flow, respectively.
+%
+% [QMIN QMAX HVAPK DPK DPCAP] = QMINMAX(T) returns the minimum heat flux, such
+% that a vapor remains a vapor flow, and the maximum heat flux allowed for a
+% liquid to remain a liquid flow. Both liquid and vapor are at their states in
+% equilibrium with the other phase at a curved meniscus.
+
+% The minimum heat flux, such that a vapor remains a vapor (does not
+% become too cold upstream of 1) is found from
+%   m = -(kappa/nu) dp/dz,
+%   q = -k dT/dz.
+% A vapor stays marginally a vapor if p follows pk(T), dp/dT = dpk/dT,
+%   m = -(kappa/nu) dpk/dT dT/dz,  m = (kappa/nu)*(dpk/dT)*q/k,
+%   qmin = m*nu*k/(kappa*dpk/dT).
+% Analoguous, a liquid stays marginally a liquid if p follows pk - pcap,
+%   qmax = m*nu*k/(kappa*(dpk/dT-dpcap/dT)).
+[pk dpk hvapK dpcap pcap] = flsetup.hvapK(T);
+qmin = m*flsetup.kmgas(T)*flsetup.nuapp(T,pk)/(mem.kappa*dpk);
+qmax = m*flsetup.kmliq(T)*s.nul(T)/(mem.kappa*(dpk-dpcap));
+end %-------------------------------------------------------------- end qminqmax
+
+function [qmin qmax hvapK dpk dpcap] = qminqmaxfree(T) %----------- qminqmaxfree
+%QMINQMAXFREE QMINQMAX for free space.
+%
+% See also FLOWSETUP>QMINQMAX.
+
+[pk dpk hvapK dpcap pcap] = flsetup.hvapK(T);
+% Two-phase flow in free space cannot tolerate any heat flux. A vapor must not
+% become colder upstream of its saturation state in the free space, hence qmin =
+% 0. A liquid must not become warmer, hence qmax = 0.
+qmin = 0;
+qmax = 0;
+end %---------------------------------------------------------- end qminqmaxfree
 
 function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 %NU2PHAPP   Apparent viscosity (Knudsen + viscous flow) of the 2ph-mixture.
@@ -176,4 +319,5 @@ function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 vol = s.v(T,pk);
 nu2app = f.nu2ph(a,vol,1/s.rho(T),flsetup.nuapp(T,pk)/vol,s.mul(T));
 end %-------------------------------------------------------------- end nu2phapp
-end %------------------------------------------------------------- end flowsetup
+
+end %%% END FLOWSETUP %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END FLOWSETUP %%%

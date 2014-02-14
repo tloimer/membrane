@@ -38,7 +38,7 @@ pcap = mem.fcurv(costheta)*s.sigma(T1);
 if nargin ~=8
   pK = ps*exp(-pcap/(s.R*s.rho(T1)*T1));
 end
-  
+
 p12 = p1 - p2;
 betakn_nu = mem.beta * 3*sqrt(pi/(8*s.R))/mem.dia;
 kap_L = mem.kappa/mem.L;  corrKn = betakn_nu/sqrt(T1);
