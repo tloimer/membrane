@@ -1,7 +1,7 @@
 function mflow()
-%MFLOW       Create figures for presumably J. Membr. Sci. 2014.
+%MFLOW       Create figures for HTFFM in Marseille, 2014.
 
-if ~exist('substance.m'), addpath('../../program'); end
+if ~exist('substance.m'), addpath('../program'); end
 
 %Setup the flow problem
 T1 = 293.15;
@@ -19,66 +19,75 @@ prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
 
 psat1 = s.ps(T1);
 
-% Plot with p1 - p2 = 0.1 bar.
-
-poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
-%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
-mf = poben; mr = poben;
-
-deltap = 0.1e5;
-for i = 2:length(poben)
-  mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pms);
-  mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pmr);
-end
-[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pms);
-[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pmr);
-
-fprintf('\nDirection separation - support layer');
-printpcondensation(pms);
-fprintf('Direction support - separation layer');
-printpcondensation(pmr);
-
-twoplots(1);
+%% Plot with p1 - p2 = 0.1 bar.
+%
+%poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
+%%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
+%mf = poben; mr = poben;
+%
+%deltap = 0.1e5;
+%for i = 2:length(poben)
+%  p2 = poben(i) - deltap;
+%  mf(i) = mnumadiabat(T1,poben(i),p2,s,pms)...
+%	  / pms.mfluxviscous(T1,poben(i),p2,s,pms);
+%  mr(i) = mnumadiabat(T1,poben(i),p2,s,pmr)...
+%	  / pmr.mfluxviscous(T1,poben(i),p2,s,pmr);
+%end
+%[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pms);
+%[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pmr);
+%
+%fprintf('\nDirection separation - support layer');
+%printpcondensation(pms);
+%fprintf('Direction support - separation layer');
+%printpcondensation(pmr);
+%
+%twoplots(1);
 
 % Plot with p1 - p2 = 0.5 bar.
 
 poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
-%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
+%poben = [1.1:0.1:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 
 deltap = 0.5e5;
 for i = 2:length(poben)
-  mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pms);
-  mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pmr);
+  p2 = poben(i) - deltap;
+  mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pms)...
+	  / pms.mfluxviscous(T1,poben(i),p2,s,pms);
+  mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pmr)...
+	  / pmr.mfluxviscous(T1,poben(i),p2,s,pmr);
 end
-[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pms);
-[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pmr);
+p2 = poben(1) - deltap;
+[mf(1),pms] = mnumadiabat(T1,poben(1),p2,s,pms);
+mf(1) = mf(1) / pms.mfluxviscous(T1,poben(1),p2,s,pms);
+[mr(1),pmr] = mnumadiabat(T1,poben(1),p2,s,pmr);
+mr(1) = mr(1) / pmr.mfluxviscous(T1,poben(1),p2,s,pmr);
 
-fprintf('Direction separation - support layer');
-printpcondensation(pms);
-fprintf('Direction support - separation layer');
-printpcondensation(pmr);
+%fprintf('Direction separation - support layer');
+%printpcondensation(pms);
+%fprintf('Direction support - separation layer');
+%printpcondensation(pmr);
 
-twoplots(3);
+twoplots(1);
 
-poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
-%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
-mf = poben; mr = poben;
-
-deltap = 1e5;
-for i = 2:length(poben)
-  mf(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,s,pms);
-  mr(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,s,pmr);
-end
-[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pms);
-[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pmr);
-
-fprintf('\nDirection separation - support layer');
-printpcondensation(pms);
-fprintf('Direction support - separation layer');
-printpcondensation(pmr);
-
-twoplots(5);
+%poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
+%%poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
+%mf = poben; mr = poben;
+%
+%deltap = 1e5;
+%for i = 2:length(poben)
+%  mf(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,s,pms);
+%  mr(i) = mnumadiabat(T1,poben(i),poben(i)-1e5,s,pmr);
+%end
+%[mf(1),pms] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pms);
+%[mr(1),pmr] = mnumadiabat(T1,poben(1),poben(1)-deltap,s,pmr);
+%
+%fprintf('\nDirection separation - support layer');
+%printpcondensation(pms);
+%fprintf('Direction support - separation layer');
+%printpcondensation(pmr);
+%
+%twoplots(5);
 
 % Plot with p1 - p2 = 1.5 bar.
 
@@ -127,22 +136,27 @@ function twoplots(i) %------------------------------------------------- twoplots
 % PaperPosition [0 0 8.9 5]; Perfectly 16x9 would be: 8.8 4.95
 % Plot with p1 - p2 = 1 bar.
 
-createfigr = @() figure('PaperUnits','points','PaperPosition',[0 0 254 144],...
-			'PaperSize',[254 144],'OuterPosition',[100 100 330 280]);
+%								[0 0 254 144]
+createfigr = @() figure('PaperUnits','points','PaperPosition',[0 0 254 174],...
+			'PaperSize',[254 174],'OuterPosition',[100 100 330 280]);
   % I took a figure, did set(gcf..,) set(gca,..), set 'Units' to 'points' and
   % get(gca,'TightInset'), get(gca,'Position') - from which I calculated the
   % necessary Position and PaperPosition values.
   % TightInset is left 30, bottom 25, right 3, top 6. rounded up a bit
   % The outer position is probably necessary for the .fig-file.
-setaxes = @(ah) set(ah,'Units','points','Position',[33 28 216 108],...
+%						[33 28 216 108]
+setaxes = @(ah) set(ah,'Units','points','Position',[33 28 216 128],...
 			'FontName','Times','FontSize',7);
 f1 = createfigr();
-hl = plot(poben/psat1,mf*1e3,'k-',poben/psat1,mr*1e3,'k:');
+hl = plot(poben/psat1,mf,'k-',poben/psat1,mr,'k:');
 setaxes(gca);
 set(hl(1),'LineWidth',0.3);
 set(hl(2),'LineWidth',0.5);
-xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
-ylabel('mass flux [gm^{\fontsize{6}-2}s^{\fontsize{6}-1}]');
+line([0.84 0.84],[50 200],'Color','r');
+line([0.97 0.97],[50 200],'Color','r');
+xlabel('p1/psat');
+%xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
+ylabel('mass flux ratio');
 xlim([0.7 1]);
 %ylim([0.004 0.016]);
 legend('separation layer upstream (flow direction A)',...
@@ -152,9 +166,12 @@ output(f1,i);
 
 f2 = createfigr();
 hl = plot(poben/psat1,mf./mr,'k-');
-setaxes(gca);
+%setaxes(gca);
 set(hl(:),'LineWidth',0.3);
-xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
+line([0.84 0.84],[0.5 2.5],'Color','r');
+line([0.97 0.97],[0.5 2.5],'Color','r');
+xlabel('p1/psat');
+%xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio flow direction A/B');
 xlim([0.7 1]);
 output(f2,i+1);
