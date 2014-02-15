@@ -28,6 +28,7 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
+%    MS.mfluxviscous    Purely viscous mass flux of the gas phase.
 %    MS.freesetup       Flow setup for the free space between membranes.
 %    MS.substance
 %    MS.membrane
@@ -94,8 +95,9 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'printsolution',@printsolution,'plotsolution',@plotsolution,'singlemstofl',@singlemstofl,...
-  'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
+  'printsolution',@printsolution,'plotsolution',@plotsolution,...
+  'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
+  'mfluxliquid',@mfluxliquid,'mfluxviscous',@mfluxviscous,...
   'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
@@ -155,7 +157,7 @@ end %------------------------------------------------------- end writeflowsetups
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
 %MFLUXLIQUID Mass flux for the flow of liquid through the membrane stack.
 %  Returns the gaseous mass flux, if the fluid can not condense.
-
+%
 %  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
 
 % With m = (kappa_i/nu) * (p_i - p_(i-1)) / L_i,   p0 |XX| p1 |XXX| p2 ... |X| pn
@@ -182,6 +184,35 @@ catch err
   end
 end
 end %----------------------------------------------------------- end mfluxliquid
+
+function m = mfluxviscous(T,p1,p2,s,ms) %------------------------- mfluxviscous
+%MFLUXVISCOUS Mass flux for the viscous flow of gas through the membrane stack.
+%  Isothermal flow of the ideal gas, purely viscous without free molecular flow
+%  contribution.
+%
+%  M = MFLUXVISCOUS(T1,P1,P2,SUBSTANCE,MS)
+
+% Compute a guess for the mass flux.
+% With
+%   m = (kappa/nu) (dp/dz),
+% substituting nu = mu*v and v = RT/p, yields
+%   m = (kappa*p/(mu*R*T)) dp/dz,
+% integrating
+%   m*L = (kappa/(mu*R*T)) (p_1^1 - p_2^2)/2.
+% This is summed up over all layers.
+
+sumL_kappa = 0;
+for i = 1:length(ms.membrane)
+  for j = 1:length(ms.membrane(i).layer)
+    sumL_kappa = sumL_kappa + ms.membrane(i).layer(j).matrix.L ...
+		 / ms.membrane(i).layer(j).matrix.kappa;
+  end
+end
+
+% R*T = v*p
+pm = (p1 + p2) / 2.;
+m = (p1*p1 - p2*p2) / (2*s.mug(T)*s.v(T,pm)*pm*sumL_kappa);
+end %---------------------------------------------------------- end mfluxviscous
 
 function fl = singlemstofl(ms) %----------------------------------- singlemstofl
 %SINGLEMSTOFL Convert a mstackstruct for a homogeneous membrane to a flowstruct.
