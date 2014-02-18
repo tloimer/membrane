@@ -145,15 +145,17 @@ createfigr = @() figure('PaperUnits','points','PaperPosition',[0 0 254 174],...
   % TightInset is left 30, bottom 25, right 3, top 6. rounded up a bit
   % The outer position is probably necessary for the .fig-file.
 %						[33 28 216 108]
-setaxes = @(ah) set(ah,'Units','points','Position',[33 28 216 128],...
-			'FontName','Times','FontSize',7);
+%setaxes = @(ah) set(ah,'Units','points','Position',[33 28 216 128],...
+%			'FontName','Times','FontSize',7);
+setaxes = @(ah) set(ah,'FontName','Times','FontSize',11);
 f1 = createfigr();
 hl = plot(poben/psat1,mf,'k-',poben/psat1,mr,'k:');
 setaxes(gca);
 set(hl(1),'LineWidth',0.3);
 set(hl(2),'LineWidth',0.5);
-line([0.84 0.84],[50 200],'Color','r');
-line([0.97 0.97],[50 200],'Color','r');
+line([0.84 0.84],[50 200]);
+line([0.95 0.95],[50 200]);
+line([0.97 0.97],[50 200]);
 xlabel('p1/psat');
 %xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio');
@@ -166,10 +168,11 @@ output(f1,i);
 
 f2 = createfigr();
 hl = plot(poben/psat1,mf./mr,'k-');
-%setaxes(gca);
+setaxes(gca);
 set(hl(:),'LineWidth',0.3);
-line([0.84 0.84],[0.5 2.5],'Color','r');
-line([0.97 0.97],[0.5 2.5],'Color','r');
+line([0.84 0.84],[0.5 2.5]);
+line([0.95 0.95],[0.5 2.5]);
+line([0.97 0.97],[0.5 2.5]);
 xlabel('p1/psat');
 %xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio flow direction A/B');
@@ -178,8 +181,8 @@ output(f2,i+1);
 
 function output(h,i)
   oname = sprintf('%s%u',mfilename,i);
-  print('-deps2','-tiff',[oname '.eps']);
-  saveas(h,oname,'fig');
+  print('-deps2',[oname '.eps']);
+%  saveas(h,oname,'fig');
 end
 end %-------------------------------------------------------------- end twoplots
 
