@@ -1,13 +1,16 @@
-function [m,ms] = mviscous(T,p1,p2,s,ms,accuracy)
-%MVISCOUS    Mass flux for viscous gaseous flow, without free molecular flow.
-%  MVISCOUS(T1,P1,P2,SUBSTANCE,MS) returns the mass flux. MS must contain a field
-%  MS.SUBSTANCE, apart from being constructed with MSTACKSTRUCT. Accurate solver
-%  settings are used.
+function [m,ms] = mgaseous(T,p1,p2,s,ms,type,accuracy)
+%MGASEOUS    Mass flux for isothermal gaseous flow.
+%  MGASEOUS(T1,P1,P2,SUBSTANCE,MS) returns the isothermal, gaseous mass flux.
+%  Viscous and free molecular flow are taken into account. MS must contain a
+%  field MS.SUBSTANCE, apart from being constructed with MSTACKSTRUCT. Accurate
+%  solver settings are used.
 %
-%  [M,MS] = MVISCOUS(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
+%  [M,MS] = MGASEOUS(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
 %
-%  [M,MS] = MVISCOUS(T1,P1,P2,SUBSTANCE,MS,'coarse') uses corser solution
-%  settings. Instead of 'coarse', 'accurate' gives accurate solver settings.
+%  [M,MS] = MGASEOUS(T1,P1,P2,SUBSTANCE,MS,TYPE,'coarse') calculates the
+%  isothermal gaseous mass flux according to TYPE. Type is either 'viscous',
+%  'gaseous' or 'knudsen'. With 'coarse', coarser solver settings are used.
+%  Accurate solver settings are set with 'accurate'.
 %
 %  See also MSTACKSTRUCT, SUBSTANCE.
 
@@ -15,8 +18,11 @@ if s.ps(T) < p1
   error('The usptream state is a liquid. Not implemented.');
 end
 
-if nargin < 6
+if nargin < 7
   accuracy = 'accurate';
+  if nargin < 6
+    type = 'gaseous';
+  end
 end
 
 % Copy some values to the membrane struct
@@ -30,9 +36,14 @@ ms.q2 = 0;
 ms.substance = s;
 
 mguess = ms.mfluxviscous(T,p1,p2,s,ms);
+if strcmp(type,'gaseous')
+  % T2 = 1000 - surely supercritical
+  ms = ms.writeflowsetups(T,1000,s,ms);
+end
 
 % Set up the solver and solution iteration
 solver = solverstruct(accuracy);
+solver.gasflow = type;
 presiduum = @(m) viscous(m,T,p2,ms,solver) - p1;
 [minterval,pinterval] = findinterval(presiduum, mguess, p2-p1);
 
@@ -40,7 +51,7 @@ m = findzero(presiduum,[minterval; pinterval],(p1-p2)/10000);
 %fprintf('Mass flux guessed mguess = %g, calculated m = %g, mguess - m = %g%%\n',...
 %  mguess, m, 100*(mguess-m));
 
-end %%% END MVISCOUS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MVISCOUS %%%
+end %%% END MGASCOUS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MGASCOUS %%%
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
@@ -95,7 +106,8 @@ for i = nmembranes:-1:1
     % Start is the downstream end of the last layer of the last membrane;
     % flow grows in integrate(), if solver.writesolution is true
     flow = zeroflowstruct;
-    [p2,flow] = integratevapor(m,T,p2,flow,ms.membrane(i).layer(j).matrix,s,solver);
+    [p2,flow] = integratevapor(m,T,p2,flow,ms.membrane(i).layer(j).matrix,...
+				ms.membrane(i).layer(j).flsetup,s,solver);
     % Arrived at the upstream end of a layer
     ms.membrane(i).layer(j).flow = flow;
   % Go into the next layer
@@ -106,7 +118,7 @@ end
 p1 = p2;
 end %--------------------------------------------------------------- end viscous
 
-function [p9,flow] = integratevapor(m,T,p2,flow,mem,s,solver) %-- integratevapor
+function [p9,flow] = integratevapor(m,T,p2,flow,mem,fs,s,solver) %integratevapor
 %INTEGRATEVAPOR Vapor flow within the membrane - a copy of FLOW12>FLOW92
 
 % TODO: z is not referred to! It is assumed z = mem.L.
@@ -120,9 +132,14 @@ function [p9,flow] = integratevapor(m,T,p2,flow,mem,s,solver) %-- integratevapor
 % pscale/zscale dpw/dzw = -m nu/kap,
 %   dpw/dzw = -m*mem.L/kappa*pscale nu,  O(pw) = 1, O(dpw/dzw) = m*zscale/...
 
+if strcmp(solver.gasflow,'gaseous')
+  nu = fs.nuapp;
+else % 'viscous'
+  nu = s.nug;
+end
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless
-pscale = m*s.nug(T,p2)*mem.L/mem.kappa;
+pscale = m*nu(T,p2)*mem.L/mem.kappa;
 step92 = -min(solver.odemaxstep(pscale,solver.maxpperstep),solver.maxpperstep/pscale);
 % functions to re-calculate dimensional values
 mkpdim = @(pw) pscale.*pw + p2;
@@ -141,7 +158,7 @@ function dy = int92w(z,y)
   % pw = y;
   p = mkpdim(y);
   % dy = dpw;
-  dy = s.nug(T,p)*coeff;
+  dy = nu(T,p)*coeff;
 end
 
 %  ASSIGN LAST POINT

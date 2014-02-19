@@ -53,15 +53,15 @@ deltap = 0.5e5;
 for i = 2:length(poben)
   p2 = poben(i) - deltap;
   mf(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pms)...
-	  / pms.mfluxviscous(T1,poben(i),p2,s,pms);
+	  / pms.mfluxknudsen(T1,poben(i),p2,s,pms);
   mr(i) = mnumadiabat(T1,poben(i),poben(i)-deltap,s,pmr)...
-	  / pmr.mfluxviscous(T1,poben(i),p2,s,pmr);
+	  / pmr.mfluxknudsen(T1,poben(i),p2,s,pmr);
 end
 p2 = poben(1) - deltap;
 [mf(1),pms] = mnumadiabat(T1,poben(1),p2,s,pms);
-mf(1) = mf(1) / pms.mfluxviscous(T1,poben(1),p2,s,pms);
+mf(1) = mf(1) / pms.mfluxknudsen(T1,poben(1),p2,s,pms);
 [mr(1),pmr] = mnumadiabat(T1,poben(1),p2,s,pmr);
-mr(1) = mr(1) / pmr.mfluxviscous(T1,poben(1),p2,s,pmr);
+mr(1) = mr(1) / pmr.mfluxknudsen(T1,poben(1),p2,s,pmr);
 
 %fprintf('Direction separation - support layer');
 %printpcondensation(pms);
@@ -153,16 +153,16 @@ hl = plot(poben/psat1,mf,'k-',poben/psat1,mr,'k:');
 setaxes(gca);
 set(hl(1),'LineWidth',0.3);
 set(hl(2),'LineWidth',0.5);
-line([0.84 0.84],[50 200]);
-line([0.95 0.95],[50 200]);
-line([0.97 0.97],[50 200]);
+line([0.84 0.84],[10 40]);
+line([0.95 0.95],[10 40]);
+line([0.97 0.97],[10 40]);
 xlabel('p1/psat');
 %xlabel('{\it p}_{\fontsize{6}1}/{\it p}_{\fontsize{6}sat}');
 ylabel('mass flux ratio');
 xlim([0.7 1]);
 %ylim([0.004 0.016]);
-legend('separation layer upstream (flow direction A)',...
-       'separation layer downstream (flow direction B)')
+legend('(separation layer upstream)',...
+       '(separation layer downstr.)')
 legend('Location','NorthWest'); legend('boxoff');
 output(f1,i);
 

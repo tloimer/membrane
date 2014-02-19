@@ -29,6 +29,7 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
+%    MS.mfluxknudsen    Purely free molecular flux of the gas phase.
 %    MS.mfluxviscous    Purely viscous mass flux of the gas phase.
 %    MS.freesetup       Flow setup for the free space between membranes.
 %    MS.substance
@@ -103,8 +104,8 @@ ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
   'printsolution',@printsolution,'plotsolution',@plotsolution,'plotT',@plotT,...
   'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
-  'mfluxliquid',@mfluxliquid,'mfluxviscous',@mfluxviscous,...
-  'freesetup',[],'substance',[],'membrane',membranes);
+  'mfluxliquid',@mfluxliquid,'mfluxknudsen',@mfluxknudsen,'mfluxviscous',...
+  @mfluxviscous,'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -191,7 +192,37 @@ catch err
 end
 end %----------------------------------------------------------- end mfluxliquid
 
-function m = mfluxviscous(T,p1,p2,s,ms) %------------------------- mfluxviscous
+function m = mfluxknudsen(T1,p1,p2,s,ms) %------------------------- mfluxknudsen
+%MFLUXKNUDSEN Mass flux for the flow of liquid through the membrane stack.
+%  Returns the gaseous mass flux, if the fluid can not condense.
+%
+%  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
+
+%   m = kappa beta Kn/nug dp/dz, Kn/nu = f(T),
+%
+%   m/(beta Kn/nu) * L/kappa = p1 - p2,
+%
+%   m = (p1 -p2) /( L_1/(beta*kappa*kn_nu)_1 + (L/beta*kappa*kn_nu)_2 + ...);
+sumL_all = 0;
+% kn_nu = @(T) 3*sqrt(pi/(8*s.R)) / (sqrt(T)*mem.dia);
+facb_dia =  3*sqrt(pi/(8*s.R)) / sqrt(T1);
+for i = 1:length(ms.membrane)
+  for j = 1:length(ms.membrane(i).layer)
+    % The sum must be done manually.
+    % sum([ms.membrane(i).layer(:).matrix.L] produced an error:
+    %  Scalar index required for this type of multi-level indexing.
+    sumL_all = sumL_all + ms.membrane(i).layer(j).matrix.L...
+			  * ms.membrane(i).layer(j).matrix.dia...
+			  / ms.membrane(i).layer(j).matrix.kappa / facb_dia...
+			  / ms.membrane(i).layer(j).matrix.beta;
+  end
+end
+m = (p1-p2)/sumL_all;
+end %---------------------------------------------------------- end mfluxknudsen
+
+
+
+function m = mfluxviscous(T,p1,p2,s,ms) %-------------------------- mfluxviscous
 %MFLUXVISCOUS Mass flux for the viscous flow of gas through the membrane stack.
 %  Isothermal flow of the ideal gas, purely viscous without free molecular flow
 %  contribution.
