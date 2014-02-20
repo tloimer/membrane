@@ -25,9 +25,12 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.printsetup      Print the membrane and layer structure.
 %    MS.printsolution   Print the solution, e.g., after mnumadiabat is called.
 %    MS.plotsolution    Plot temperature and pressure distributions.
+%    MS.plotT           Plot temperature distribution.
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
+%    MS.mfluxknudsen    Purely free molecular flux of the gas phase.
+%    MS.mfluxviscous    Purely viscous mass flux of the gas phase.
 %    MS.freesetup       Flow setup for the free space between membranes.
 %    MS.substance
 %    MS.membrane
@@ -51,6 +54,11 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %  individual flow regimes in a layer.
 %
 %  See also ASYM, FMODEL, MEMBRANE, MSTACKSTRUCT>WRITEFLOWSETUPS, SUBSTANCE.
+
+%  To plot the upstream boundary layer, for the z-coordinate use the
+%  transformation (from FLOW12.m)
+%    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
+%    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
 
 % expand mem to cell vector of cell vector (yes, cell vector of cell vector)
 % f is expanded below
@@ -94,9 +102,10 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'printsolution',@printsolution,'plotsolution',@plotsolution,'singlemstofl',@singlemstofl,...
-  'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
-  'freesetup',[],'substance',[],'membrane',membranes);
+  'printsolution',@printsolution,'plotsolution',@plotsolution,'plotT',@plotT,...
+  'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
+  'mfluxliquid',@mfluxliquid,'mfluxknudsen',@mfluxknudsen,'mfluxviscous',...
+  @mfluxviscous,'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -155,7 +164,7 @@ end %------------------------------------------------------- end writeflowsetups
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
 %MFLUXLIQUID Mass flux for the flow of liquid through the membrane stack.
 %  Returns the gaseous mass flux, if the fluid can not condense.
-
+%
 %  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
 
 % With m = (kappa_i/nu) * (p_i - p_(i-1)) / L_i,   p0 |XX| p1 |XXX| p2 ... |X| pn
@@ -182,6 +191,65 @@ catch err
   end
 end
 end %----------------------------------------------------------- end mfluxliquid
+
+function m = mfluxknudsen(T1,p1,p2,s,ms) %------------------------- mfluxknudsen
+%MFLUXKNUDSEN Mass flux for the flow of liquid through the membrane stack.
+%  Returns the gaseous mass flux, if the fluid can not condense.
+%
+%  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
+
+%   m = kappa beta Kn/nug dp/dz, Kn/nu = f(T),
+%
+%   m/(beta Kn/nu) * L/kappa = p1 - p2,
+%
+%   m = (p1 -p2) /( L_1/(beta*kappa*kn_nu)_1 + (L/beta*kappa*kn_nu)_2 + ...);
+sumL_all = 0;
+% kn_nu = @(T) 3*sqrt(pi/(8*s.R)) / (sqrt(T)*mem.dia);
+facb_dia =  3*sqrt(pi/(8*s.R)) / sqrt(T1);
+for i = 1:length(ms.membrane)
+  for j = 1:length(ms.membrane(i).layer)
+    % The sum must be done manually.
+    % sum([ms.membrane(i).layer(:).matrix.L] produced an error:
+    %  Scalar index required for this type of multi-level indexing.
+    sumL_all = sumL_all + ms.membrane(i).layer(j).matrix.L...
+			  * ms.membrane(i).layer(j).matrix.dia...
+			  / ms.membrane(i).layer(j).matrix.kappa / facb_dia...
+			  / ms.membrane(i).layer(j).matrix.beta;
+  end
+end
+m = (p1-p2)/sumL_all;
+end %---------------------------------------------------------- end mfluxknudsen
+
+
+
+function m = mfluxviscous(T,p1,p2,s,ms) %-------------------------- mfluxviscous
+%MFLUXVISCOUS Mass flux for the viscous flow of gas through the membrane stack.
+%  Isothermal flow of the ideal gas, purely viscous without free molecular flow
+%  contribution.
+%
+%  M = MFLUXVISCOUS(T1,P1,P2,SUBSTANCE,MS)
+
+% Compute a guess for the mass flux.
+% With
+%   m = (kappa/nu) (dp/dz),
+% substituting nu = mu*v and v = RT/p, yields
+%   m = (kappa*p/(mu*R*T)) dp/dz,
+% integrating
+%   m*L = (kappa/(mu*R*T)) (p_1^1 - p_2^2)/2.
+% This is summed up over all layers.
+
+sumL_kappa = 0;
+for i = 1:length(ms.membrane)
+  for j = 1:length(ms.membrane(i).layer)
+    sumL_kappa = sumL_kappa + ms.membrane(i).layer(j).matrix.L ...
+		 / ms.membrane(i).layer(j).matrix.kappa;
+  end
+end
+
+% R*T = v*p
+pm = (p1 + p2) / 2.;
+m = (p1*p1 - p2*p2) / (2*s.mug(T)*s.v(T,pm)*pm*sumL_kappa);
+end %---------------------------------------------------------- end mfluxviscous
 
 function fl = singlemstofl(ms) %----------------------------------- singlemstofl
 %SINGLEMSTOFL Convert a mstackstruct for a homogeneous membrane to a flowstruct.
@@ -504,3 +572,100 @@ for i = 1:nmembranes
 end
 
 end %---------------------------------------------------------- end plotsolution
+
+function plotT(ms,i) %---------------------------------------------------- plotT
+%PLOTT      Plot temperature.
+%
+%  PLOTT(MS,I) Plot temperature distribution in the I-th membrane.
+
+if nargin == 1
+  i = 1;
+end
+
+mark = 'none';
+
+nl = length(ms.membrane(i).layer);
+% the total thickness of the membrane
+sumL = ms.membrane(i).layer(1).matrix.L;
+if nl > 1
+  offz(nl-1) = 0;
+end
+for j = 2:nl
+  offz(j-1) = sumL;
+  sumL = sumL + ms.membrane(i).layer(j).matrix.L;
+end
+
+isup = false; %false(1,nmembranes);
+% Here, at difference to the code in upstreamflow, the emptyness of .flow is
+% not checked; The plot-command then exits with error anyway.
+% Add the number of possible upstream layers
+nflow = length(ms.membrane(i).flow);
+if nflow > 0
+  isup = true;
+  % insert 3 points between each value of z, T in the upstream boundary layer
+  % the first layer might be a liquid film
+  j = length(ms.membrane(i).flow(nflow).z);
+  zup = interp1([0:j-1]*4, ms.membrane(i).flow(nflow).z, [0:4*j-4]);
+  Tup = interp1([0:j-1]*4, ms.membrane(i).flow(nflow).T, [0:4*j-4]);
+  % the zup's are negative numbers
+  for k = 1:4*j-3
+    if zup(1) - ms.membrane(i).zscale > zup(k)
+      zup(k:4*j-3) = [];
+      Tup(k:4*j-3) = [];
+      break;
+    end
+  end
+% scale back the front boundary layer
+%   z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
+%   z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
+  zup = zup(1) + ms.membrane(i).zscale * log( (zup-zup(1))/ms.membrane(i).zscale + 1);
+end
+
+mkTdim = @(T) (T - ms.T2)/(ms.T1 - ms.T2);
+fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
+
+  % Plot the first layer, probably with the front boundary layer(s)
+  ht = figure('Name','Global Temperature');
+  jl = ms.membrane(i).layer(1);
+  if isup
+    plot(zup/sumL, mkTdim(Tup),...
+	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+    xlim([zup(end)/sumL 1]);
+    for k = nflow-1:-1:1
+      line(ms.membrane(i).flow(k).z/sumL, mkTdim(ms.membrane(i).flow(k).T),...
+	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
+    end
+    % The first line in the layer.
+    nflow = length(jl.flow);
+    line(jl.flow(nflow).z/sumL, mkTdim(jl.flow(nflow).T),...
+	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
+  else
+    nflow = length(jl.flow);
+    plot(jl.flow(nflow).z/sumL, mkTdim(jl.flow(nflow).T),...
+	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
+    xlim([0 1]);
+  end
+  ylim([-0.1 1.1]);
+  xlabel('z/(sum L)');
+  ylabel('(T-T1)/(T2-T1)');
+
+  % Put the remaining flow elements in the first layer into the existing plot.
+  for k = nflow-1:-1:1
+    line(jl.flow(k).z/sumL, mkTdim(jl.flow(k).T),'Color',jl.flow(k).color,...
+	 'LineStyle','-','Marker',mark);
+  end
+
+  % At last, the remaining layers
+  if nl == 1, return; end
+
+  for j = 2:nl
+    jl = ms.membrane(i).layer(j);
+    nflow = length(jl.flow);
+    line([1 1]*offz(j-1)/sumL, [0.2 0.8]);
+    for k = nflow:-1:1
+      line((offz(j-1) + jl.flow(k).z)/sumL,mkTdim(jl.flow(k).T),...
+	   'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
+    end
+  end
+
+end %----------------------------------------------------------------- end plotT
