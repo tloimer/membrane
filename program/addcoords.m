@@ -4,6 +4,13 @@ if nargin==3
   options = [];
 end
 
+if size(X,1) == 1
+  X = X';
+end
+if size(Y,1) == 1
+  Y = Y';
+end
+
 % the accuracy; think, e.g., of  a range between 292.1 and 292.5 K
 %xmin = min(X);
 %ymin = min(Y);
