@@ -1,7 +1,7 @@
 function mflow()
 %MFLOW       Create figures for presumably J. Membr. Sci. 2014.
 
-if ~exist('substance.m'), addpath('../../program'); end
+if ~exist('substance.m'), addpath('../program'); end
 
 %Setup the flow problem
 T1 = 293.15;
@@ -10,9 +10,9 @@ s = substance('isobutane');
 %s = substance('nitrogen');
 f = fmodel('plug');
 
-pu1 = membrane(10e-9,0.6,36,'tube',3,8.1,20e-6);
-pu2 = membrane(100e-9,0.6,36,'tube',3,8.1,150e-6);
-pu3 = membrane(6e-6,0.6,36,'tube',3,8.1,2e-3);
+pu1 = membrane(10e-9,0.5,24,'tube',2,8.1,20e-6);
+pu2 = membrane(100e-9,0.4,24,'tube',2.5,8.1,150e-6);
+pu3 = membrane(6e-6,0.3,24,'tube',3,8.1,2e-3);
 
 psmems = {{pu1 pu2 pu3}}; pms = mstackstruct(0,psmems,f); pmsorig = pms;
 prmems = {{pu3 pu2 pu1}}; pmr = mstackstruct(0,prmems,f); pmrorig = pmr;
@@ -161,7 +161,7 @@ output(f2,i+1);
 
 function output(h,i)
   oname = sprintf('%s%u',mfilename,i);
-  print('-deps2','-tiff',[oname '.eps']);
+  print('-deps2',[oname '.eps']);
   saveas(h,oname,'fig');
 end
 end %-------------------------------------------------------------- end twoplots
