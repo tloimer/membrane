@@ -21,7 +21,7 @@ psat1 = s.ps(T1);
 
 % Plot with p1 - p2 = 0.1 bar.
 
-poben = [2.1:0.01:psat1/1e5 psat1/1e5]*1e5;
+poben = [2.1:0.01:2.41 2.412:0.002:2.454 2.46:0.01:psat1/1e5 psat1/1e5]*1e5;
 %poben = [1.1:0.2:psat1/1e5 psat1/1e5]*1e5;
 mf = poben; mr = poben;
 

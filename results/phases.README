@@ -2,3 +2,8 @@ phases.fig -> phases.eps:
 Shows the phase distribution in the membrane. Produced by running phase.m and
 taking the z/L-values for the fronts of phase change from phase.mlog.
 
+for f in mflow?.eps;
+  do epstool -tg --device tiffg4 --dpi 300 $f /tmp/$f;
+done
+
+epstool -t6p --device bmpgray --dpi 300 phases.eps  /tmp/p.eps
