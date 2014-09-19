@@ -415,7 +415,7 @@ kgfun = @poly3;
 % See pp. 546 in Reid, Prausnitz and Poling, 4th ed. (1987).
 % Range: 64 K < T < 121 K
 klcoeffs = [.2629 -1.545e-3 -9.45e-7];
-klfun = @poly3;
+klfun = @poly2;
 
 % CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
 % See Perry, 7th ed. (1997), Table 2-196.
