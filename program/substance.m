@@ -47,7 +47,7 @@ function s = substance(name)
 %TODO:
 %  18. 9. 2014: vcoeffs reparieren: 1000*R/M in Zuweisung der Koeffizienten
 %  18. 9. 2014: Do all unit conversions when assigning the coefficients!
-%               Still left: cpperry, vcoeffs (see above). Too contorted in
+%               Still left: vcoeffs (see above). Too contorted in
 %               cpleq2, leave cpleq2 alone.
 %  22. 9. 2014: Old muliquid (mul) of nitrogen - 10^22 at 80 K, what happened?
 %  22. 9. 2014: rhoperry, only in nitrogen: Count the coefficients!
@@ -171,7 +171,7 @@ virialfun = @pdiv3;
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
-cpcoeffs = [0.6549e5 2.4776e5 1.587e3 1.575e5 -706.99 M];
+cpcoeffs = [0.6549e5/M 2.4776e5/M 1.587e3 1.575e5/M -706.99];
 cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
@@ -264,7 +264,7 @@ virialfun = @pdiv3;
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
-cpcoeffs = [.7134e5 2.43e5 1.63e3 1.5033e5 730.42 M];
+cpcoeffs = [0.7134e5/M 2.43e5/M 1.63e3 1.5033e5/M 730.42];
 cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
@@ -354,7 +354,7 @@ virialfun = @pdiv3;
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
-cpcoeffs = [0.492e5 1.4577e5 1.6628e3 0.939e5 744.7 M];
+cpcoeffs = [0.492e5/M 1.4577e5/M 1.6628e3 0.939e5/M 744.7];
 cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
@@ -440,7 +440,7 @@ virialfun = @pdiv4;
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 50 K < T < 1500 K
-cpcoeffs = [.2911e5 .0861e5 1.7016e3 100 909.79 M];
+cpcoeffs = [0.2911e5/M 0.0861e5/M 1.7016e3 100/M 909.79];
 cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
@@ -710,11 +710,10 @@ function cpid = cpperry(C,T)
 %  the ideal gas state, [J/kgK]. An equation to Table 2-198 in Perry's Chemical
 %  Engineer's Handbook, 7th ed. (1997) is used.
 
-M = C(6);
 c3t=C(3)./T;
 c5t=C(5)./T;
 
-cpid = ( C(1) + C(2)*(c3t./sinh(c3t)).^2 + C(4)*(c5t./cosh(c5t)).^2 )/M;
+cpid = C(1) + C(2)*(c3t./sinh(c3t)).^2 + C(4)*(c5t./cosh(c5t)).^2;
 
 function cpid = vdi10(C,T)
 %VDI10      Specific heat capacity at constant pressure in the ideal gas state.
