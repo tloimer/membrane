@@ -44,11 +44,10 @@ function s = substance(name)
 %
 %  More help text: Try, e.g., HELP SUBSTANCE>PS.
 
+%  Unit conversions are already done when assigning the coefficients. VCOEFFS
+%  and CPLEQ2 could be done more elegantly, but these function work and would
+%  require quite some work.
 %TODO:
-%  18. 9. 2014: vcoeffs reparieren: 1000*R/M in Zuweisung der Koeffizienten
-%  18. 9. 2014: Do all unit conversions when assigning the coefficients!
-%               Still left: vcoeffs (see above). Too contorted in
-%               cpleq2, leave cpleq2 alone.
 %  22. 9. 2014: Old muliquid (mul) of nitrogen - 10^22 at 80 K, what happened?
 %  22. 9. 2014: rhoperry, only in nitrogen: Count the coefficients!
 %               C(5) is not M, something is wrong here.
@@ -165,7 +164,7 @@ rhofun = {@poly3, @rholandolt};
 % Mixtures (2002)
 % Landolt-Börnstein gives M = 58.12, see p. 17 in
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
-vcoeffs = [116.25 -1.0293e5 -1.2475e7 -7.0490e9 R M];
+vcoeffs = [[116.25 -1.0293e5 -1.2475e7 -7.0490e9]/1e3 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
@@ -258,7 +257,7 @@ rhofun = {@poly3, @rholandolt};
 % Mixtures (2002)
 % Landolt-Börnstein gives M = 58.12, see p. 15 in
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
-vcoeffs = [227.20 -2.2797e5 2.9855e7 -1.3706e10 R M];
+vcoeffs = [[227.20 -2.2797e5 2.9855e7 -1.3706e10]/1e3 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
@@ -348,7 +347,7 @@ rhofun = {@poly3, @rholandolt};
 % Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
 % Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
 % Mixtures (2002)
-vcoeffs = [9.6838e3 -1.3575e7 6.3248e9 -1.0114e12 R M];
+vcoeffs = [[9.6838e3 -1.3575e7 6.3248e9 -1.0114e12]/1e3 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
@@ -434,7 +433,7 @@ rhofun{1} = @rhoperry;
 % Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
 % Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
 % Mixtures (2002)
-vcoeffs = [40.286 -9.3378e3 -1.4164e6 6.1253e7 -2.7198e9 R M];
+vcoeffs = [[40.286 -9.3378e3 -1.4164e6 6.1253e7 -2.7198e9]/1e3 R M];
 virialfun = @pdiv4;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
@@ -551,7 +550,7 @@ rhofun = {@poly4, @rholandolt};
 % B [cm^3/mol] = A + B/T + C/T^2 + D/T^3.
 % vcoeffs = [A B C D R M];
 % Vectorizes!
-vcoeffs = [109.71 -8.4673e4 -8.1215e6 -3.4382e9 R M];
+vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
@@ -852,6 +851,7 @@ function v = virial(out,vcoeffs,virialfun,T,p)
 %  Continuing for v = (1/2)RT/p + sqrt( (1/4)(RT/p)^2 + BRT/p ). Unit
 %  conversions: VIRIALFUN returns the coefficients for B from Landolt-Börnstein
 %  in cm^3/mol, hence B = VIRIALFUN/1000 [m^3/kmol] and V = v/M [m^3/kg].
+%  Division by 1000 is already done when assigning coefficients.
 %  However, since v is given as a series, I believed the correct expression for
 %  v would be
 %
@@ -891,12 +891,11 @@ M = vcoeffs(end);
 if strcmp(out,'v') % case 'v'
   % compute the specific volume; call to virialfun with one nargout
   v = R*T./p; % interim use of variable
-  v = (0.5*v + sqrt(0.25*v.^2 + virialfun(vcoeffs,T).*v/1000))/M; %( = vsqr)
+  v = (0.5*v + sqrt(0.25*v.^2 + virialfun(vcoeffs,T).*v))/M; %( = vsqr)
 
 else % case 'cp' 'dhdp' 'jt'
   % call to virialfun
   [B, B1, B2] = virialfun(vcoeffs,T);
-  B = B/1000; B1 = B1/1000; B2 = B2/1000; %
   % for the assignment v = [v ..] in 'dhdp' construct the output variable
   v = [];
 
@@ -1007,14 +1006,14 @@ if nargin == 6 || p1 == p2
     R = vcoeffs(end-1);
     M = vcoeffs(end);
     [B, B2] = virialfun(vcoeffs,T2);
-    B2 = B2./(1000.*T2);
+    B2 = B2./T2;
   end
 else % p1 ~= p2
   % the contribution  Int_p1^p2 dv/dT dp
   R = vcoeffs(end-1);
   M = vcoeffs(end);
   [B, B2] = virialfun(vcoeffs,T2);
-  B2 = B2./(1000.*T2);
+  B2 = B2./T2;
 %  fprintf('SG: -R log(p2/p1) = %.4g\n',-R.*log(p2./p1)./M);
   s12 = - R.*log(p2./p1)./M - B2*(p2-p1)./M;
 %  fprintf('SG: -R log(p2/p1) - B2 (p2-p1) = %.4g\n',s12);
@@ -1043,7 +1042,7 @@ end
 
 if T1 ~= T2
   [B, B1] = virialfun(vcoeffs,T1);
-  B1 = B1./(1000.*T1);
+  B1 = B1./T1;
   cpid1 = cpid(T1);
   cpid2 = cpid(T2);
   % The isobaric contribution, int_T1^T2 cpid/T dT
