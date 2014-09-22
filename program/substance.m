@@ -4,7 +4,7 @@ function s = substance(name)
 %  material properties for the substance NAME. The functions do not check their
 %  range of validity. Look for lines % Range: ... in the source code.
 %
-%  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen'.
+%  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane'.
 %
 %  The struct S has the following fields:
 %  Variables:
@@ -44,15 +44,20 @@ function s = substance(name)
 %
 %  More help text: Try, e.g., HELP SUBSTANCE>PS.
 
+%TODO:
+%  18. 9. 2014: vcoeffs reparieren: 1000*R/M in Zuweisung der Koeffizienten
+%  18. 9. 2014: Do all unit conversions when assigning the coefficients!
+%               Still left: cpperry, vcoeffs (see above). Too contorted in
+%               cpleq2, leave cpleq2 alone.
+%  22. 9. 2014: Old muliquid (mul) of nitrogen - 10^22 at 80 K, what happened?
+%  22. 9. 2014: rhoperry, only in nitrogen: Count the coefficients!
+%               C(5) is not M, something is wrong here.
+%  22. 9. 2014: cpl for nitrogen is not correct, 3.2 instead of 2.1 kJ/kgK.
+%
 %  TODO: cpl von butane hat sich geandert, siehe Table 153, Perry, 2007
 %  entropie-berechnung: v(T) - sqrt konsequent anwenden?
 %  Überprüfen der enthalpie-Berechnung; Eventuell structs oder cell-arrays of
 %  function handles for, e.g., poly4, ..
-%  Note: poly4, eg, evaluates a polynomial; [p dp ddp] = poly4, as do pdiv3 and
-%  pdiv4, return the value and, in addition, first and second derivative (used
-%  for the virial eq.); [dp p] = dpoly3 and dpoly2 return the derivative and the
-%  function value (for sigma and rho, i believe), dpoly4 or dpdiv4 do not exist.
-%  Should be cleaned up.
 
 %  not implemented yet (if ever).
 %  S = SUBSTANCE(NAME,T) returns a struct s that contains material properties
@@ -69,31 +74,72 @@ s = struct('name',name,'R',[],'ps',[],'Ts',[],'rho',[],'v',[],'hvap',[], ...
 R = 8314.4; % J/kmolK
 
 % The data. Data might contain only the correlation coefficients, or the
-% coefficients and an id that points to a correlation function. The first case
+% coefficients and a function handle to a correlation function. The first case
 % happens when all substances use the same function.
-% Examples: ps always uses the same function, although within the function it is
+% Examples: PS always uses the same function, although within the function it is
 % decided, based upon information contained in the coefficients, whether the
-% classical or an extended Antoine eq. is used. rho uses different functions.
+% classical or an extended Antoine eq. is used. RHO uses different functions.
+
+% Sources
+
+% PS, Saturation pressure
+%
+% Landolt-Börnstein, New Series, Group IV: Physical Chemistry. Vapor Pressure of
+% Chemicals. J. Dykyj, J. Svoboda, R.C. Wilhoit, M.  Frenkel, K.R. Hall
+% Vol. 20A (1999); Vol. 20B (2000); Vol. 20C (2001).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV20A1-13.pdf, Introduction.
+%
+% Landolt-Börnstein gives the coefficients for the classical Antoine or an
+% extended Antoine-equation. The classical Antoine-equation is represented by a
+% single line in Landolt-Börnstein,
+%   A-3  B  C  Dmin/Dmax  Tmin/Tmax
+% the extended Antoine-equation is represented by two lines,
+%   A-3  B  C  Dmin/Dmax  T0/Tc
+%   (n) (E) (F)
+% Above, Dmin/Dmax is the temperature range in which data is available, and
+% Tmin/Tmax is the recommended range for application of this correlation.
+% Since Landolt-Börnstein gives coefficients to obtain the pressure in kPa, here
+% 3 must be added to the value of A.
+%
+% The function S.PS expects the array Acoeffs to consist of at least one row and
+% ten columns, e.g.,
+% [ Tmax pmax A B C 0 0 0 0 0;... % classical Antoine eq.
+%   Tmax pmax A B C T0 Tc n E F]; % extended Antoine eq.
+%
+% See the copy of the tabular values for propane, below. In the table of
+% Landolt-Börnstein, pmax is not listed, but must be computed after setting the
+% other values and calling S.PS(Tmax).
+
+% V, specific volume of the gas
+%
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond,
+% K.N. Marsh, R.C. Wilhoit and K.C. Wong (2002).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV21A1-22.pdf, Introduction.
+%
+% Landolt-Börnstein gives the second virial coefficient B in cm^3/mol. This is
+% written to vcoeffs, conversion to m^3/kg happens in VIRIAL below (slightly
+% hacky).
+% B [cm^3/mol] = A + B/T + C/T^2 + D/T^3.
+% vcoeffs = [A B C D R M];
 
 switch(name)
 case 'isobutane'
 % Isobutane. 2-Methylpropane. CAS 75-28-5.
 
 % PS, saturation pressure, coefficients for the Antoine eq.
-% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
-% Vapor Pressure of Chemicals, vol. 20A: J. Dykyj, J. Svoboda, R.C. Wilhoit,
-% M.  Frenkel, K.R. Hall (1999).
+% Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20A. J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M. Frenkel, K.R. Hall (1999).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV20A14-29.pdf, Hydrocarbons.
 % Range:  110 K < T < 408 K
-% Landolt-Börnstein gives the coefficients for the pressure in kPa, here Pa,
-% therefore A+3 must be used.
 % Tmax, pmax are the values up to which the coeffs. in this line are valid.
-% Antoinecoeffs for
 % classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
-% line in Landolt-Börnstein:     A-3  B  C  T?/T?  T?/Tmax
-%
-% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
-% line in Landolt-Börnstein:     A-3  B   C   T?/Tmax  T0/Tc
+% line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ] % Tmax = Tc
+% line in Landolt-Börnstein:     A-3  B   C   Dmin/Dmax  T0/Tc
 %                                (n)  (E) (F)
+% Dmin/Dmax: Range of data points; Tmin/Tmax: recommended temperature range
 Acoeffs =  zeros(3,10);
 Acoeffs(1,1:5) = [188 1641.9542 8.32368 739.94 -43.15];
 Acoeffs(2,1:5) = [268 130286.05 9.00272 947.54 -24.28];
@@ -117,13 +163,16 @@ rhofun = {@poly3, @rholandolt};
 % Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
 % Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
 % Mixtures (2002)
+% Landolt-Börnstein gives M = 58.12, see p. 17 in
+% ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [116.25 -1.0293e5 -1.2475e7 -7.0490e9 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
-cpcoeffs = [.6549e5 2.4776e5 1.587e3 1.575e5 -706.99 M];
+cpcoeffs = [0.6549e5 2.4776e5 1.587e3 1.575e5 -706.99 M];
+cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
 % See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
@@ -133,15 +182,17 @@ cpcoeffs = [.6549e5 2.4776e5 1.587e3 1.575e5 -706.99 M];
 % isobutane
 % Range: 190 K < T < 400 K
 mulcoeffs = [-18.345 1020.3 1.0978 -6.1e-27 10];
+mulfun = @mudaubert;
 
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas (also reported by
-% Reid, Prausnitz and Poling, 4th ed. (1987) or by Perry, 7th ed. (1997) is used.
+% Reid, Prausnitz and Poling, 4th ed., 1987 or by Perry, 7th ed., 1997) is used.
 % Critical constants are taken from VDI Wärmeatlas, pages Da 6 - Da 15.
 % mugcoeffs = [M Tc pc Zc dipol];
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
 Tc = 408.2; pc = 3.65e6;
-mugcoeffs = [0.283 0.1];
+mugcoeffs = [0.283 0.1 R M Tc pc];
+mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See p. 498 in Reid, Prausnitz and Poling, 4th ed. (1987).
@@ -168,7 +219,7 @@ cplfun = @poly4;
 % Stephan: Tc = 408.15 K, pc = 36.48 bar.
 % Range: 113.74 K < T < 408.15 K
 % sigcoeffs = [a1 a2 Tc]
-sigcoeffs = [50.5731 1.24412 408.15];
+sigcoeffs = [0.0505731 1.24412 408.15];
 sigfun = @sigstephan22;
 
 case 'butane'
@@ -191,7 +242,7 @@ Acoeffs(3,:) = [425.1 3723052.4 Acoeffs(2,3:5) 288 425.1 2.14767 -175.62 12204];
 % Range: 134.86 K < T < 425.12 K.
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8B.
-% R. Wilhoit, K. Marsh, X.  Hong, N. Gadalla and M. Frenkel (1996).
+% R. Wilhoit, K. Marsh, X. Hong, N. Gadalla and M. Frenkel (1996).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
 M = 58.124; % VDI-Wärmeatlas, siehe unten bei kritischen Größen
@@ -205,6 +256,8 @@ rhofun = {@poly3, @rholandolt};
 % Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
 % Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
 % Mixtures (2002)
+% Landolt-Börnstein gives M = 58.12, see p. 15 in
+% ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [227.20 -2.2797e5 2.9855e7 -1.3706e10 R M];
 virialfun = @pdiv3;
 
@@ -212,6 +265,7 @@ virialfun = @pdiv3;
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
 cpcoeffs = [.7134e5 2.43e5 1.63e3 1.5033e5 730.42 M];
+cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
 % See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
@@ -220,6 +274,7 @@ cpcoeffs = [.7134e5 2.43e5 1.63e3 1.5033e5 730.42 M];
 % Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
 % Range: 134.86 K < T < 420 K
 mulcoeffs = [-7.2471 534.82 -0.57469 -4.6625e-27 10];
+mulfun = @mudaubert;
 
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas (also reported by
@@ -228,7 +283,8 @@ mulcoeffs = [-7.2471 534.82 -0.57469 -4.6625e-27 10];
 % mugcoeffs = [M Tc pc Zc dipol];
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
 Tc = 425.2; pc = 3.8e6;
-mugcoeffs = [0.274 0];
+mugcoeffs = [0.274 0 R M Tc pc];
+mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See p. 498 in Reid, Prausnitz and Poling, 4th ed. (1987).
@@ -255,7 +311,7 @@ cplfun = @cpleq2;
 % Stephan: Tc = 425.16 K, pc = 37.97 bar.
 % Range: 134.84 K < T < 425.16 K
 % sigcoeffs = [a1 a2 Tc]
-sigcoeffs = [51.3853 1.20933 425.16];
+sigcoeffs = [0.0513853 1.20933 425.16];
 sigfun = @sigstephan22;
 
 case 'ethanol'
@@ -299,6 +355,7 @@ virialfun = @pdiv3;
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 200 K < T < 1500 K
 cpcoeffs = [0.492e5 1.4577e5 1.6628e3 0.939e5 744.7 M];
+cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
 % See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
@@ -307,6 +364,7 @@ cpcoeffs = [0.492e5 1.4577e5 1.6628e3 0.939e5 744.7 M];
 % Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
 % Range: 240 K < T < 440 K
 mulcoeffs = [8.049 776 -3.068 0 0];
+mulfun = @mudaubert;
 
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas (also reported by
@@ -315,7 +373,8 @@ mulcoeffs = [8.049 776 -3.068 0 0];
 % mugcoeffs = [M Tc pc Zc dipol];
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
 Tc = 513.9; pc = 6.14e6;
-mugcoeffs = [0.24 1.7];
+mugcoeffs = [0.24 1.7 R M Tc pc];
+mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor at approx. 1 bar [W/mK].
 % See Reid, Prausnitz and Poling, 4th ed. (1987). They report a correlation by
@@ -343,7 +402,7 @@ cplfun = @poly3;
 % Stephan: Tc = 513.92 K, pc = 61.37 bar.
 % Range: 158.5 K < T < 513.92 K
 % sigcoeffs = [a1 a2 a3 Tc]
-sigcoeffs = [72.6009 1.08415 -.524168 513.92];
+sigcoeffs = [0.0726009 1.08415 -.524168 513.92];
 sigfun = @sigstephan23;
 
 case 'nitrogen'
@@ -354,10 +413,6 @@ case 'nitrogen'
 % Vapor Pressure of Chemicals, vol. 20C: J. Dykyj, J. Svoboda, R.C. Wilhoit,
 % M. Frenkel, K.R. Hall (2001).
 % Range:  63.5 K < T < 126.2 K
-% Landolt-Börnstein gives the coefficients for the pressure in kPa, here Pa,
-% therefore A+3 must be used.
-% Tmax, pmax are the values up to which the coeffs. in this line are valid.
-% Antoinecoeffs for
 % classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
 % extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
 Acoeffs =  zeros(2,10);
@@ -369,8 +424,9 @@ Acoeffs(2,:) = [126.2 6069220.85 Acoeffs(1,3:5) 80 126.2 0.434294 15.32 -15.5];
 % See Table 2-30 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Some kind of Rackett equation, i suppose.
 M = 28.013;  % VDI-Wärmeatlas, siehe unten bei kritischen Größen
-rhocoeffs = zeros(1,7);
+%rhocoeffs = zeros(1,7);
 rhocoeffs(1,1:6) = [126.2 3.2091 0.2861 126.2 0.2966 M];
+%rhocoeffs(1,1:5) = [126.2*M 3.2091 0.2861 126.2 0.2966];
 rhofun{1} = @rhoperry;
 
 % V, specific volume of the gas
@@ -385,6 +441,7 @@ virialfun = @pdiv4;
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Range: 50 K < T < 1500 K
 cpcoeffs = [.2911e5 .0861e5 1.7016e3 100 909.79 M];
+cpfun = @cpperry;
 
 % MUL, dynamic viscosity of the liquid
 % See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
@@ -392,7 +449,17 @@ cpcoeffs = [.2911e5 .0861e5 1.7016e3 100 909.79 M];
 % ties of Pure Chemicals -- Data Compilation, Design Institute for Physical
 % Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
 % Range: 63.15 K < T < 125 K
-mulcoeffs = [29.236 496.9 3.9069 -1.08e-21 10];
+%mulcoeffs = [29.236 496.9 3.9069 -1.08e-21 10];
+%mulfun = @mudaubert;
+%  GAVE mul = 6.67e22 Pas, 19. Sep. 2014, commit a7b0e08, bf98b90 and before.
+
+% MUL, dynamic viscosity of the liquid [Pas].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
+% in mPas, but the unit really is Pas.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+mulcoeffs = [2.23392 0.01273 127.145 36.807 1.343e-5];
+mulfun = @vdi02;
 
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas, also reported by
@@ -401,7 +468,8 @@ mulcoeffs = [29.236 496.9 3.9069 -1.08e-21 10];
 % mugcoeffs = [M Tc pc Zc dipol];
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
 Tc = 126.2; pc = 3.39e6;
-mugcoeffs = [0.29 0];
+mugcoeffs = [0.29 0 R M Tc pc];
+mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor at approx. 1 bar [W/mK].
 % See Reid, Prausnitz and Poling, 4th ed. (1987). They report a correlation by
@@ -429,6 +497,119 @@ cplfun = @poly3;
 sigcoeffs = [2.4954e-07 Tc pc];
 sigfun = @sigvdi;
 
+case 'propane'
+% Propane. CAS 74-98-6. C_3 H_8
+
+% PS, saturation pressure, coefficients for the Antoine eq.
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20A: J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M. Frenkel and K.R. Hall (1999).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV20A14-29.pdf
+% Range:  85.5 K < T < 369.8 K
+% classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
+% line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
+% line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+%                                (n) (E) (F)
+% Table in Landolt-Börnstein
+% 9    C3H8            Propane                                           74-98-6
+% l-g  6.6956   1030.7   -7.79    101/165  85.5/167 B  231.07/101.325  74-trchc
+% l-g  5.92828  803.997  -26.11   270/248  167/237 A                   74-trchc
+% l-g  5.92828  803.997  -26.108  248/369  237/369.8 A                 74-trchc
+%      (2.55753) (50.655) (-1408.9)
+% Does not vectorize.
+Acoeffs =  zeros(3,10);
+Acoeffs(1,1:5) = [167 1666.32 9.6956 1030.7 -7.79];
+Acoeffs(2,1:5) = [237 130581.0 8.92828 803.997 -26.11];
+Acoeffs(3,:) = [369.8 4247600 Acoeffs(2,3:5) 237 369.8 2.55753 50.655 -1408.9];
+
+% critical constants, from VDI Wärmeatlas, 2013, Table D3.1
+% See also ~/Literatur/pdfs/VDI/VDI2013D3
+M = 44.10; Tc = 369.82; % pc = 4.248e6;
+% Landolt-Börnstein also gives M = 44.10, see
+% ~/Literatur/pdfs/Landolt/LandoltIV21A151-168.pdf
+
+% RHO, liquid density at saturation
+% Range:  85.47 K < T < 369.83 K
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8B:
+% R. Wilhoit, K. Marsh, X. Hong, N. Gadalla and M. Frenkel (1996).
+% See also ~/Literatur/pdfs/Landold/LandoltIV8B16-44.pdf
+% rhocoeffs:   [Tmax A B C D E 0]
+%  or          [Tmax A B C D Tc rhoc]
+% Does not vectorize.
+rhocoeffs = [288 820.464 -1.013 -2.71229e-4 3.32129e-6 -1.12912e-8 0;...
+             369.83 .490105 -.0132372 1.66441e-4 -7.6597e-7 369.83 220];
+rhofun = {@poly4, @rholandolt};
+
+% V, specific volume of the gas
+% Range:  250 K < T
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond,
+% K.N. Marsh, R.C. Wilhoit and K.C. Wong (2002).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
+% B [cm^3/mol] = A + B/T + C/T^2 + D/T^3.
+% vcoeffs = [A B C D R M];
+% Vectorizes!
+vcoeffs = [109.71 -8.4673e4 -8.1215e6 -3.4382e9 R M];
+virialfun = @pdiv3;
+
+% CPID, specific heat capacity in the ideal gas state at constant pressure
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf, Tabelle 6, S. 52.
+% Tabelle 6 states that J/gK is returned, eq. 10 refers to J/kgK. The latter is
+% correct.
+cpcoeffs = [1089.3798 4.7246 -1.1767 3.7776 129.3687 -281.4223 216.9425 R/M];
+cpfun = @vdi10;
+
+% MUL, dynamic viscosity of the liquid [Pas].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
+% in mPas, but really the unit is Pas.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+mulcoeffs = [2.56344 0.16137 372.533 38.033 1.751e-5];
+mulfun = @vdi02;
+
+% MUG, dynamic viscosity of the vapor [Pas]
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 8 claims to report the viscosity in muPas,
+% but really the unit is Pas.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+mugcoeffs = [7.353e-7 2.0874e-8 2.4208e-11 -3.914e-14 1.784e-17];
+mugfun = @poly4;
+
+% KG, thermal conductivity of the vapor at low pressures [W/mK].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 10.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+kgcoeffs = [-6.656e-3 5.280e-5 1.01810e-7];
+kgfun = @poly2;
+
+% KL, thermal conductivity of the saturated liquid [W/mK]
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 9.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+klcoeffs = [0.2661 -6.336e-4 5.7e-8 6.55e-10 -7.01e-13];
+klfun = @poly4;
+
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 5.
+% Do not multiply all coefficients by 1000*R/M, only by R/M, although Tabelle 5
+% claims to be in J/gK, eq. 8 claims to return J/kgK, which is correct.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+cplcoeffs = [[0.5219 13.0156 -3.9111 -21.2164 49.1038 -30.2438]*R/M Tc];
+cplfun = @vdi08;
+
+% SIGMA, surface tension [N/m].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 11.  Do not divide coefficient A by 1000;
+% Tabelle 11 claims to return surface tension in mN/m, but really returns N/m.
+% For two coefficients, eq. 6 is identical to SIGSTEPHAN22.
+sigcoeffs = [0.05094 1.22051 Tc];
+sigfun = @sigstephan22;
+
 otherwise
 error('No substance of this name.')
 % water
@@ -438,7 +619,7 @@ error('No substance of this name.')
 % ties of Pure Chemicals -- Data Compilation, Design Institute for Physical
 % Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
 % Range: 273.15 K < T < 643.15 K
-mulcoeffs = [-51.964 3670.6 5.7331 -5.349e-29 10];
+%mulcoeffs = [-51.964 3670.6 5.7331 -5.349e-29 10];
 end
 %end case name
 
@@ -453,12 +634,12 @@ s.v = @(T,p) virial('v',vcoeffs,virialfun,T,p);
 s.hvap = @(T) hvap(s.ps,s.rho,s.v,T);
 % caloric equation of state
 % cpid, cpg_cpid - def'd for better readability
-cpid = @(T) cpperry(cpcoeffs,T);
+cpid = @(T) cpfun(cpcoeffs,T);
 % cpg_cpid = cpg(T,p) - cpid; cpid = cp(T,p=0)
 cpg_cpid = @(T,p) virial('cp',vcoeffs,virialfun,T,p);
 s.cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p));
-s.mul = @(T) mudaubert(mulcoeffs,T);
-s.mug = @(T) mulucas(T,R,M,Tc,pc,mugcoeffs);
+s.mul = @(T) mulfun(mulcoeffs,T);
+s.mug = @(T) mugfun(mugcoeffs,T);
 s.kg = @(T) kgfun(kgcoeffs,T);
 s.kl = @(T) klfun(klcoeffs,T);
 s.cpl = @(T) cplfun(cplcoeffs,T);
@@ -526,7 +707,7 @@ function cpid = cpperry(C,T)
 %CPID       Specific heat capacity at constant pressure in the ideal gas state.
 %
 %  CPID(CPCOEFFS,T) returns the specific heat capacity at constant pressure in
-%  the ideal gas state, [J/kgK].  An equation to Table 2-198 in Perry's Chemical
+%  the ideal gas state, [J/kgK]. An equation to Table 2-198 in Perry's Chemical
 %  Engineer's Handbook, 7th ed. (1997) is used.
 
 M = C(6);
@@ -534,6 +715,20 @@ c3t=C(3)./T;
 c5t=C(5)./T;
 
 cpid = ( C(1) + C(2)*(c3t./sinh(c3t)).^2 + C(4)*(c5t./cosh(c5t)).^2 )/M;
+
+function cpid = vdi10(C,T)
+%VDI10      Specific heat capacity at constant pressure in the ideal gas state.
+%
+%  VDI10(CPCOEFFS,T) uses eq. 10 in VDI Wärmeatlas, 11th ed. (2013), D3.1
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return
+%  the specific heat capacity at constant pressure in the ideal gas state in
+%  units of J/kgK. Coefficients are already scaled to return J/kgK. The caption
+%  to Tabelle 6 claims to return J/gK, but really J/kgK are returned.
+
+at = T./(C(1) + T);
+at2 =at.^2;
+cpid = C(8).*( C(2) + (C(3)-C(2)).*at2.*(1.0-(C(1)./(C(1)+T)).*...
+       (C(4) + C(5).*at + C(6).*at2 + C(7).*at2.*at)));
 
 function cpg = cpgas(cpid,cpg_cpid)
 %CPGAS      Specific heat capacity at constant pressure of the vapor  [J/kgK].
@@ -1059,9 +1254,9 @@ function rho = rhoperry(C,T)
 %  Uses a Rackett(?) equation. See Table 2-30 in Perry's Chemical Engineer's
 %  Handbook, 7th ed. (1997).
 
-% C = [C1 C2 C3 C4 M]
+% C = [C1 C2 C3 C4 M]; C1 = C1*M in the assignment
 M = C(5);
-rho = C(1)/C(2).^(1 + (1 - T./C(3)).^C(4));
+rho = C(1)./C(2).^(1 + (1 - T./C(3)).^C(4));
 rho = rho.*M;
 
 function [drho, rho] = drhoperry(C,T)
@@ -1090,7 +1285,6 @@ function mul = mudaubert(C,T)
 %  C = [A B C D E]
 
 % if T<C(1) | T>C(2) warning('Liquid viscosity: Out of range.');
-
 if C(4)~=0
   term = C(4).*(T.^C(5));
 else
@@ -1098,7 +1292,17 @@ else
 end
 mul = exp( C(1) + C(2)./T + C(3).*log(T) + term );
 
-function mug = mulucas(T,R,M,Tc,pc,mugcoeffs)
+function mul = vdi02(C,T)
+%VDI02      Specific heat capacity at constant pressure in the ideal gas state.
+%
+%  VDI02(MULCOEFFS,T) uses eq. 2 in VDI Wärmeatlas, 11th ed. (2013), D3.1
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return
+%  the dynamic viscosity of the liquid. The equation states units of Pas, the
+%  caption of Tabelle 7 refers to mPas. The latter is wrong.
+cdt = (C(3) - T)./(T - C(4));
+mul = C(5).*exp(nthroot(cdt,3).*(C(1) + C(2).*cdt));
+
+function mug = mulucas(mugcoeffs,T)
 %MULUCAS    Dynamic viscosity of the vapor [Pa s].
 %
 %  MULUCAS(T,M,TC,PC,MUGCOEFFS) returns the dynamic viscosity of the vapor.
@@ -1107,7 +1311,9 @@ function mug = mulucas(T,R,M,Tc,pc,mugcoeffs)
 %  and by Perry, 7th ed. (1997). Not good for, e.g., nitrogen at saturation for
 %  T > 80 K (cf. viscosity.pdf).
 
-Z = mugcoeffs(1); debye = mugcoeffs(2);
+Z = mugcoeffs(1);  debye = mugcoeffs(2);
+R = mugcoeffs(3); M = mugcoeffs(4);
+Tc = mugcoeffs(5); pc = mugcoeffs(6);
 Navo = 6.02214e26; % Avogadros constant.
 k = R/Navo; % Boltzmann number
 
@@ -1243,6 +1449,19 @@ y = (  (-12*C(4).^2.*(T1.^5-T2.^5))/5 ...
   -15*(2*C(1)+C(3)).*C(4)- 6*C(4).^2 ).*(log(T1./T2)) ...
   +30*C(1).^2.*log((Tc-T2)./(Tc-T1)))   )./(M.*60.*Tc.^5);
 
+function cpl = vdi08(C,T)
+%VDI08      Specific isobaric heat capacity of the liquid [J/kgK].
+%
+%  VDI08(C,T) applies eq. 8 from VDI Wärmeatlas, 11th ed. (2013). D3.1
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the specific
+%  isobaric heat capacity of the liquid in units of J/kgK. VDI08 expects
+%  coefficients C(1) to C(6), A to F in eq. 8, to already be multiplied with
+%  R/M.
+
+% Tc = C(7);
+xi = (1-T./C(7));
+cpl = C(1)./xi  + C(2) + C(3).*xi + C(4).*xi.^2 + C(5).*xi.^3 + C(6).*xi.^4;
+
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
 %
@@ -1269,10 +1488,9 @@ function sig = sigstephan22(sigcoeffs,T)
 %  SIGSTEPHAN22(SIGCOEFFS,T) returns the surface tension from a correlation by
 %  Stephan and Hildwein (1987), their eq. (22).
 
-% sigcoeffs = [a1 a2 Tc]; Stephan returns sigma in [1e-3 N/m]
 % Check of T <= Tc commented out.
 %if T < sigcoeffs(3)
-  sig = 1e-3*sigcoeffs(1).*(1-T./sigcoeffs(3)).^sigcoeffs(2);
+  sig = sigcoeffs(1).*(1-T./sigcoeffs(3)).^sigcoeffs(2);
 %else
 %  sig = 0;
 %end
@@ -1284,6 +1502,7 @@ function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 %  tension, normalized with the surface tension, and the surface tension itself.
 %
 %  See also SIGSTEPHAN22.
+
 % Check of T <= Tc commented out.
 %if T < sigcoeffs(3)
   dsig = sigcoeffs(2)./(T-sigcoeffs(3));
@@ -1298,9 +1517,9 @@ function sig = sigstephan23(sigcoeffs,T)
 %  SIGSTEPHAN23(SIGCOEFFS,T) returns the surface tension from a correlation by
 %  Stephan and Hildwein (1987), their eq. (23).
 
-% sigcoeffs = [a1 a2 a3 Tc]; Stephan returns sigma in [1e-3 N/m]
+% sigcoeffs = [a1 a2 a3 Tc];
 th = 1-T./sigcoeffs(4);
-sig = sigcoeffs(1)*1e-3.*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
+sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 
 function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 %DSIGSTEPHAN23 Surface tension [N/m].
@@ -1310,8 +1529,14 @@ function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 %
 %  See also SIGSTEPHAN23.
 th = 1-T./sigcoeffs(4);
-sig = sigcoeffs(1)*1e-3.*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
+sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 dsig = (-sigcoeffs(2) - 1./(1+1./(sigcoeffs(3).*th)))./(th.*sigcoeffs(4));
+
+%function sig = vdi06(C,T)
+%VDI06     Surface tension [N/m].
+%  VDI06(C,T) applies eq. 6 from VDI Wärmeatlas, 11th ed. (2013). D3.1
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the surface
+%  tension. For two coefficients, equivalent to SIGSTEPHAN22.
 
 function jt = jt(V,cpid)
 %JT         Joule-Thomson coefficient [K/Pa].
@@ -1364,7 +1589,7 @@ function [dy, y] = dpoly2(C,x)
 %
 %  See also POLY2.
 y = poly2(C,x);
-dy = ( C(2)+2*C(3)*x )./y;
+dy = (C(2) + 2*C(3)*x)./y;
 
 function y = poly3(C,x)
 %POLY3      Evaluate a polynomial of third order, four coefficients.
@@ -1380,7 +1605,7 @@ function [dy, y] = dpoly3(C,x)
 %
 %  See also POLY3.
 y = poly3(C,x);
-dy = ( C(2)+2*C(3)*x+3*C(4)*x.^2 )./y;
+dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 )./y;
 
 function iy = ipoly3(C,x0,x1)
 %IPOLY3     Integrate a polynomial of third order.
@@ -1403,10 +1628,20 @@ function y = poly4(C,x)
 %  POLY4(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3 + C(5)*x^4.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3 + C(5)*x.^4;
 
-function iy = ipoly4(C,x0,x1)
-%IPOLY4     Integrate a polynomial of third order.
+function [dy, y] = dpoly4(C,x)
+%DPOLY3     Evaluate the derivative of a polynomial of fourth order.
 %
-%  IY = IPOLY3(C,X0,X1) integrates a polynomial between X0 and X1.
+%  [DY Y] = DPOLY4(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
+%  the value of the polynomial.
+%
+%  See also POLY4.
+y = poly4(C,x);
+dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 + 4*C(5)*x.^3)./y;
+
+function iy = ipoly4(C,x0,x1)
+%IPOLY4     Integrate a polynomial of fourth order.
+%
+%  IY = IPOLY4(C,X0,X1) integrates a polynomial between X0 and X1.
 %
 %  See also POLY4.
 iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
@@ -1433,7 +1668,7 @@ if nargout > 1
 end
 
 function [y, y1, y2] = pdiv4(C,x)
-%POLY4      Evaluate a polynomial in X^-1 of fourth order, five coefficients.
+%PDIV4      Evaluate a polynomial in X^-1 of fourth order, five coefficients.
 %
 %  PDIV4(C,x) returns y = C(1) + C(2)/x + C(3)/x^2 + C(4)/x^3 + C(5)/x^4.
 %
@@ -1453,9 +1688,9 @@ function x = newtony(fun,x0,y,res,iter)
 %  from X = X0. NEWTON expects FUN to be the handle to a function that returns a
 %  vector [F(X) DF(X)], where DF is the derivative of F at X.
 %
-%  NEWTONY(FUN,X0,Y,RES,ITER) finds a solution to F(X) = Y. NEWTONY iterates until
-%  ABS( F(X) - Y ) < RES or more than ITER iterations are done. Default values
-%  are RES = 1e-6 and ITER = 100.
+%  NEWTONY(FUN,X0,Y,RES,ITER) finds a solution to F(X) = Y. NEWTONY iterates
+%  until ABS( F(X) - Y ) < RES or more than ITER iterations are done. Default
+%  values are RES = 1e-6 and ITER = 100.
 %
 %  The exact X is at a distance of approximately RES/DF from the value returned.
 %
