@@ -36,7 +36,8 @@ function s = substance(name)
 %    S.nul(T)       Kinematic viscosity of the liquid [m2/s]
 %    S.nug(T,p)     Kinematic viscosity of the vapor [m2/s]
 %
-%  Scalar functions: S.ps, S.Ts, ...
+%  Functions S.ps, S.Ts, S.rho and S.hvap, as well as the depending functions
+%  s.drho, s.nul (and ??) do not accept arrays as input.
 %  Subfunctions: genericfunc, genericafun, cpperry, cpgas, hvap, virial, ps, Ts,
 %  rholandolt, drholandolt, rhoperry, drhoperry, mudaubert, mulucas, kgroy,
 %  klatini, cpleq2, icpleq2, sigvdi, dsigvdi, jt, dhdp, intjt, poly2, dpoly2,
@@ -559,6 +560,7 @@ virialfun = @pdiv3;
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf, Tabelle 6, S. 52.
 % Tabelle 6 states that J/gK is returned, eq. 10 refers to J/kgK. The latter is
 % correct.
+% Vectorizes!
 cpcoeffs = [1089.3798 4.7246 -1.1767 3.7776 129.3687 -281.4223 216.9425 R/M];
 cpfun = @vdi10;
 
@@ -567,6 +569,7 @@ cpfun = @vdi10;
 % Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
 % in mPas, but really the unit is Pas.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
 mulcoeffs = [2.56344 0.16137 372.533 38.033 1.751e-5];
 mulfun = @vdi02;
 
@@ -575,6 +578,7 @@ mulfun = @vdi02;
 % Kleiber und Ralph Joh. Tabelle 8 claims to report the viscosity in muPas,
 % but really the unit is Pas.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
 mugcoeffs = [7.353e-7 2.0874e-8 2.4208e-11 -3.914e-14 1.784e-17];
 mugfun = @poly4;
 
@@ -582,6 +586,7 @@ mugfun = @poly4;
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 10.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
 kgcoeffs = [-6.656e-3 5.280e-5 1.01810e-7];
 kgfun = @poly2;
 
@@ -589,6 +594,7 @@ kgfun = @poly2;
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 9.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
 klcoeffs = [0.2661 -6.336e-4 5.7e-8 6.55e-10 -7.01e-13];
 klfun = @poly4;
 
@@ -598,6 +604,7 @@ klfun = @poly4;
 % Do not multiply all coefficients by 1000*R/M, only by R/M, although Tabelle 5
 % claims to be in J/gK, eq. 8 claims to return J/kgK, which is correct.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
 cplcoeffs = [[0.5219 13.0156 -3.9111 -21.2164 49.1038 -30.2438]*R/M Tc];
 cplfun = @vdi08;
 
@@ -606,6 +613,7 @@ cplfun = @vdi08;
 % Kleiber und Ralph Joh. Tabelle 11.  Do not divide coefficient A by 1000;
 % Tabelle 11 claims to return surface tension in mN/m, but really returns N/m.
 % For two coefficients, eq. 6 is identical to SIGSTEPHAN22.
+% Vectorizes!
 sigcoeffs = [0.05094 1.22051 Tc];
 sigfun = @sigstephan22;
 
@@ -902,10 +910,10 @@ else % case 'cp' 'dhdp' 'jt'
   if strcmp(out,'cp') || strcmp(out,'jt') % case 'cp' 'jt'
     % compute cpg-cpid = (R/M) * {[(B-B'T)^2 - 2BB''T^2]/BRT}
     %  * [p/SQR + (RT/2B)(1/SQR - 1)] + (B''T^2/2B)(1/SQR-1).
-    v = sqrt(1 + 4*p*B/(R*T)); % interim use of variable
-    sqr1=(1/v - 1);
-    v = ((B-B1)^2-2*B*B2)*(p/v + R*T*sqr1/(2*B))/(B*R*T) + B2*sqr1/(2*B);
-    v = v*R/M;
+    v = sqrt(1 + 4*p.*B./(R*T)); % interim use of variable
+    sqr1=(1./v - 1);
+    v = ((B-B1).^2-2*B.*B2).*(p./v+R.*T.*sqr1./(2*B))./(B.*R.*T)+B2.*sqr1./(2*B);
+    v = v*R./M;
   end
 
   if strcmp(out,'dhdp') || strcmp(out,'jt') % case 'dhdp' 'jt'
