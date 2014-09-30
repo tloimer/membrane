@@ -1468,6 +1468,49 @@ function cpl = vdi08(C,T)
 xi = (1-T./C(7));
 cpl = C(1)./xi  + C(2) + C(3).*xi + C(4).*xi.^2 + C(5).*xi.^3 + C(6).*xi.^4;
 
+function icpl = ivdi08(C,T0,T1)
+%IVDI08     Integrate VDI08.
+%
+%  IVDI08(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy of
+%  the liquid between the temperatures T0 and T1.
+%  The difference to CPLEQ2 is the assignment of the coefficients. Also, VDI08
+%  goes to fourth order, cpleq2 to fifth order in (1-T/Tc), but the latter uses
+%  fewer coefficients.
+%
+%  See also VDI08, ICPLEQ2.
+
+%  From cpl = c1/x + c2 + c3*x + .. + c6*x^4, x = 1-T/Tc, hence dx = -dT/Tc
+%  yields for int_T0^T1 cpl dT = -Tc int_x0^x1 cpl dx,
+%  int_x0^x1 cpl = c1*log(x1/x0) + c2*(x1-x0) + c3*(x1^2-x0^2)/2 ...
+%    +  c4*(x1^3-x0^3)/3 + c5*(x1^4-x0^4)/4 + c6*(x1^5-x0^5)/5;
+Tc = C(7);
+x0 = (1-T0./Tc); x1 = (1-T1./Tc);
+
+icpl = Tc.*( C(1)*log(x0./x1) - C(2)*(x1-x0) - C(3)*(x1.^2-x0.^2)/2 ...
+       - C(4)*(x1.^3-x0.^3)/3 - C(5)*(x1.^4-x0.^4)/4 - C(6)*(x1.^5-x0.^5)/5 );
+
+function y = ivdi08_x(C,T1,T2)
+%IVDI08_X   Integrate cpl/T from T1 to T2, cpl given by VDI08 [J/kgK].
+%
+%  IVDI08_X(C,T1,T2) integrates the specific isobaric heat capacity of the
+%  liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation of the difference of
+%  the specific entropy of the liquid.
+
+% FullSimplify[ Integrate[ (C1/x + C2 + C3*x + C4*x^2 + C5*x^3 + C6*x^4) / T
+%                           /. x -> (1 - T/Tc), {T, T1, T2},
+%         Assumptions -> T1 > 0 && T2 > 0 && T1 < Tc && T2 < Tc && T1 < T2]]
+%
+% FullSimplify[ %2 == ...,
+%         Assumptions -> T1 > 0 && T2 > 0 && Tc > 0 && T1 < Tc && T2 < Tc ]
+
+Tc = C(7);
+y = C(6)*(T2.^4 -T1.^4)/(4*Tc^4) + (C(5) + 4*C(6))*(T1.^3 - T2.^3)/(3*Tc^3) ...
+    - (C(4) + 3*C(5) + 6*C(6))*(T1.^2 - T2.^2)/(2*Tc^2) ...
+    + (C(3) + 2*C(4) + 3*C(5) + 4*C(6))*(T1 - T2)/Tc ...
+    + (C(2) + C(3) + C(4) + C(5) + C(6))*log(T2./T1) ...
+    + C(1)*log((T2.*(Tc-T1))./(T1.*(Tc-T2)));
+
+
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
 %
