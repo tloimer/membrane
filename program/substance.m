@@ -38,6 +38,7 @@ function s = substance(name)
 %
 %  Functions S.ps, S.Ts, S.rho and S.hvap, as well as the depending functions
 %  s.drho, s.nul (and ??) do not accept arrays as input.
+%  S.v and S.jt only accept column vectors [270;280;290], not row vectors.
 %  Subfunctions: genericfunc, genericafun, cpperry, cpgas, hvap, virial, ps, Ts,
 %  rholandolt, drholandolt, rhoperry, drhoperry, mudaubert, mulucas, kgroy,
 %  klatini, cpleq2, icpleq2, sigvdi, dsigvdi, jt, dhdp, intjt, poly2, dpoly2,
@@ -506,6 +507,7 @@ case 'propane'
 % M. Frenkel and K.R. Hall (1999).
 % See also ~/Literatur/pdfs/Landolt/LandoltIV20A14-29.pdf
 % Range:  85.5 K < T < 369.8 K
+% More than 9% error at T = 120 K, increasing rapidly for decreasing T
 % classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
 % line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
 % extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
@@ -543,14 +545,16 @@ rhocoeffs = [288 820.464 -1.013 -2.71229e-4 3.32129e-6 -1.12912e-8 0;...
 rhofun = {@poly4, @rholandolt};
 
 % V, specific volume of the gas
-% Range:  250 K < T
+% Range:  250 K < T < 340 K
+% s.v(T,ps(T)) gives < 1% error for T < 300 K, < 8% error for T < 330 K,
+% error (v becomes complex) for T > 330 K.
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond,
 % K.N. Marsh, R.C. Wilhoit and K.C. Wong (2002).
 % See also ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 % B [cm^3/mol] = A + B/T + C/T^2 + D/T^3.
 % vcoeffs = [A B C D R M];
-% Vectorizes!
+% Vectorizes, but only for column vectors!
 vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
 
@@ -912,8 +916,8 @@ else % case 'cp' 'dhdp' 'jt'
     %  * [p/SQR + (RT/2B)(1/SQR - 1)] + (B''T^2/2B)(1/SQR-1).
     v = sqrt(1 + 4*p.*B./(R*T)); % interim use of variable
     sqr1=(1./v - 1);
-    v = ((B-B1).^2-2*B.*B2).*(p./v+R.*T.*sqr1./(2*B))./(B.*R.*T)+B2.*sqr1./(2*B);
-    v = v*R./M;
+    v = ((B-B1).^2-2*B.*B2).*(p./v+R.*T.*sqr1./(2*B))./(B*R.*T)+B2.*sqr1./(2*B);
+    v = v*R/M;
   end
 
   if strcmp(out,'dhdp') || strcmp(out,'jt') % case 'dhdp' 'jt'
@@ -923,7 +927,7 @@ else % case 'cp' 'dhdp' 'jt'
       % compute dh/dp
       % from above, with b = 4p/RT = a/T, B1 = B'T
       % T dv/dT = ( 2 + (2+b(B+B1))/sqrt(1+bB) ) / bM
-      w = 4*p./(R.*T); % next interim variable w, w = b
+      w = 4*p./(R*T); % next interim variable w, w = b
       dhdp = ( 2 + (2+w.*(B+B1))./sqrt(1+w.*B) )./(w*M); % now dhdp = T dv/dT
       % the volume v, copied from above
       w = 4./w; % v = RT/p = a
@@ -1594,14 +1598,14 @@ function jt = jt(V,cpid)
 %    jt = -(dh/dp)/cp.
 
 % jt = -dhdp(T)./cpg(T,p); V = [dhdp cpg_cpid], see VIRIAL.
-jt = -V(1)./(cpid+V(2));
+jt = -V(:,1)./(cpid+V(:,2));
 
 function [dhdp, cpg]= dhcpg(V,cpid)
 %DHCPG      Derivative of enthalpy by pressure at constant temperature,  dh/dp.
 %
 %  DHCPG([DHDP CPG_CPID],CPID) returns the array [DHDP CPG].
-dhdp = V(1);
-cpg = V(2)+cpid;
+dhdp = V(:,1);
+cpg = V(:,2)+cpid;
 
 function T1 = intjt(T0,p0,p1,jtloc)
 %INTJT      Integral Joule-Thomson coefficient [K].
