@@ -506,7 +506,7 @@ case 'propane'
 % Vapor Pressure of Chemicals, vol. 20A: J. Dykyj, J. Svoboda, R.C. Wilhoit,
 % M. Frenkel and K.R. Hall (1999).
 % See also ~/Literatur/pdfs/Landolt/LandoltIV20A14-29.pdf
-% Range:  85.5 K < T < 369.8 K
+% Range:  85.5 K < T < 369.8 K; error < 0.4% for 180 K < T < 350 K
 % More than 9% error at T = 120 K, increasing rapidly for decreasing T
 % classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
 % line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
@@ -532,7 +532,7 @@ M = 44.10; Tc = 369.82; % pc = 4.248e6;
 % ~/Literatur/pdfs/Landolt/LandoltIV21A151-168.pdf
 
 % RHO, liquid density at saturation
-% Range:  85.47 K < T < 369.83 K
+% Range:  85.47 K < T < 369.83 K; 100 K < T < 350 K, error < 0.1%
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8B:
 % R. Wilhoit, K. Marsh, X. Hong, N. Gadalla and M. Frenkel (1996).
@@ -559,6 +559,7 @@ vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
+% Range: 130 K < T < 350 K, error < 0.8%
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf, Tabelle 6, S. 52.
@@ -569,6 +570,7 @@ cpcoeffs = [1089.3798 4.7246 -1.1767 3.7776 129.3687 -281.4223 216.9425 R/M];
 cpfun = @vdi10;
 
 % MUL, dynamic viscosity of the liquid [Pas].
+% Range: 100 K < T < 350 K, error < 1%
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
 % in mPas, but really the unit is Pas.
@@ -578,6 +580,7 @@ mulcoeffs = [2.56344 0.16137 372.533 38.033 1.751e-5];
 mulfun = @vdi02;
 
 % MUG, dynamic viscosity of the vapor [Pas]
+% Range 100 K < T < 300 K for error < 2%;  T < 330 for error < 10%
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 8 claims to report the viscosity in muPas,
 % but really the unit is Pas.
@@ -595,6 +598,8 @@ kgcoeffs = [-6.656e-3 5.280e-5 1.01810e-7];
 kgfun = @poly2;
 
 % KL, thermal conductivity of the saturated liquid [W/mK]
+% Range: 100 K < T < 350 K, error smaller than 2.5% for T < 320 K, otherwise
+% error smaller than 4%.
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 9.
 % See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
@@ -603,6 +608,7 @@ klcoeffs = [0.2661 -6.336e-4 5.7e-8 6.55e-10 -7.01e-13];
 klfun = @poly4;
 
 % CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% Range 100 K < T < 330 K, error < 0.1%; error 0.17% at 340 K, 0.8% at 350 K
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 5.
 % Do not multiply all coefficients by 1000*R/M, only by R/M, although Tabelle 5
@@ -613,6 +619,7 @@ cplcoeffs = [[0.5219 13.0156 -3.9111 -21.2164 49.1038 -30.2438]*R/M Tc];
 cplfun = @vdi08;
 
 % SIGMA, surface tension [N/m].
+% Range 100 K < T < 350 K, error < 3%
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. Tabelle 11.  Do not divide coefficient A by 1000;
 % Tabelle 11 claims to return surface tension in mN/m, but really returns N/m.
@@ -620,6 +627,14 @@ cplfun = @vdi08;
 % Vectorizes!
 sigcoeffs = [0.05094 1.22051 Tc];
 sigfun = @sigstephan22;
+
+% Joule-Thomson coefficient
+% Range: 100 K < T < 310 K, error < 10%
+% Enthaply of vaporization
+% Range: 100 K < T < 320 K, error < 4%;  150 K < T < 300 K, error < 1%;
+% Kinematic viscosity of the vapor
+% Range: 100 K < T < 290, error < 2%; increases to 15% error for T = 330 K
+% TODO Thermal conductivity of the vapor, 100% off
 
 otherwise
 error('No substance of this name.')
