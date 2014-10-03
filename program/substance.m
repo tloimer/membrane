@@ -230,7 +230,8 @@ case 'butane'
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Vapor Pressure of Chemicals, vol. 20A. J. Dykyj, J. Svoboda, R.C. Wilhoit,
 % M.  Frenkel, K.R. Hall (1999).
-% Range: 134.8 K < T < 425.1 K
+% Range: 134.8 K < T < 425.1 K; BUT error > 10% for T < 160 K!
+%
 
 % classical Antoine eq.: Tmax pmax A B C 0  0  0 0 0
 % extended Antoine eq.:  Tmax pmax A B C T0 Tc n E F
