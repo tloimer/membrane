@@ -23,7 +23,7 @@ function testsubstance(name)
 global VERBOSE;
 
 switch(name)
-case 'propane'
+case {'propane', 'propaneperry'}
 Tc = 369.82;
 
 % Saturation properties - temperature increments.
