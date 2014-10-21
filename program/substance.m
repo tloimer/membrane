@@ -642,6 +642,226 @@ sigfun = @sigstephan22;
 % Range: 100 K < T < 290, error < 2%; increases to 15% error for T = 330 K
 % TODO Thermal conductivity of the vapor, 100% off
 
+case 'propaneperry'
+% Propane. CAS 74-98-6. C_3 H_8
+
+% PS, saturation pressure, coefficients for the Antoine eq.
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20A: J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M. Frenkel and K.R. Hall (1999).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV20A14-29.pdf
+% Range:  85.5 K < T < 369.8 K; error < 0.4% for 180 K < T < 350 K
+% More than 9% error at T = 120 K, increasing rapidly for decreasing T
+% classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
+% line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
+% line in Landolt-Börnstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+%                                (n) (E) (F)
+% Table in Landolt-Börnstein
+% 9    C3H8            Propane                                           74-98-6
+% l-g  6.6956   1030.7   -7.79    101/165  85.5/167 B  231.07/101.325  74-trchc
+% l-g  5.92828  803.997  -26.11   270/248  167/237 A                   74-trchc
+% l-g  5.92828  803.997  -26.108  248/369  237/369.8 A                 74-trchc
+%      (2.55753) (50.655) (-1408.9)
+% Does not vectorize.
+Acoeffs =  zeros(3,10);
+Acoeffs(1,1:5) = [167 1666.32 9.6956 1030.7 -7.79];
+Acoeffs(2,1:5) = [237 130581.0 8.92828 803.997 -26.11];
+Acoeffs(3,:) = [369.8 4247600 Acoeffs(2,3:5) 237 369.8 2.55753 50.655 -1408.9];
+% PS, saturation pressure
+% Range 85.47 K (1.68e-4 Pa) < T < 369.83 K (4.214e6 Pa)
+% See Table 2-8 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+%pscoeffs = [59.078 -3492.6 -6.0669 1.0919e-5 2];
+% pseq = exp(C1 + C2/T + C3*log(T) + C4*T^2]; must be
+% pseq = exp(C1 + C2/T + C3*log(T) + C4*T^C5]; = mudaubert
+% TODO: implement pseq
+%psfun = @mudaubert;
+
+% critical constants, from VDI Wärmeatlas, 2013, Table D3.1
+% See also ~/Literatur/pdfs/VDI/VDI2013D3
+M = 44.10;
+Tc = 369.82; % pc = 4.248e6;
+% Landolt-Börnstein also gives M = 44.10, see
+% ~/Literatur/pdfs/Landolt/LandoltIV21A151-168.pdf
+% Perry's Chemical Engineer's Handbook, 8th ed. (2008) gives
+% M = 44.096; % Table 2-156 Specific heat capacity in the ideal gas state
+% M = 44.10;  % Table 2-134 Thermal conductivity of the vapor
+
+% RHO, liquid density at saturation
+% Range:  85.47 K < T < 369.83 K; 100 K < T < 350 K, error < 0.1%
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8B:
+% R. Wilhoit, K. Marsh, X. Hong, N. Gadalla and M. Frenkel (1996).
+% See also ~/Literatur/pdfs/Landold/LandoltIV8B16-44.pdf
+% rhocoeffs:   [Tmax A B C D E 0]
+%  or          [Tmax A B C D Tc rhoc]
+% Does not vectorize.
+%rhocoeffs = [288 820.464 -1.013 -2.71229e-4 3.32129e-6 -1.12912e-8 0;...
+%             369.83 .490105 -.0132372 1.66441e-4 -7.6597e-7 369.83 220];
+%rhofun = {@poly4, @rholandolt};
+% RHO, liquid density at max(1 atm, psat(T))
+% Range 85.47 K (16.583 mol/dm3) < T < 369.83 K (5.011 mol/dm3)
+% See Table 2-32 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+%			M = 44.096
+rhocoeffs = [369.83 1.3757*44.096 0.27453 369.83 0.29359];
+rhofun{1} = @rhoperry;
+
+% V, specific volume of the gas
+% Range:  250 K < T < 340 K
+% s.v(T,ps(T)) gives < 1% error for T < 300 K, < 8% error for T < 330 K,
+% error (v becomes complex) for T > 330 K.
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond,
+% K.N. Marsh, R.C. Wilhoit and K.C. Wong (2002).
+% See also ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
+% B [cm^3/mol] = A + B/T + C/T^2 + D/T^3.
+% vcoeffs = [A B C D R M];
+% Vectorizes, but only for column vectors!
+% Landolt-Börnstein also gives M = 44.10, see
+vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
+virialfun = @pdiv3;
+
+% CPID, specific heat capacity in the ideal gas state at constant pressure
+% Range: 130 K < T < 350 K, error < 0.8%
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf, Tabelle 6, S. 52.
+% Tabelle 6 states that J/gK is returned, eq. 10 refers to J/kgK. The latter is
+% correct.
+% Vectorizes!
+%cpcoeffs = [1089.3798 4.7246 -1.1767 3.7776 129.3687 -281.4223 216.9425 R/M];
+%cpfun = @vdi10;
+% See Table 2-156 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+% Range 200 K (0.5632e-5) < T < 1500 (2.0556e-5)
+%M = 44.096;
+cpcoeffs = [0.5192e5/M 1.9245e5/M 1.6265e3 1.168e5/M 723.6];
+cpfun = @cpperry;
+
+% MUL, dynamic viscosity of the liquid [Pas].
+% Range: 100 K < T < 350 K, error < 1%
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
+% in mPas, but really the unit is Pas.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
+%mulcoeffs = [2.56344 0.16137 372.533 38.033 1.751e-5];
+%mulfun = @vdi02;
+% MUL, dynamic viscosity of the liquid at max(1 atm, psat) [Pas].
+% Range 85.47 K (9.458e-3 Pas) < T < 360 K (4.274e-5 Pas)
+% See Table 2-313 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+% Vectorizes!
+mulcoeffs = [-17.156 646.25 1.1101 -7.3439e-11 4];
+mulfun = @mudaubert;
+
+% MUG, dynamic viscosity of the vapor [Pas]
+% Range 100 K < T < 300 K for error < 2%;  T < 330 for error < 10%
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 8 claims to report the viscosity in muPas,
+% but really the unit is Pas.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
+mugcoeffs = [7.353e-7 2.0874e-8 2.4208e-11 -3.914e-14 1.784e-17];
+mugfun = @poly4;
+% MUG, dynamic viscosity of the vapor at min(1 atm, psat) [Pas]
+% Range 85.47 K (2.702e-6 Pas) < T < 1000 K (2.48e-5)
+% See Table 2-312 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+% mu = C1*T^C2/(1 + C3/T + C4/T^2)
+mugcoeffs = [4.9054e-8 0.90125];
+mugfun = @kmuperryshort;
+
+% KG, thermal conductivity of the vapor at low pressures [W/mK].
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 10.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
+%kgcoeffs = [-6.656e-3 5.280e-5 1.01810e-7];
+%kgfun = @poly2;
+% KG, thermal conductivity of the vapor at min(1 atm, psat(T))
+% Range: 231.11 K (0.01114 W/mK) < T < 1000 K (0.14599)
+% See Table 2-314 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+% k = C1*T^C2/(1 + C3/T + C4/T^2)
+kgcoeffs = [-1.12 0.10972 -9834.6 -7.5358e6];
+kgfun = @kmuperry;
+
+% KL, thermal conductivity of the saturated liquid [W/mK]
+% Range: 100 K < T < 350 K, error smaller than 2.5% for T < 320 K, otherwise
+% error smaller than 4%.
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 9.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
+%klcoeffs = [0.2661 -6.336e-4 5.7e-8 6.55e-10 -7.01e-13];
+%klfun = @poly4;
+% KL, thermal conductivity of the liquid at max(1 atm, psat(T))
+% Range 85.47 K (0.2128 W/mK) < T < 350 K (0.0689 W/mK)
+% See Table 2-315 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Data in this table taken from
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+%M=44.10
+klcoeffs = [0.26755 -6.6457e-4 2.774e-7];
+klfun = @poly2;
+
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% Range 100 K < T < 330 K, error < 0.1%; error 0.17% at 340 K, 0.8% at 350 K
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 5.
+% Do not multiply all coefficients by 1000*R/M, only by R/M, although Tabelle 5
+% claims to be in J/gK, eq. 8 claims to return J/kgK, which is correct.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3.pdf
+% Vectorizes!
+%cplcoeffs = [[0.5219 13.0156 -3.9111 -21.2164 49.1038 -30.2438]*R/M Tc];
+%cplfun = @vdi08;
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% Range 85.47 K (0.8488e-5 J/kmolK) < T < 360 K (2.6079 J/kmolK)
+% See Table 2-153 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+% Cp (J/kmol K) = C1^2/t + C2 - 2*C1*C3*t - C1*C4*t^2 -C3^2*t^3/3 ...
+%  - C3*C4*t^4/2 - C4^2*t^5/5;
+%				   Tc = 369.83; M = 44.096;
+cplcoeffs = [62.983 113630 633.21 -873.46 369.83 44.096];
+cplfun = @cpleq2;
+
+% SIGMA, surface tension [N/m].
+% Range 100 K < T < 350 K, error < 3%
+% See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
+% Kleiber und Ralph Joh. Tabelle 11.  Do not divide coefficient A by 1000;
+% Tabelle 11 claims to return surface tension in mN/m, but really returns N/m.
+% For two coefficients, eq. 6 is identical to SIGSTEPHAN22.
+% Critical temperature: See VDI Wärmeatlas, 2013, Table D3.1.
+% See also ~/Literatur/pdfs/VDI/VDI2013D3
+% Vectorizes!		Tc = 369.82
+sigcoeffs = [0.05094 1.22051 369.82];
+sigfun = @sigstephan22;
+
 otherwise
 error('No substance of this name.')
 % water
@@ -740,7 +960,7 @@ function cpid = cpperry(C,T)
 %
 %  CPID(CPCOEFFS,T) returns the specific heat capacity at constant pressure in
 %  the ideal gas state, [J/kgK]. An equation to Table 2-198 in Perry's Chemical
-%  Engineer's Handbook, 7th ed. (1997) is used.
+%  Engineer's Handbook, 7th ed. (1997) or Table 2-156, 8th ed. (2008) is used.
 
 c3t=C(3)./T;
 c5t=C(5)./T;
@@ -1365,6 +1585,15 @@ else
 end
 
 mug = etaxi*fp/xi;
+
+function kmu = kmuperry(C,T)
+%KMUPERRY   Equation to Table 2-312, 2-314 in Perry, 8th ed. (2008).
+% k = C1*T^C2/(1 + C3/T + C4/T^2)
+kmu = C(1)*T.^C(2)./(1 + C(3)./T + C(4)./T./T);
+
+function kmu = kmuperryshort(C,T)
+%KMUPERRYSHORT Abridged SUBSTANCE>KMUPERRY.
+kmu = C(1)*T.^C(2);
 
 function kg = kgroy(kgcoeffs,T)
 %KGROY      Thermal conductivity of the vapor [W/mK].
