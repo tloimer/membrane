@@ -50,10 +50,9 @@ function s = substance(name)
 %  and CPLEQ2 could be done more elegantly, but these function work and would
 %  require quite some work.
 %TODO:
-%  22. 9. 2014: Old muliquid (mul) of nitrogen - 10^22 at 80 K, what happened?
-%  22. 9. 2014: rhoperry, only in nitrogen: Count the coefficients!
-%               C(5) is not M, something is wrong here.
+%  21.10. 2014: saturation pressure for nitrogen takes off at T > 80 K
 %  22. 9. 2014: cpl for nitrogen is not correct, 3.2 instead of 2.1 kJ/kgK.
+%		Probably, the pressure must be considered?
 %
 %  TODO: cpl von butane hat sich geandert, siehe Table 153, Perry, 2007
 %  entropie-berechnung: v(T) - sqrt konsequent anwenden?
@@ -365,8 +364,8 @@ cpfun = @cpperry;
 % ties of Pure Chemicals -- Data Compilation, Design Institute for Physical
 % Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
 % Range: 240 K < T < 440 K
-mulcoeffs = [8.049 776 -3.068 0 0];
-mulfun = @mudaubert;
+mulcoeffs = [8.049 776 -3.068];
+mulfun = @mudaubertshort;
 
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas (also reported by
@@ -404,7 +403,7 @@ cplfun = @poly3;
 % Stephan: Tc = 513.92 K, pc = 61.37 bar.
 % Range: 158.5 K < T < 513.92 K
 % sigcoeffs = [a1 a2 a3 Tc]
-sigcoeffs = [0.0726009 1.08415 -.524168 513.92];
+sigcoeffs = [0.0726009 1.08415 -0.524168 513.92];
 sigfun = @sigstephan23;
 
 case 'nitrogen'
@@ -422,13 +421,16 @@ Acoeffs(1,1:5) = [80 136931.93 8.69633 265.684 -5.366];
 Acoeffs(2,:) = [126.2 6069220.85 Acoeffs(1,3:5) 80 126.2 0.434294 15.32 -15.5];
 
 % RHO, liquid density at saturation
-% Range: 63.15 K < T < 126.2 K
+% Range: 63.15 K (31.036 mol/dm³) < T < 126.2 K (11.217 mol/dm³)
 % See Table 2-30 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
 % Some kind of Rackett equation, i suppose.
-M = 28.013;  % VDI-Wärmeatlas, siehe unten bei kritischen Größen
-%rhocoeffs = zeros(1,7);
-rhocoeffs(1,1:6) = [126.2 3.2091 0.2861 126.2 0.2966 M];
-%rhocoeffs(1,1:5) = [126.2*M 3.2091 0.2861 126.2 0.2966];
+% See also Table 2-32 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
+% Cite the source of this table as
+% R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
+% R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
+% Institute for Physical Properties, AIChe, New York (2007).
+M = 28.013;  % also in VDI-Wärmeatlas, see critical constants below
+rhocoeffs = [126.2 3.2091*M 0.2861 126.2 0.2966];
 rhofun{1} = @rhoperry;
 
 % V, specific volume of the gas
@@ -454,8 +456,10 @@ cpfun = @cpperry;
 %mulcoeffs = [29.236 496.9 3.9069 -1.08e-21 10];
 %mulfun = @mudaubert;
 %  GAVE mul = 6.67e22 Pas, 19. Sep. 2014, commit a7b0e08, bf98b90 and before.
+%  with mulcoeffs(1) = -29.236, approx. 20 times too large value
 
 % MUL, dynamic viscosity of the liquid [Pas].
+% Range 65 K < T < 120 K, error < 10%
 % See VDI Wärmeatlas, 11th ed. (2013). D3.1 Flüssigkeiten und Gase: Michael
 % Kleiber und Ralph Joh. The caption to Tabelle 7, p. 59, says that mul is given
 % in mPas, but the unit really is Pas.
@@ -528,7 +532,7 @@ Acoeffs(3,:) = [369.8 4247600 Acoeffs(2,3:5) 237 369.8 2.55753 50.655 -1408.9];
 
 % critical constants, from VDI Wärmeatlas, 2013, Table D3.1
 % See also ~/Literatur/pdfs/VDI/VDI2013D3
-M = 44.10; Tc = 369.82; % pc = 4.248e6;
+M = 44.10; % Tc = 369.82; % pc = 4.248e6;
 % Landolt-Börnstein also gives M = 44.10, see
 % ~/Literatur/pdfs/Landolt/LandoltIV21A151-168.pdf
 
@@ -626,7 +630,8 @@ cplfun = @vdi08;
 % Tabelle 11 claims to return surface tension in mN/m, but really returns N/m.
 % For two coefficients, eq. 6 is identical to SIGSTEPHAN22.
 % Vectorizes!
-sigcoeffs = [0.05094 1.22051 Tc];
+%			Tc = 369.82;
+sigcoeffs = [0.05094 1.22051 369.82];
 sigfun = @sigstephan22;
 
 % Joule-Thomson coefficient
@@ -1278,12 +1283,9 @@ function rho = rhoperry(C,T)
 %
 %  RHOPERRY(C,T) returns the liquid density [kg/m3].
 %  Uses a Rackett(?) equation. See Table 2-30 in Perry's Chemical Engineer's
-%  Handbook, 7th ed. (1997).
+%  Handbook, 7th ed. (1997). See also Table 2-32 idem, 8th. ed (2008).
 
-% C = [C1 C2 C3 C4 M]; C1 = C1*M in the assignment
-M = C(5);
 rho = C(1)./C(2).^(1 + (1 - T./C(3)).^C(4));
-rho = rho.*M;
 
 function [drho, rho] = drhoperry(C,T)
 %DRHOPERRY  Derivative of liquid density, (1/rho) drho/dT [1/K].
@@ -1306,17 +1308,19 @@ function mul = mudaubert(C,T)
 %  Viswanath et al. report correlations by Daubert and Danner, Physical and
 %  Thermodynamic Properties of Pure Chemicals -- Data Compilation, Design
 %  Institute for Physical Properties Data, AIChE, Taylor and Francis,
-%  Washington DC (1989-1994).
-%
-%  C = [A B C D E]
+%  Washington DC (1989-1994). See also Table 2-313 in Perry's Chemical
+%  Engineer's Handbook, 8th ed. (2008).
 
-% if T<C(1) | T>C(2) warning('Liquid viscosity: Out of range.');
-if C(4)~=0
-  term = C(4).*(T.^C(5));
-else
-  term = 0;
-end
-mul = exp( C(1) + C(2)./T + C(3).*log(T) + term );
+mul = exp( C(1) + C(2)./T + C(3).*log(T) + C(4).*(T.^C(5)) );
+
+function mul = mudaubertshort(C,T)
+%MUDAUBERTSHORT  Dynamic viscosity of the liquid [Pa s].
+%
+%  MUDAUBERTSHORT(C,T) returns the dynamic viscosity of the liquid when only the
+%  first three coefficients for MUDAUBERT are set.
+%  See also SUBSTANCE>MUDAUBERT.
+
+mul = exp( C(1) + C(2)./T + C(3).*log(T) );
 
 function mul = vdi02(C,T)
 %VDI02      Specific heat capacity at constant pressure in the ideal gas state.

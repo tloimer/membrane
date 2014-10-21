@@ -3,7 +3,7 @@ function testsubstance(name)
 %  TESTSUBSTANCE(NAME) creates a number of figures which show the difference in
 %  the values of properties for the substance NAME as returned by the
 %  correlation functions and as retrieved on 30 Sep. 2014 from the National
-%  Institute of Standards website, http://webbook.nist.gov/chemistry/fluid. 
+%  Institute of Standards website, http://webbook.nist.gov/chemistry/fluid.
 %  NAME can be 'propane'.
 %
 %  See also QTESTSUBSTANCE.
@@ -235,6 +235,70 @@ p1Pa = ...
 390	1e-6	1.7924e-05	55790.	750.40	806.19	4.7274	1.9598	2.1029	244.67	10.436	9.6471e-06	0.026914;... vapor
 400	1e-6	1.7476e-05	57221.	770.21	827.44	4.7811	2.0036	2.1467	247.60	9.6710	9.8849e-06	0.028204]; % vapor
 
+case 'nitrogen'
+Tc = 126.192;
+N = struct();
+
+% Saturation properties - temperature increments.
+% Data retrieved 2014-10-21, http://webbook.nist.gov/chemistry/fluid
+
+%Temperature (K)	Pressure (MPa)	Density (l, kg/m3)	Volume (l, m3/kg)	Internal Energy (l, kJ/kg)	Enthalpy (l, kJ/kg)	Entropy (l, J/g*K)	Cv (l, J/g*K)	Cp (l, J/g*K)	Sound Spd. (l, m/s)	Joule-Thomson (l, K/MPa)	Viscosity (l, Pa*s)	Therm. Cond. (l, W/m*K)	Surf. Tension (l, N/m)	Density (v, kg/m3)	Volume (v, m3/kg)	Internal Energy (v, kJ/kg)	Enthalpy (v, kJ/kg)	Entropy (v, J/g*K)	Cv (v, J/g*K)	Cp (v, J/g*K)	Sound Spd. (v, m/s)	Joule-Thomson (v, K/MPa)	Viscosity (v, Pa*s)	Therm. Cond. (v, W/m*K)
+satdata = ...
+[65	0.017404	859.60	0.0011633	-147.05	-147.03	2.4834	1.1634	2.0034	976.36	-0.39833	0.00028011	0.17315	0.011789	0.91308	1.0952	47.474	66.536	5.7690	0.75174	1.0633	163.20	38.268	4.5084e-06	0.0063374; ...
+70	0.038545	838.51	0.0011926	-137.02	-136.97	2.6321	1.1297	2.0145	925.74	-0.37947	0.00021988	0.16184	0.010589	1.8960	0.52743	50.769	71.098	5.6045	0.75805	1.0816	168.42	32.837	4.8792e-06	0.0067968; ...
+75	0.076043	816.67	0.0012245	-126.92	-126.83	2.7714	1.0981	2.0311	875.28	-0.35506	0.00017675	0.15087	0.0094170	3.5404	0.28245	53.838	75.316	5.4667	0.76649	1.1080	172.95	28.707	5.2557e-06	0.0072706; ...
+80	0.13687	793.94	0.0012595	-116.75	-116.58	2.9028	1.0691	2.0555	824.36	-0.32322	0.00014505	0.14020	0.0082740	6.0894	0.16422	56.622	79.099	5.3487	0.77733	1.1449	176.72	25.490	5.6413e-06	0.0077802; ...
+85	0.22886	770.13	0.0012985	-106.46	-106.16	3.0277	1.0429	2.0906	772.44	-0.28135	0.00012111	0.12993	0.0071627	9.8241	0.10179	59.056	82.352	5.2454	0.79094	1.1957	179.68	22.923	6.0405e-06	0.0083518; ...
+90	0.36046	745.02	0.0013422	-96.001	-95.517	3.1473	1.0196	2.1407	719.01	-0.22564	0.00010253	0.11989	0.0060858	15.079	0.066317	61.065	84.970	5.1527	0.80785	1.2655	181.78	20.823	6.4592e-06	0.0090210; ...
+95	0.54052	718.26	0.0013922	-85.324	-84.571	3.2630	0.99956	2.2126	663.50	-0.15025	8.7656e-05	0.11009	0.0050469	22.272	0.044900	62.559	86.828	5.0672	0.82877	1.3628	182.99	19.057	6.9056e-06	0.0098408; ...
+100	0.77827	689.35	0.0014506	-74.338	-73.209	3.3761	0.98316	2.3180	605.23	-0.045743	7.5375e-05	0.10050	0.0040504	31.961	0.031288	63.416	87.766	4.9858	0.85481	1.5026	183.25	17.523	7.3920e-06	0.010893; ...
+105	1.0833	657.52	0.0015209	-62.915	-61.268	3.4882	0.97148	2.4789	543.30	0.10414	6.4882e-05	0.091091	0.0031022	44.959	0.022243	63.462	87.557	4.9055	0.88744	1.7139	182.51	16.132	7.9386e-06	0.012314; ...
+110	1.4658	621.45	0.0016091	-50.845	-48.486	3.6015	0.96674	2.7433	476.44	0.33023	5.5566e-05	0.081788	0.0022107	62.579	0.015980	62.412	85.835	4.8226	0.92835	2.0618	180.76	14.812	8.5822e-06	0.014350; ...
+115	1.9370	578.70	0.0017280	-37.736	-34.389	3.7198	0.97416	3.2403	402.67	0.69974	4.6895e-05	0.072515	0.0013887	87.294	0.011456	59.721	81.911	4.7311	0.98957	2.7490	177.75	13.409	9.4010e-06	0.017541; ...
+120	2.5106	523.36	0.0019107	-22.667	-17.870	3.8514	1.0106	4.5076	317.33	1.4037	3.8206e-05	0.063318	065908	125.09	0.0079943	54.102	74.173	4.6185	1.0985	4.6309	172.61	11.643	1.0611e-05	0.023495];
+
+% isobaric properties - p = 1 Pa (for ideal gas cp)
+% Data retrieved 2014-10-21, http://webbook.nist.gov/chemistry/fluid
+
+%Temperature (K)	Pressure (MPa)	Density (kg/m3)	Volume (m3/kg)	Internal Energy (kJ/kg)	Enthalpy (kJ/kg)	Entropy (J/g*K)	Cv (J/g*K)	Cp (J/g*K)	Sound Spd. (m/s)	Joule-Thomson (K/MPa)	Viscosity (Pa*s)	Therm. Cond. (W/m*K)	Phase
+p1Pa = ...
+[70	1e-6	4.8132e-05	20776.	51.649	72.426	8.7513	0.74208	1.0389	170.55	32.158	4.8530e-06	0.0070050; ... vapor
+80	1e-6	4.2115e-05	23744.	59.070	82.815	8.8900	0.74209	1.0389	182.32	24.400	5.5563e-06	0.0080202; ... vapor
+90	1e-6	3.7436e-05	26712.	66.491	93.204	9.0124	0.74210	1.0389	193.38	19.380	6.2442e-06	0.0090132; ... vapor
+100	1e-6	3.3692e-05	29680.	73.912	103.59	9.1219	0.74211	1.0389	203.84	15.904	6.9167e-06	0.0099841; ... vapor
+110	1e-6	3.0629e-05	32648.	81.333	113.98	9.2209	0.74213	1.0389	213.79	13.372	7.5742e-06	0.010933; ... vapor
+120	1e-6	2.8077e-05	35616.	88.755	124.37	9.3113	0.74214	1.0389	223.29	11.453	8.2170e-06	0.011861; ... vapor
+130	1e-6	2.5917e-05	38585.	96.176	134.76	9.3945	0.74215	1.0390	232.41	9.9518	8.8458e-06	0.012769; ... vapor
+140	1e-6	2.4066e-05	41553.	103.60	145.15	9.4714	0.74216	1.0390	241.18	8.7481	9.4610e-06	0.013657; ... vapor
+150	1e-6	2.2462e-05	44521.	111.02	155.54	9.5431	0.74218	1.0390	249.65	7.7625	1.0063e-05	0.014527; ... vapor
+160	1e-6	2.1058e-05	47489.	118.44	165.93	9.6102	0.74219	1.0390	257.84	6.9414	1.0653e-05	0.015379; ... vapor
+170	1e-6	1.9819e-05	50457.	125.86	176.32	9.6732	0.74220	1.0390	265.77	6.2472	1.1231e-05	0.016213; ... vapor
+180	1e-6	1.8718e-05	53425.	133.29	186.71	9.7326	0.74222	1.0390	273.47	5.6531	1.1798e-05	0.017032; ... vapor
+190	1e-6	1.7733e-05	56393.	140.71	197.10	9.7887	0.74223	1.0390	280.97	5.1391	1.2354e-05	0.017835; ... vapor
+200	1e-6	1.6846e-05	59361.	148.13	207.49	9.8420	0.74225	1.0391	288.27	4.6902	1.2900e-05	0.018623; ... vapor
+210	1e-6	1.6044e-05	62329.	155.55	217.88	9.8927	0.74227	1.0391	295.38	4.2950	1.3436e-05	0.019397; ... vapor
+220	1e-6	1.5315e-05	65297.	162.98	228.27	9.9411	0.74229	1.0391	302.33	3.9444	1.3963e-05	0.020158; ... vapor
+230	1e-6	1.4649e-05	68265.	170.40	238.66	9.9873	0.74232	1.0391	309.13	3.6314	1.4480e-05	0.020905; ... vapor
+240	1e-6	1.4038e-05	71233.	177.82	249.05	10.031	0.74236	1.0392	315.77	3.3503	1.4989e-05	0.021641; ... vapor
+250	1e-6	1.3477e-05	74201.	185.25	259.45	10.074	0.74240	1.0392	322.28	3.0966	1.5490e-05	0.022365; ... vapor
+260	1e-6	1.2959e-05	77169.	192.67	269.84	10.115	0.74246	1.0393	328.66	2.8665	1.5983e-05	0.023077; ... vapor
+270	1e-6	1.2479e-05	80137.	200.10	280.23	10.154	0.74254	1.0393	334.92	2.6569	1.6468e-05	0.023779; ... vapor
+280	1e-6	1.2033e-05	83105.	207.52	290.63	10.192	0.74263	1.0394	341.06	2.4651	1.6946e-05	0.024471; ... vapor
+290	1e-6	1.1618e-05	86073.	214.95	301.02	10.228	0.74276	1.0396	347.08	2.2891	1.7417e-05	0.025154; ... vapor
+300	1e-6	1.1231e-05	89041.	222.38	311.42	10.263	0.74292	1.0397	353.01	2.1270	1.7882e-05	0.025828; ... vapor
+310	1e-6	1.0868e-05	92009.	229.81	321.82	10.298	0.74311	1.0399	358.83	1.9772	1.8339e-05	0.026493; ... vapor
+320	1e-6	1.0529e-05	94977.	237.24	332.22	10.331	0.74334	1.0401	364.55	1.8384	1.8791e-05	0.027150; ... vapor
+330	1e-6	1.0210e-05	97945.	244.67	342.62	10.363	0.74363	1.0404	370.19	1.7095	1.9237e-05	0.027800]; %	vapor
+
+N.v.Tlast = 110;
+N.cpg.Tlast = 110;
+N.jt.Tlast = 110;
+N.hvap.Tlast = 101;
+N.kg.Tlast = 110;
+N.nug.Tlast = 110;
+N.sigma.Tlast = 115;
+
+
 end
 
 s = substance(name);
@@ -284,9 +348,11 @@ arrayplot(s.cpl,'Specific isobaric heat capacity of the liquid',first,last,...
   allT,'T [K]',satdata(:,9)*1e3);
 
 % Surface tension
+setfirstlast('sigma');
 arrayplot(s.sigma,'Surface tension',first,last,allT,'T [K]',satdata(:,14));
 
 % Dynamic viscosity of the liquid
+setfirstlast('reset');
 arrayplot(s.mul,'Dynamic viscosity of the liquid',first,last,...
   allT,'T [K]',satdata(:,12));
 
@@ -295,10 +361,12 @@ arrayplot(s.mug,'Dynamic viscosity of the vapor',first,last,...
   allT,'T [K]',satdata(:,24));
 
 % Thermal conductivity of the vapor
+setfirstlast('kg');
 arrayplot(s.kg,'Thermal conductivity of the vapor',first,last,...
   allT,'T [K]',satdata(:,25));
 
 % Thermal conductivity of the liquid
+setfirstlast('reset');
 arrayplot(s.kl,'Thermal conductivity of the liquid',first,last,...
   allT,'T [K]',satdata(:,13));
 
@@ -328,13 +396,14 @@ else
   first = 1;
   last = len;
 end
-end
+end %---------------------- end nested function ---------
 
-end %--------------------------------------------------------- end testsubstance
+end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end testsubstance %%%
 
 
 function nonarrayplot(prop,description,first,last,X,xname,datanist) %-----------
 
+global VERBOSE;
 len = last - first + 1;
 datam = zeros(len,1);
 for i = 1:len
@@ -346,32 +415,52 @@ plot(X(first:last),100*(datam./datanist(first:last)-1),'k*');
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
+
+if VERBOSE
+  printtable(description,X(first:last),datanist(first:last),datam);
 end
+
+end %---------------------------------------------------------------------------
 
 
 function arrayplot(prop,description,first,last,X,xname,datanist) %--------------
 
+global VERBOSE;
+datam = prop(X(first:last));
 figure('Name',description,'NumberTitle','Off');
-plot(X(first:last),100*(prop(X(first:last))./datanist(first:last)-1),'k*');
+plot(X(first:last),100*(datam./datanist(first:last)-1),'k*');
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
+
+if VERBOSE
+  printtable(description,X(first:last),datanist(first:last),datam);
 end
+
+end %---------------------------------------------------------------------------
 
 
 function pplot(prop,description,first,last,X,P,xname,datanist) %----------------
 
+global VERBOSE;
+datam = prop(X(first:last),P(first:last));
 figure('Name',description,'NumberTitle','Off');
 plot(X(first:last),...
-     100*(prop(X(first:last),P(first:last))./datanist(first:last)-1),'k*');
+     100*(datam./datanist(first:last)-1),'k*');
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
+
+if VERBOSE
+ printtable(description,X(first:last),datanist(first:last),datam,P(first:last));
 end
+
+end %---------------------------------------------------------------------------
 
 
 function pscalarplot(prop,description,first,last,X,P,xname,datanist) %----------
 
+global VERBOSE;
 len = last - first + 1;
 datam = zeros(len,1);
 for i = 0:len-1
@@ -383,4 +472,32 @@ plot(X(first:last),100*(datam./datanist(first:last)-1),'k*');
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
+
+if VERBOSE
+ printtable(description,X(first:last),datanist(first:last),datam,P(first:last));
 end
+
+end %---------------------------------------------------------------------------
+
+
+function printtable(description,X,datanist,datam,P) %---------------------------
+
+fprintf(['\n' description ' \n']);
+if nargin == 4
+  fprintf('T [K]\tnist\tmatlab\t100*(matlab-nist)/nist\n');
+  fstring = '%3.0f\t%.4g\t%.4g\t%.3f\n';
+  fprintf('%3.0f\t%.4g\t%.4g\t%.3f\n', ...
+    [X'; datanist'; datam'; 100*(datam./datanist-1)']);
+elseif nargin == 5
+  if P(1) < 1e3
+    fprintf('T [K]\tp [Pa]\tnist\tmatlab\t100*(matlab-nist)/nist\n');
+    fprintf('%3.0f\t%.0f\t%.4g\t%.4g\t%.3f\n', ...
+      [X'; P'; datanist'; datam'; 100*(datam./datanist-1)']);
+  else
+    fprintf('T [K]\tp [bar]\tnist\tmatlab\t100*(matlab-nist)/nist\n');
+    fprintf('%3.0f\t%.4g\t%.4g\t%.4g\t%.3f\n', ...
+      [X'; P'/1e5; datanist'; datam'; 100*(datam./datanist-1)']);
+  end
+end
+
+end %---------------------------------------------------------------------------
