@@ -2,9 +2,10 @@ function testsubstance(name)
 %TESTSUBSTANCE Compare correlations with data from nist.
 %  TESTSUBSTANCE(NAME) creates a number of figures which show the difference in
 %  the values of properties for the substance NAME as returned by the
-%  correlation functions and as retrieved on 30 Sep. 2014 from the National
-%  Institute of Standards website, http://webbook.nist.gov/chemistry/fluid.
-%  NAME can be 'propane'.
+%  correlation functions and as retrieved on 30 Sep. 2014 and 20 Okt. 2014 from
+%  the National Institute of Standards website,
+%  http://webbook.nist.gov/chemistry/fluid.
+%  NAME can be 'propane', 'propaneperry', 'butane' and 'isobutane'.
 %
 %  See also QTESTSUBSTANCE.
 
