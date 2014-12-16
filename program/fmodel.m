@@ -31,10 +31,12 @@ f.x = f.xdot;
 % eq. (21)
 f.nu2ph = @(a,vgas,vliq,mugas,muliq) ( a.*mugas + (1-a).*muliq ) ...
   ./ ( (1-a)./vliq + a./vgas );
+% thermal conductivity model
+keff = @(eps,km,kf) (1-eps).*km + eps.*kf;	% Parallel model
+%keff = @(eps,km,kf) 1./((1-eps)./km + eps./kf);	% Series model
 % eq. (22)
-f.k2ph = @(a,epsilon,km,kgas,kliq) (1-epsilon).*km ...
-  + epsilon.*(a.*kgas+(1-a).*kliq);
+f.k2ph = @(a,epsilon,km,kgas,kliq) keff(epsilon,km,a.*kgas+(1-a).*kliq);
 
 % Auxiliary functions
-f.kmgas = @(epsilon,km,kgas) (1-epsilon).*km + epsilon.*kgas;
-f.kmliq = @(epsilon,km,kliq) (1-epsilon).*km + epsilon.*kliq;
+f.kmgas = keff;
+f.kmliq = keff;
