@@ -1,18 +1,20 @@
 function [m,ms] = mgaseous(T,p1,p2,s,ms,type,accuracy)
-%MGASEOUS    Mass flux for isothermal gaseous flow.
-%  MGASEOUS(T1,P1,P2,SUBSTANCE,MS) returns the isothermal, gaseous mass flux.
-%  Viscous and free molecular flow are taken into account. MS must contain a
-%  field MS.SUBSTANCE, apart from being constructed with MSTACKSTRUCT. Accurate
-%  solver settings are used.
+%MGASEOUS    Mass flux for isothermal gaseous flow [kg/m2s].
+%  MGASEOUS(T1,P1,P2,SUBSTANCE,MS) returns the mass flux for the
+%  isothermal, gaseous flow of SUBSTANCE through the membrane struct MS.
+%  Viscous and free molecular flow are taken into account. MS is a struct
+%  constructed with MSTACKSTRUCT. Accurate solver settings are used.
 %
 %  [M,MS] = MGASEOUS(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
 %
 %  [M,MS] = MGASEOUS(T1,P1,P2,SUBSTANCE,MS,TYPE,'coarse') calculates the
-%  isothermal gaseous mass flux according to TYPE. Type is either 'viscous',
-%  'gaseous' or 'knudsen'. With 'coarse', coarser solver settings are used.
-%  Accurate solver settings are set with 'accurate'.
+%  mass flux according to TYPE. TYPE can be 'viscous', 'gaseous' or
+%  'knudsen'. With 'coarse', coarser solver settings are used. Accurate
+%  solver settings are set with 'accurate'.
 %
-%  See also MSTACKSTRUCT, SUBSTANCE.
+%  See also MGASEOUS>GASFLOW, MSTACKSTRUCT, SUBSTANCE.
+
+% TODO: Test mgaseous! Rewrite tests/testviscous.m, probably.
 
 if s.ps(T) < p1
   error('The usptream state is a liquid. Not implemented.');
@@ -44,44 +46,29 @@ end
 % Set up the solver and solution iteration
 solver = solverstruct(accuracy);
 solver.gasflow = type;
-presiduum = @(m) viscous(m,T,p2,ms,solver) - p1;
+presiduum = @(m) gasflow(m,T,p2,ms,solver) - p1;
 [minterval,pinterval] = findinterval(presiduum, mguess, p2-p1);
 
 m = findzero(presiduum,[minterval; pinterval],(p1-p2)/10000);
 %fprintf('Mass flux guessed mguess = %g, calculated m = %g, mguess - m = %g%%\n',...
 %  mguess, m, 100*(mguess-m));
 
-end %%% END MGASCOUS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MGASCOUS %%%
+end %%% END MGASEOUS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MGASEOUS %%%
 
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
-function [p1,ms] = viscous(m,T,p2,ms,solver) %-------------------------- viscous
-%VISCOUS    Viscous gaseous flow through a porous medium with several layers.
-%  VISCOUS(M,T,P2,MSTACKSTRUCT,SOLVER) returns the upstream pressure for the
-%  gaseous, viscous flow of a fluid with temperature T and downstream pressure
-%  P2 through an assemblage of membranes described by
-%  at a downstream state STATE through an assemblage of membranes described by
-%  the membrane struct MSTACKSTRUCT. The solution tolerances are controlled via
-%  the struct SOLVER.
+function [p1,ms] = gasflow(m,T,p2,ms,solver) %---------------------------gasflow
+%GASFLOW    Gaseous flow through a porous medium with several layers.
+%  GASFLOW(M,T,P2,MS,SOLVER) returns the upstream pressure for the gaseous
+%  flow of a fluid with temperature T and downstream pressure P2 through an
+%  assemblage of membranes described by the membrane struct MS. The flow
+%  type and solution tolerances are controlled via the struct SOLVER. Set
+%  SOLVER.gasflow to 'viscous', 'gaseous' or 'knudsen'.
 %
-%  [P1,MSTACKSTRUCT] = VISCOUS(M,T,P2,MSTACKSTRUCT,SOLVER)) returns the upstream
-%  pressure P1 and a MSTACKSTRUCT describing the solution.
-
-%  TODO - rewrite below here, after first runs
-%  Restrictions: The upstream state must be a gaseous phase, because the liquid
-%  film and the temperature boundary layer integrators upstream of the membrane
-%  (ifreevapor, ifreeliquid) use termination conditions that work only with an
-%  gaseous upstream state.
-%  The vapor phase integrator (integratevapor) always starts at the downstream
-%  end of a layer.
-%  For a two-phase upstream state, integration direction would have to be
-%  downstream.
+%  [P1,MS] = GASFLOW(M,T,P2,MS,SOLVER) returns the upstream pressure P1
+%  and a membrane struct MS describing the solution.
 %
-%  ASYM>FRONT should probably be a subfunction or nested function in STATE,
-%  STATE1 = STATE2.FRONT(STATE2,...). However, algorithms in FRONT and INTEGRATE
-%  are partially similar, therefore they are kept in one place.
-%
-%  See also DOWNSTREAMSTATE, MSTACKSTRUCT, SOLVERSTRUCT.
+%  See also SOLVERSTRUCT.
 
 if solver.writesolution
   % construct empty (0x0) struct flow.
@@ -116,7 +103,7 @@ for i = nmembranes:-1:1
 % Next membrane
 end
 p1 = p2;
-end %--------------------------------------------------------------- end viscous
+end %--------------------------------------------------------------- end gasflow
 
 function [p9,flow] = integratevapor(m,T,p2,flow,mem,fs,s,solver) %integratevapor
 %INTEGRATEVAPOR Vapor flow within the membrane - a copy of FLOW12>FLOW92

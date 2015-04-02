@@ -1,7 +1,10 @@
 function [m,ms] = mnumadiabat(T1,p1,p2,s,ms,accuracy)
-%MNUMADIABAT Mass flux under adiabatic conditions.
-%  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) returns the mass flux. The membrane struct
-%  MS is constructed with MSTACKSTRUCT.
+%MNUMADIABAT Adiabatic flow through a membranestack.
+%  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) returns the mass flux [kg/m2s] for
+%  adiabatic flow of SUBSTANCE through a membrane struct MS. The membrane
+%  struct MS is constructed with MSTACKSTRUCT.
+%
+%  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS,'crude') sets crude solver tolerances.
 %
 %  [M,MS] = MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
 %

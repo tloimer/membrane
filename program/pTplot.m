@@ -1,7 +1,7 @@
 function pTplot(fl,name,ispgfplot)
 %PTPLOT     Plot p-T diagram.
-%  PTPLOT(NAME,FLOWSTRUCT,ISPGFPLOT) plots a p-T diagram. If ISPGFPLOT is true,
-%  a pgfplot-file with the name NAME.pgfplot is created.
+%  PTPLOT(FLOWSTRUCT,NAME,ISPGFPLOT) plots a p-T diagram. If ISPGFPLOT is
+%  true, a pgfplot-file with the name NAME.pgfplot is created.
 
 global VERBOSE;
 

@@ -1,8 +1,8 @@
 function endpgfplot(pid,legend)
 %ENDPGFPLOT  Close a pgfplot.
 %  ENDPGFPLOT(PID) closes the pgfplot with file identifier PID.
-%  ENDPGFPLOT(PID,LEGEND) adds the legend LEGEND, a string where commas separate
-%  the legend identifiers: ENDPGFPLOT(PID,'data 1, data2').
+%  ENDPGFPLOT(PID,LEGEND) adds a legend. LEGEND is a string where commas
+%  separate the legend identifiers: ENDPGFPLOT(PID,'data 1, data2').
 
 if nargin==2
   fprintf(pid,['\\legend{' legend '}\n']);

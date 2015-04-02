@@ -1,4 +1,11 @@
 function addcoords(pid,X,Y,options)
+%ADDCOORDS  Add data to a pgfplot.
+%  ADDCOORDS(PID,X,Y) adds data described by X and Y to the pgfplot PID.
+%  X and Y must be vectors, preferably column vectors.
+%  ADDCOORDS(PID,X,Y,OPTIONS) inserts the string OPTIONS into the
+%  '\addplot[] coordinates' command.
+%
+%  See also BEGINPGFPLOT, ENDPGFPLOT.
 
 if nargin==3
   options = [];

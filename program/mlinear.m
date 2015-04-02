@@ -1,15 +1,16 @@
 function m = mlinear(p1,p2,T1,theta,s,mem,f)
 %MLINEAR    Mass flux from linear theory [kg/m2s].
-%  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux according to linear
-%  theory. For P1 = PSAT(T1), the mass flux is calculated as given in JMS07
-%  [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. For wetted systems and PK -
-%  N*(P1-P2) < P1 < PSAT, the mass flux is obtained from an linear interpolation
-%  between MGAS and MLINEAR(P1=PSAT), see JMS11 [Loimer, J. Membr, Sci. 383, pp.
-%  104-115, 2011]. P1 [Pa] is the upstream pressure, P2 [Pa] the downstream
-%  pressure, T1 the upstream temperature, and THETA is the contact angle. at the
-%  upstream temperature. The downstream pressure is P2 [Pa], TROOM [°C] is
-%  demanded for diagnostic purposes. The substance S, membrane M and two-phase
-%  flow model F are provided via structs, see SUBSTANCE, MEMBRANE and FMODEL.
+%  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux of substance S
+%  through membrane M according to linear theory. The contact angle is
+%  given by THETA and F is the two-phase flow model. For P1 = PSAT(T1), the
+%  mass flux is calculated as given in JMS07 [Loimer, J. Membr. Sci. 301,
+%  pp. 107-117, 2007]. For wetted systems and PK - N*(P1-P2) < P1 < PSAT,
+%  the mass flux is obtained from an linear interpolation between MGAS and
+%  MLINEAR(P1=PSAT), see JMS11 [Loimer, J. Membr, Sci. 383, pp. 104-115,
+%  2011]. P1 [Pa] is the upstream pressure, P2 [Pa] the downstream
+%  pressure, and T1 [K] is the upstream temperature. The substance S,
+%  membrane M and two-phase flow model F are provided via structs, see
+%  SUBSTANCE, MEMBRANE and FMODEL.
 %
 %  See also SUBSTANCE, MEMBRANE, FMODEL, MLINEAR>MLINPSAT.
 
@@ -61,14 +62,16 @@ end
 
 function fl = mlinpsat(T1,p12,theta,s,mem,f) %------------------------- mlinpsat
 %MLINPSAT   Mass flux from linear theory for P1 = PSAT(T1) [kg/m2s].
-%  MLINPSAT(T1,P12,THETA,S,M,F) calculates the mass flux according to linear
-%  theory [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. The upstream pressure
-%  is PSAT(T1), with T1 given in Kelvin. A pressure difference P12 [Pa] is
-%  applied. The substance S, membrane M and two-phase flow model F are provided
-%  via structs, see SUBSTANCE, MEMBRANE and FMODEL. The output is a flowstruct
-%  FL. The mass flux is reported in FL.LIN.M (or FL.INFO.M) [kg/m2s].
+%  MLINPSAT(T1,P12,THETA,S,M,F) calculates the mass flux according to
+%  linear theory [Loimer, J. Membr. Sci. 301, pp. 107-117, 2007]. The
+%  upstream pressure is PSAT(T1), with T1 given in Kelvin. A pressure
+%  difference P12 [Pa] is applied. The substance S, membrane M and
+%  two-phase flow model F are provided via structs, see SUBSTANCE, MEMBRANE
+%  and FMODEL. The output is a (obsolete) flowstruct FL. The mass flux is
+%  reported in FL.LIN.M (or FL.INFO.M) [kg/m2s].
 %
-%  See also FLOWSTRUCT, SUBSTANCE, MEMBRANE, FMODEL.
+%  See also FLOWSTRUCT, SUBSTANCE, MEMBRANE, FMODEL,
+%           MSTACKSTRUCT>SINGLEMSTOFL.
 %
 %  Adapted from MLINEAR.M in, e.g., 12potsdam, 11jms/matlab3.
 

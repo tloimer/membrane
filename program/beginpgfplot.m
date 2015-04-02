@@ -1,8 +1,11 @@
 function pid = beginpgfplot(pname,options)
 %BEGINPGFPLOT Write the begin of a pgfplot.
 %  BEGINPGFPLOT(FILENAME) writes the pgfplot FILENAME.PGFPLOT.
-%  BEGINPGFPLOT(FILENAME,OPTIONS) adds the string OPTIONS to the axis. OPTIONS
-%  is parsed by fprint, hence \\ gives \, \n is a newline, %% yields %.
+%  BEGINPGFPLOT(FILENAME,OPTIONS) adds the string OPTIONS to the axis.
+%  OPTIONS is parsed by fprint, hence \\ gives \, \n is a newline,
+%  %% yields %.
+%
+%  See also ADDCOORDS, ENDPGFPLOT.
 
 if nargin==1, options=''; end
 pid = fopen([pname '.pgfplot'],'w');

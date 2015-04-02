@@ -1,21 +1,21 @@
 function f = fmodel(fname)
 %FMODEL     Two-phase flow model.
-%  F = FMODEL('plug') returns a struct F that contains functions to calculate
-%  the effective properties of the two-phase mixture. At present, only a
-%  homogeneous ('plug') flow model is supported. All functions in F can be
-%  vectorized.
+%  FMODEL('plug') returns a struct F that contains functions to calculate
+%  the effective properties of a two-phase mixture. At present, only a
+%  homogeneous ('plug' or 'homogeneous') flow model is supported. All
+%  functions in F can be vectorized.
 %
-%  F returns its name
-%    F.name                            Identifier of the flow model.
-%  F provides the functions
-%    F.xdot(a,vgas,vliq)               Vapor mass flow fraction.
-%    F.x(a,vgas,vliq)                  Vapor mass fraction.
-%    F.nu2ph(a,vgas,vliq,mugas,muliq)  Effective kinematic viscosity [m2/s].
+%  F contains the fields
+%    F.name                            Identifier of the flow model
+%  Functions
+%    F.xdot(a,vgas,vliq)               Vapor mass flow fraction
+%    F.x(a,vgas,vliq)                  Vapor mass fraction
+%    F.nu2ph(a,vgas,vliq,mugas,muliq)  Effective kinematic viscosity [m2/s]
 %    F.k2ph(a,epsilon,km,kgas,kliq)    Effective thermal conductivity of the
-%                                      mixture-filled membrane [W/mK].
+%                                      mixture-filled membrane [W/mK]
 %  Auxiliary functions, for convenience:
-%    F.kmgas(epsilon,km,kgas)  Thermal conductivity, gas-filled membrane [W/mK].
-%    F.kmliq(epsilon,km,kliq)  Thermal conductivity, liquid-filled mem. [W/mK].
+%    F.kmgas(epsilon,km,kgas)  Thermal conductivity, gas-filled membrane [W/mK]
+%    F.kmliq(epsilon,km,kliq)  Thermal conductivity, liquid-filled mem. [W/mK]
 
 if ~strcmp(fname,'plug') && ~strcmp(fname,'homogeneous')
   error('Only ''plug'' and ''homogeneous'' flow model is supported.');

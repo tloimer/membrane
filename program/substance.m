@@ -1,8 +1,8 @@
 function s = substance(name)
 %SUBSTANCE  Material properties of a substance.
-%  S = SUBSTANCE(NAME) returns a struct S that contains functions to calculate
-%  material properties for the substance NAME. The functions do not check their
-%  range of validity. Look for lines % Range: ... in the source code.
+%  SUBSTANCE(NAME) returns a struct S that contains functions to calculate
+%  material properties for the substance NAME. The functions do not check
+%  their range of validity. Look for lines % Range: ... in the source code.
 %
 %  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane'.
 %
@@ -36,13 +36,14 @@ function s = substance(name)
 %    S.nul(T)       Kinematic viscosity of the liquid [m2/s]
 %    S.nug(T,p)     Kinematic viscosity of the vapor [m2/s]
 %
-%  Functions S.ps, S.Ts, S.rho and S.hvap, as well as the depending functions
-%  s.drho, s.nul (and ??) do not accept arrays as input.
+%  Functions S.ps, S.Ts, S.rho and S.hvap, as well as the depending
+%  functions s.drho, s.nul (and ??) do not accept arrays as input.
 %  S.v and S.jt only accept column vectors [270;280;290], not row vectors.
-%  Subfunctions: genericfunc, genericafun, cpperry, cpgas, hvap, virial, ps, Ts,
-%  rholandolt, drholandolt, rhoperry, drhoperry, mudaubert, mulucas, kgroy,
-%  klatini, cpleq2, icpleq2, sigvdi, dsigvdi, jt, dhdp, intjt, poly2, dpoly2,
-%  poly3, dpoly3, ipoly3, poly4, ipoly4, pdiv3, pdiv4, newtony.
+%  Subfunctions: genericfunc, genericafun, cpperry, cpgas, hvap, virial,
+%  ps, Ts, rholandolt, drholandolt, rhoperry, drhoperry, mudaubert,
+%  mulucas, kgroy, klatini, cpleq2, icpleq2, sigvdi, dsigvdi, jt, dhdp,
+%  intjt, poly2, dpoly2, poly3, dpoly3, ipoly3, poly4, ipoly4, pdiv3,
+%  pdiv4, newtony.
 %
 %  More help text: Try, e.g., HELP SUBSTANCE>PS.
 
@@ -849,10 +850,10 @@ s.nug = @(T,p) s.mug(T).*s.v(T,p);
 
 function y = genericfunc(coeffs,functions,T)
 %GENERICFUNC Apply a correlation function at temperature T.
-%
-%  GENERICFUNC(COEFFS,FUNCTIONS,T) Applies a correlation function in the cell
-%  array FUNCTIONS to the correlation coefficients COEFFS. COEFFS(I,1) is the
-%  maximum temperature up to which the function FUNCTIONS(I) is valid.
+%  GENERICFUNC(COEFFS,FUNCTIONS,T) Applies a correlation function in the
+%  cell array FUNCTIONS to the correlation coefficients COEFFS. COEFFS(I,1)
+%  is the maximum temperature up to which the function FUNCTIONS(I) is
+%  valid.
 
 i = find(T <= coeffs(:,1), 1);
 
@@ -866,11 +867,11 @@ i = find(T <= coeffs(:,1), 1);
 
 function [y1,y2] = genericafun(coeffs,functions,T)
 %GENERICAFUN Apply a correlation function at temperature T, returns an array.
-%
-%  GENERICAFUN(COEFFS,FUNCTIONS,T) Applies a correlation function in the cell
-%  array FUNCTIONS to the correlation coefficients COEFFS. COEFFS(I,1) is the
-%  maximum temperature up to which the function FUNCTIONS(I) is valid.
-%  GENERICAFUN returns two output arguments, in contrast to GENERICFUN.
+%  GENERICAFUN(COEFFS,FUNCTIONS,T) Applies a correlation function in the
+%  cell array FUNCTIONS to the correlation coefficients COEFFS. COEFFS(I,1)
+%  is the maximum temperature up to which the function FUNCTIONS(I) is
+%  valid. GENERICAFUN returns two output arguments, in contrast to
+%  GENERICFUN.
 
 i = find(T <= coeffs(:,1), 1);
 
@@ -884,10 +885,10 @@ i = find(T <= coeffs(:,1), 1);
 
 function cpid = cpperry(C,T)
 %CPID       Specific heat capacity at constant pressure in the ideal gas state.
-%
-%  CPID(CPCOEFFS,T) returns the specific heat capacity at constant pressure in
-%  the ideal gas state, [J/kgK]. An equation to Table 2-198 in Perry's Chemical
-%  Engineer's Handbook, 7th ed. (1997) or Table 2-156, 8th ed. (2008) is used.
+%  CPID(CPCOEFFS,T) returns the specific heat capacity at constant pressure
+%  in the ideal gas state, [J/kgK]. An equation to Table 2-198 in Perry's
+%  Chemical Engineer's Handbook, 7th ed. (1997) or Table 2-156, 8th ed.
+%  (2008) is used.
 
 c3t=C(3)./T;
 c5t=C(5)./T;
@@ -896,12 +897,12 @@ cpid = C(1) + C(2)*(c3t./sinh(c3t)).^2 + C(4)*(c5t./cosh(c5t)).^2;
 
 function cpid = vdi10(C,T)
 %VDI10      Specific heat capacity at constant pressure in the ideal gas state.
-%
 %  VDI10(CPCOEFFS,T) uses eq. 10 in VDI Wärmeatlas, 11th ed. (2013), D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return
-%  the specific heat capacity at constant pressure in the ideal gas state in
-%  units of J/kgK. Coefficients are already scaled to return J/kgK. The caption
-%  to Tabelle 6 claims to return J/gK, but really J/kgK are returned.
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
+%  specific heat capacity at constant pressure in the ideal gas state in
+%  units of J/kgK. Coefficients are already scaled to return J/kgK. The
+%  caption to Tabelle 6 claims to return J/gK, but really J/kgK are
+%  returned.
 
 at = T./(C(1) + T);
 at2 =at.^2;
@@ -910,16 +911,16 @@ cpid = C(8).*( C(2) + (C(3)-C(2)).*at2.*(1.0-(C(1)./(C(1)+T)).*...
 
 function cpg = cpgas(cpid,cpg_cpid)
 %CPGAS      Specific heat capacity at constant pressure of the vapor  [J/kgK].
-%
 %  CPGAS(CPID,CPG_CPID) calculates the specific heat capacity at constant
 %  pressure in the gaseous state from
 %
 %    cpg(T,p) = cpid(T) + 0_int^p (dcp/dp)_T dp,
 %
-%  where cpid is the specific isobaric heat capacity in the ideal gas state,
-%  i.e., p -> 0, 0_int^p is the notation for the definite integral from 0 to p
-%  and (df/dx)_y is the partial derivative of f(x,y) with respect to x. The
-%  integral above is evaluated in VIRIAL by using the identity
+%  where cpid is the specific isobaric heat capacity in the ideal gas
+%  state, i.e., p -> 0, 0_int^p is the notation for the definite integral
+%  from 0 to p and (df/dx)_y is the partial derivative of f(x,y) with
+%  respect to x. The integral above is evaluated in VIRIAL by using the
+%  identity
 %
 %    (dcp/dp)_T = -T (d^2v/dT^2)_p.
 
@@ -948,31 +949,30 @@ cpg = cpid + cpg_cpid;
 
 function hvap = hvap(ps,rho,v,T)
 %HVAP       Specific enthalpy of vaporization [J/kg].
-%
-%  HVAP(PS,RHO,V,T) returns the specific enthalpy of vaporization calculated by
-%  applying Clausius-Clapeyron's equation,
+%  HVAP(PS,RHO,V,T) returns the specific enthalpy of vaporization
+%  calculated by applying Clausius-Clapeyron's equation,
 %
 %    dps/dT = hvap/(T(v - 1/rho)).
 %
-%  PS, RHO and V are function handles to functions that return [PS DPS], RHO and
-%  V, respectively.
+%  PS, RHO and V are function handles to functions that return [PS DPS],
+%  RHO and V, respectively.
 
 [psat, dpsat] = ps(T);
 hvap = dpsat.*T.*(v(T,psat)-1./rho(T));
 
 function v = virial(out,vcoeffs,virialfun,T,p)
 %VIRIAL     Specific volume of the vapor [m3/kg].
+%  VIRIAL('V',VCOEFFS,VIRIALFUN,T,P) calculates the specific volume of the
+%  vapor by an virial equation truncated after the first virial
+%  coefficient, B(T).
 %
-%  VIRIAL('V',VCOEFFS,VIRIALFUN,T,P) calculates the specific volume of the vapor
-%  by an virial equation truncated after the first virial coefficient, B(T).
-%
-%  VIRIAL('CP',VCOEFFS,VIRIALFUN,T,P) returns cpg_cpid = CP(T,P) - CP(T,P->0) by
-%  integrating  0_int^p (dcp/dp)_T dp  (see CPG).
+%  VIRIAL('CP',VCOEFFS,VIRIALFUN,T,P) returns cpg_cpid = CP(T,P) -
+%  CP(T,P->0) by integrating  0_int^p (dcp/dp)_T dp  (see CPG).
 %
 %  VIRIAL('DHDP',VCOEFFS,VIRIALFUN,T,P) returns the derivative dh/dp.
 %
-%  VIRIAL('JT',VCOEFFS,VIRIALFUN,T,P) returns the array [dh/dp cpg_cpid] for
-%  calculation of the Joule-Thomson coefficient.
+%  VIRIAL('JT',VCOEFFS,VIRIALFUN,T,P) returns the array [dh/dp cpg_cpid]
+%  for calculation of the Joule-Thomson coefficient.
 %
 %  Strings 'V', 'CP', etc. are all lowercase.
 
@@ -1110,13 +1110,12 @@ end
 
 function s12 = entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,ps,Ts,hvap,drho)
 %ENTROPY    Difference of specific entropy [J/kgK].
-%
-%  S(T,P,X,TR) returns the difference of specific entropy between a state given
-%  by the Temperature T [K], Pressure P [Pa] and vapor mass fraction X, and a
-%  saturated liquid with Temperature TR, S(T,P,X) - S(TR,PS(TR),0). Arguments
-%  can be given as single values or row vectors, e.g., T = [T1 T2 T3 ... Tn ].
-%  X = 1 or X = 0 may be used to force a subcooled vapor or overheated liquid,
-%  respectively.
+%  S(T,P,X,TR) returns the difference of specific entropy between a state
+%  given by the Temperature T [K], Pressure P [Pa] and vapor mass fraction
+%  X, and a saturated liquid with Temperature TR, S(T,P,X) -
+%  S(TR,PS(TR),0). Arguments can be given as single values or row vectors,
+%  e.g., T = [T1 T2 T3 ... Tn ]. X = 1 or X = 0 may be used to force a
+%  subcooled vapor or overheated liquid, respectively.
 
 % s12 = sl(Tr,ps(Tr),Ts(p),p) + hvap(Ts(p))/Ts(p) + sg(Ts(p),p,T,p);
 if isempty(T) || isempty(p) || isempty(x) || isempty(Tr)
@@ -1168,7 +1167,6 @@ end
 
 function s12 = sg(virialfun,vcoeffs,cpid,T1,p1,T2,p2)
 %SG         Difference of specific entropy in a gaseous state [J/kgK].
-%
 %  SG(T1,P1,T2) returns S(T2,P1) - S(T1,P1).
 %
 %  SG(T1,P1,T2,P2) returns S(T2,P2) - S(T1,P1).
@@ -1246,7 +1244,6 @@ end
 
 function s12 = sl(intcpl_T,Ts,ps,drho,T1,p1,T2,p2)
 %SL         Difference of specific entropy in a liquid state [J/kgK].
-%
 %  SL(T1,P1,T2) returns S(T2,P1) - S(T1,P1).
 
 if nargin == 7
@@ -1296,22 +1293,22 @@ end
 
 function [ps, dps] = ps(Acoeffs,T)
 %PS         Saturation pressure [Pa].
-%
 %  PS(ANTOINECOEFFS,T) returns the saturation pressure [Pa].
 %
 %  [P DP] = PS(ANTOINECOEFFS,T) returns the saturation pressure and the
 %  derivative of the saturation pressure with respect to T [Pa, Pa/K].
 %
-%  For T > Tc, more precisely, no ANTOINECOEFFS are found, PS returns [Inf NaN].
+%  For T > Tc, more precisely, no ANTOINECOEFFS are found, PS
+%  returns [Inf NaN].
 %
-%  PS calculates the saturation pressure by applying either the classical or an
-%  extended Antoine eq., see Landolt-Börnstein, New Series, Group IV: Physical
-%  Chemistry.  Vapor Pressure of Chemicals, vol.  20A: J. Dykyj, J. Svoboda,
-%  R.C. Wilhoit, M.  Frenkel, K.R. Hall (1999).  ANTOINECOEFFS is a m-by-10
-%  matrix, where m is the number of available equations, ANTOINECOEFFS(m,:) =
-%  [Tmax pmax A B C T0 Tc n E F]. Tmax and pmax are the values up to which the
-%  equation in this line is valid. If T0 == 0 then only A, B and C are set and
-%  the classical Antoine eq. is used,
+%  PS calculates the saturation pressure by applying either the classical
+%  or an extended Antoine eq., see Landolt-Börnstein, New Series, Group IV:
+%  Physical Chemistry.  Vapor Pressure of Chemicals, vol.  20A: J. Dykyj,
+%  J. Svoboda, R.C. Wilhoit, M.  Frenkel, K.R. Hall (1999).  ANTOINECOEFFS
+%  is a m-by-10 matrix, where m is the number of available equations,
+%  ANTOINECOEFFS(m,:) = [Tmax pmax A B C T0 Tc n E F]. Tmax and pmax are
+%  the values up to which the equation in this line is valid. If T0 == 0
+%  then only A, B and C are set and the classical Antoine eq. is used,
 %
 %    ps = 10^(a-b/(c+T)).
 %
@@ -1360,11 +1357,11 @@ end
 
 function Ts = Ts(Acoeffs,p)
 %TS(P)      Saturation temperature [K].
-%
 %  TS(ANTOINECOEFFS,P) returns the saturation temperature by inverting the
-%  Antoine equation or by iteratively solving the extended Antoine equation.
+%  Antoine equation or by iteratively solving the extended Antoine
+%  equation.
 %
-%  See PS.
+%  See also PS.
 %  Calls PS, NEWTON.
 
 % The Antoine eq. underpredicts vapor pressure. Therefore, the temperature
@@ -1402,11 +1399,10 @@ end
 
 function rho = rholandolt(coeffs,T)
 %RHOLANDOLT Liquid density [kg/m3].
-%
-%  RHOLANDOLT(COEFFS,T) returns the liquid density [kg/m3].
-%  See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
-%  Thermodynamic Properties of Organic Compounds and Their Mixtures, vol. 8G.
-%  M. Frenkel, X. Hong, R. Wilhoit, K. Hall (2000).
+%  RHOLANDOLT(COEFFS,T) returns the liquid density [kg/m3]. See
+%  Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+%  Thermodynamic Properties of Organic Compounds and Their Mixtures, vol.
+%  8G. M. Frenkel, X. Hong, R. Wilhoit, K. Hall (2000).
 [A, B, C, D, Tc, rhoc] ...
   = deal(coeffs(1),coeffs(2),coeffs(3),coeffs(4),coeffs(5),coeffs(6));
 chi = 1 - T/Tc;  phi = Tc - T;
@@ -1414,7 +1410,6 @@ rho=(1+1.75.*chi.^(1/3)+0.75.*chi).*(rhoc+A.*phi+B.*phi.^2+C.*phi.^3+D.*phi.^4);
 
 function [drho, rho] = drholandolt(coeffs,T)
 %DRHOLANDOLT Derivative of liquid density, (1/rho) drho/dT [1/K].
-%
 %  [DRHO RHO] = DROLANDOLT(C,T) returns the first derivative of the liquid
 %  density, DRHO = (1/RHO) (DRHO/DT), and the density.
 [A, B, C, D, Tc, rhoc] ...
@@ -1427,16 +1422,14 @@ drho = drho./rho;
 
 function rho = rhoperry(C,T)
 %RHOPERRY   Liquid density [kg/m3].
-%
-%  RHOPERRY(C,T) returns the liquid density [kg/m3].
-%  Uses a Rackett(?) equation. See Table 2-30 in Perry's Chemical Engineer's
-%  Handbook, 7th ed. (1997). See also Table 2-32 idem, 8th. ed (2008).
+%  RHOPERRY(C,T) returns the liquid density [kg/m3]. Uses a Rackett(?)
+%  equation. See Table 2-30 in Perry's Chemical Engineer's Handbook, 7th
+%  ed. (1997). See also Table 2-32 idem, 8th. ed (2008).
 
 rho = C(1)./C(2).^(1 + (1 - T./C(3)).^C(4));
 
 function [drho, rho] = drhoperry(C,T)
 %DRHOPERRY  Derivative of liquid density, (1/rho) drho/dT [1/K].
-%
 %  [DRHO RHO] = DRHOPERRY(C,T) returns the first derivative of the liquid
 %  density, DRHO = (1/RHO) (DRHO/DT), and the density.
 
@@ -1449,9 +1442,8 @@ drho = C(4).*(1-T./C(3)).^(-1+C(4)).*log(C(2))./C(3);
 
 function mul = mudaubert(C,T)
 %MUDAUBERT  Dynamic viscosity of the liquid [Pa s].
-%
-%  MUDAUBERT(C,T) returns the dynamic viscosity of the liquid.
-%  See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
+%  MUDAUBERT(C,T) returns the dynamic viscosity of the liquid. See
+%  Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
 %  Viswanath et al. report correlations by Daubert and Danner, Physical and
 %  Thermodynamic Properties of Pure Chemicals -- Data Compilation, Design
 %  Institute for Physical Properties Data, AIChE, Taylor and Francis,
@@ -1462,31 +1454,29 @@ mul = exp( C(1) + C(2)./T + C(3).*log(T) + C(4).*(T.^C(5)) );
 
 function mul = mudaubertshort(C,T)
 %MUDAUBERTSHORT  Dynamic viscosity of the liquid [Pa s].
+%  MUDAUBERTSHORT(C,T) returns the dynamic viscosity of the liquid when
+%  only the first three coefficients for MUDAUBERT are set.
 %
-%  MUDAUBERTSHORT(C,T) returns the dynamic viscosity of the liquid when only the
-%  first three coefficients for MUDAUBERT are set.
 %  See also SUBSTANCE>MUDAUBERT.
 
 mul = exp( C(1) + C(2)./T + C(3).*log(T) );
 
 function mul = vdi02(C,T)
 %VDI02      Specific heat capacity at constant pressure in the ideal gas state.
-%
 %  VDI02(MULCOEFFS,T) uses eq. 2 in VDI Wärmeatlas, 11th ed. (2013), D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return
-%  the dynamic viscosity of the liquid. The equation states units of Pas, the
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
+%  dynamic viscosity of the liquid. The equation states units of Pas, the
 %  caption of Tabelle 7 refers to mPas. The latter is wrong.
 cdt = (C(3) - T)./(T - C(4));
 mul = C(5).*exp(nthroot(cdt,3).*(C(1) + C(2).*cdt));
 
 function mug = mulucas(mugcoeffs,T)
 %MULUCAS    Dynamic viscosity of the vapor [Pa s].
-%
 %  MULUCAS(T,M,TC,PC,MUGCOEFFS) returns the dynamic viscosity of the vapor.
 %  See VDI Wärmeatlas, pp. 27-28, 9th ed. (2002). The correlation in VDI is
-%  proposed by Lucas and reported by Reid, Prausnitz and Poling, 4th ed. (1987)
-%  and by Perry, 7th ed. (1997). Not good for, e.g., nitrogen at saturation for
-%  T > 80 K (cf. viscosity.pdf).
+%  proposed by Lucas and reported by Reid, Prausnitz and Poling, 4th ed.
+%  (1987) and by Perry, 7th ed. (1997). Not good for, e.g., nitrogen at
+%  saturation for T > 80 K (cf. viscosity.pdf).
 
 Z = mugcoeffs(1);  debye = mugcoeffs(2);
 R = mugcoeffs(3); M = mugcoeffs(4);
@@ -1524,11 +1514,10 @@ kmu = C(1)*T.^C(2);
 
 function kg = kgroy(kgcoeffs,T)
 %KGROY      Thermal conductivity of the vapor [W/mK].
-%
-%  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p. 498
-%  in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
-%  gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..), Pc in Pa
-%  is used.
+%  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p.
+%  498 in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
+%    gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..),
+%  Pc in Pa is used.
 
 M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(4);
 
@@ -1539,12 +1528,12 @@ kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
 
 function kl = klatini(klcoeffs,T)
 %KLATINI    Thermal conductivity of the liquid [W/mK].
-%
-%  KLATINI(KLCOEFFS,T) returns the thermal conductivity of the vapor, based on
-%  a correlation by Latini and coworkers [Baroncini et al., Int. J. Thermophys.
-%  1, pp. 21, 1981] in the form kl = A(1-Tr)^0.38/Tr^(1/6). See pp. 549 in
-%  Reid, Prausnitz and Poling, 4th ed. (1987). A is determined from a single
-%  data point.
+%  KLATINI(KLCOEFFS,T) returns the thermal conductivity of the vapor, based
+%  on a correlation by Latini and coworkers [Baroncini et al., Int. J.
+%  Thermophys. 1, pp. 21, 1981] in the form
+%   kl = A(1-Tr)^0.38/Tr^(1/6).
+%  See pp. 549 in Reid, Prausnitz and Poling, 4th ed. (1987). A is
+%  determined from a single data point.
 
 % klcoeffs = [Tc A]
 Tr = T./klcoeffs(1);
@@ -1552,19 +1541,19 @@ kl = klcoeffs(2).*(1-Tr).^0.38./Tr.^(1/6);
 
 function cpl = cpleq2(C,T)
 %CPLEQ2     Evaluate Equation 2 to Table 2-153 in Green & Perry, 8th ed. (2007).
-%
-%  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid [J/kgK].
-%  Equation 2 to Table 2-196, from Perry, 7th ed. (1997), corrected, is used.
-%  For the correction see Perry, 8th ed. (2007), Equation 2 to Table 2-153.
-%  CPL could be calculated from the real gas cp, from
+%  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid
+%  [J/kgK]. Equation 2 to Table 2-196, from Perry, 7th ed. (1997),
+%  corrected, is used. For the correction see Perry, 8th ed. (2007),
+%  Equation 2 to Table 2-153. CPL could be calculated from the real gas cp,
+%  from
 %   cp = cp(id) + int_0^p (d cp/ dp')_T dp'
-%  and with Clausius-Clapeyron, h''-h' = (dps/dT)T(v''-v'), taken the derivative
-%  (d/dT) gives
+%  and with Clausius-Clapeyron, h''-h' = (dps/dT)T(v''-v'), taken the
+%  derivative (d/dT) gives
 %   cp''-cp' = (d^2ps/dT^2)T(v''-v') + (dps/dT)( (v''-v')+T (dv''/dT-dv'/dT) ).
 %  Then, as above, cp = cp' + int_ps^p (d cp/ dp')_T dp'.
-%  However, (i) cpl is nearly independent of p and (ii) the second derivative of
-%  the saturation pressure (d^2ps/dT^2) is not available in the required
-%  accuracy.
+%  However, (i) cpl is nearly independent of p and (ii) the second
+%  derivative of the saturation pressure (d^2ps/dT^2) is not available in
+%  the required accuracy.
 Tc = C(5); M = C(6);
 x = (1-T./Tc);
 cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
@@ -1572,10 +1561,9 @@ cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
 
 function icpl = icpleq2(C,T0,T1)
 %ICPLEQ2    Integrate CPLEQ2.
-%
-%  ICPLEQ2(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy of
-%  the liquid between the temperatures T0 and T1. Corrected on Mai 6, 2013, see
-%  substance>cpleq2.
+%  ICPLEQ2(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy
+%  of the liquid between the temperatures T0 and T1. Corrected on Mai 6,
+%  2013, see substance>cpleq2.
 %
 %  See also CPLEQ2.
 
@@ -1593,10 +1581,9 @@ icpl = Tc.*icpl./M;
 
 function y = icpleq2_x(C,T1,T2)
 %ICPLEQ2_X  Integrate CPL/T dT, CPL given by CPLEQ2 [J/kg K].
-%
-%  ICPLEQ2_X(CPLCOEFFS,T1,T2) integrates the specific isobaric heat capacity of
-%  the liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation of the difference
-%  of the specific entropy of the liquid.
+%  ICPLEQ2_X(CPLCOEFFS,T1,T2) integrates the specific isobaric heat
+%  capacity of the liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation
+%  of the difference of the specific entropy of the liquid.
 
 % mathematica-Session
 %
@@ -1637,12 +1624,11 @@ y = (  (-12*C(4).^2.*(T1.^5-T2.^5))/5 ...
 
 function cpl = vdi08(C,T)
 %VDI08      Specific isobaric heat capacity of the liquid [J/kgK].
-%
 %  VDI08(C,T) applies eq. 8 from VDI Wärmeatlas, 11th ed. (2013). D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the specific
-%  isobaric heat capacity of the liquid in units of J/kgK. VDI08 expects
-%  coefficients C(1) to C(6), A to F in eq. 8, to already be multiplied with
-%  R/M.
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
+%  specific isobaric heat capacity of the liquid in units of J/kgK. VDI08
+%  expects coefficients C(1) to C(6), A to F in eq. 8, to already be
+%  multiplied with R/M.
 
 % Tc = C(7);
 xi = (1-T./C(7));
@@ -1650,12 +1636,11 @@ cpl = C(1)./xi  + C(2) + C(3).*xi + C(4).*xi.^2 + C(5).*xi.^3 + C(6).*xi.^4;
 
 function icpl = ivdi08(C,T0,T1)
 %IVDI08     Integrate VDI08.
-%
-%  IVDI08(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy of
-%  the liquid between the temperatures T0 and T1.
-%  The difference to CPLEQ2 is the assignment of the coefficients. Also, VDI08
-%  goes to fourth order, cpleq2 to fifth order in (1-T/Tc), but the latter uses
-%  fewer coefficients.
+%  IVDI08(CPLCOEFFS,T0,T1) returns the difference of the specific enthalpy
+%  of the liquid between the temperatures T0 and T1.
+%  The difference to CPLEQ2 is the assignment of the coefficients. Also,
+%  VDI08 goes to fourth order, cpleq2 to fifth order in (1-T/Tc), but the
+%  latter uses fewer coefficients.
 %
 %  See also VDI08, ICPLEQ2.
 
@@ -1671,10 +1656,9 @@ icpl = Tc.*( C(1)*log(x0./x1) - C(2)*(x1-x0) - C(3)*(x1.^2-x0.^2)/2 ...
 
 function y = ivdi08_x(C,T1,T2)
 %IVDI08_X   Integrate cpl/T from T1 to T2, cpl given by VDI08 [J/kgK].
-%
 %  IVDI08_X(C,T1,T2) integrates the specific isobaric heat capacity of the
-%  liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation of the difference of
-%  the specific entropy of the liquid.
+%  liquid over T, Int_T1^T2 CPL/T dT. Used for evaluation of the difference
+%  of the specific entropy of the liquid.
 
 % FullSimplify[ Integrate[ (C1/x + C2 + C3*x + C4*x^2 + C5*x^3 + C6*x^4) / T
 %                           /. x -> (1 - T/Tc), {T, T1, T2},
@@ -1693,7 +1677,6 @@ y = C(6)*(T2.^4 -T1.^4)/(4*Tc^4) + (C(5) + 4*C(6))*(T1.^3 - T2.^3)/(3*Tc^3) ...
 
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
-%
 %  SIGVDI(SIGCOEFFS,T) gives the surface tension after a correlation from
 %  VDI-Wärmeatlas, eq.(91), p. Da 37.
 b = sigcoeffs(1); Tc = sigcoeffs(2); pc = sigcoeffs(3);
@@ -1701,9 +1684,9 @@ sig = b.*(pc.^2.*Tc).^(1/3).*(1-T./Tc).^(11/9);
 
 function [dsig, sig] = dsigvdi(sigcoeffs,T)
 %DSIGVDI    Derivative of surface tension, (1/SIG) DSIG/DT [1/K].
-%
 %  [DSIG SIG] = DSIGVDI(SCOEFFS,T) returns the derivative of the surface
-%  tension, normalized with the surface tension, and the surface tension itself.
+%  tension, normalized with the surface tension, and the surface tension
+%  itself.
 %
 %  See also SIGVDI.
 
@@ -1713,9 +1696,8 @@ sig = sigvdi(sigcoeffs,T);
 
 function sig = sigstephan22(sigcoeffs,T)
 %SIGSTEPHAN22 Surface tension [N/m].
-%
-%  SIGSTEPHAN22(SIGCOEFFS,T) returns the surface tension from a correlation by
-%  Stephan and Hildwein (1987), their eq. (22).
+%  SIGSTEPHAN22(SIGCOEFFS,T) returns the surface tension from a correlation
+%  by Stephan and Hildwein (1987), their eq. (22).
 
 % Check of T <= Tc commented out.
 %if T < sigcoeffs(3)
@@ -1726,9 +1708,9 @@ function sig = sigstephan22(sigcoeffs,T)
 
 function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 %DSIGSTEPHAN22 Surface tension [N/m].
-%
-%  [DSIG SIG] = DSIGSTEPHAN22(SCOEFFS,T) returns the derivative of the surface
-%  tension, normalized with the surface tension, and the surface tension itself.
+%  [DSIG SIG] = DSIGSTEPHAN22(SCOEFFS,T) returns the derivative of the
+%  surface tension, normalized with the surface tension, and the surface
+%  tension itself.
 %
 %  See also SIGSTEPHAN22.
 
@@ -1742,9 +1724,8 @@ function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 
 function sig = sigstephan23(sigcoeffs,T)
 %SIGSTEPHAN23 Surface tension [N/m].
-%
-%  SIGSTEPHAN23(SIGCOEFFS,T) returns the surface tension from a correlation by
-%  Stephan and Hildwein (1987), their eq. (23).
+%  SIGSTEPHAN23(SIGCOEFFS,T) returns the surface tension from a correlation
+%  by Stephan and Hildwein (1987), their eq. (23).
 
 % sigcoeffs = [a1 a2 a3 Tc];
 th = 1-T./sigcoeffs(4);
@@ -1752,9 +1733,9 @@ sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 
 function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 %DSIGSTEPHAN23 Surface tension [N/m].
-%
-%  [DSIG SIG] = DSIGSTEPHAN23(SCOEFFS,T) returns the derivative of the surface
-%  tension, normalized with the surface tension, and the surface tension itself.
+%  [DSIG SIG] = DSIGSTEPHAN23(SCOEFFS,T) returns the derivative of the
+%  surface tension, normalized with the surface tension, and the surface
+%  tension itself.
 %
 %  See also SIGSTEPHAN23.
 th = 1-T./sigcoeffs(4);
@@ -1769,26 +1750,24 @@ dsig = (-sigcoeffs(2) - 1./(1+1./(sigcoeffs(3).*th)))./(th.*sigcoeffs(4));
 
 function jt = jt(V,cpid)
 %JT         Joule-Thomson coefficient [K/Pa].
-%
-%  JT([DHDP CPG_CPID],CPID) returns the differential Joule-Thomson coefficient,
-%    jt = -(dh/dp)/cp.
+%  JT([DHDP CPG_CPID],CPID) returns the differential Joule-Thomson
+%  coefficient, jt = -(dh/dp)/cp.
 
 % jt = -dhdp(T)./cpg(T,p); V = [dhdp cpg_cpid], see VIRIAL.
 jt = -V(:,1)./(cpid+V(:,2));
 
 function [dhdp, cpg]= dhcpg(V,cpid)
 %DHCPG      Derivative of enthalpy by pressure at constant temperature,  dh/dp.
-%
 %  DHCPG([DHDP CPG_CPID],CPID) returns the array [DHDP CPG].
 dhdp = V(:,1);
 cpg = V(:,2)+cpid;
 
 function T1 = intjt(T0,p0,p1,jtloc)
 %INTJT      Integral Joule-Thomson coefficient [K].
-%
-%  T1 = INTJT(T0,P0,P1,JT) returns the final temperature T1 for an isenthalpic
-%  change of state from the initial conditions T0, P0 to the final state P1. JT
-%  is a function handle to the Joule-Thomson coefficient, JT(P,T).
+%  T1 = INTJT(T0,P0,P1,JT) returns the final temperature T1 for an
+%  isenthalpic change of state from the initial conditions T0, P0 to the
+%  final state P1. JT is a function handle to the Joule-Thomson
+%  coefficient, JT(P,T).
 
 if p0 == p1
   T1 = T0;
@@ -1806,15 +1785,13 @@ end
 
 function y = poly2(C,x)
 %POLY2      Evaluate a polynomial of second order, three coefficients.
-%
 %  POLY2(C,x) returns C(1) + C(2)*x + C(3)*x^2.
 y = C(1) + C(2)*x + C(3)*x.^2;
 
 function [dy, y] = dpoly2(C,x)
 %DPOLY2     Evaluate the derivative of a polynomial of third order.
-%
-%  [DY Y] = DPOLY2(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
-%  the value of the polynomial.
+%  [DY Y] = DPOLY2(C,X) returns the first derivative, DY = (1/Y) (DY/DX),
+%  and the value of the polynomial.
 %
 %  See also POLY2.
 y = poly2(C,x);
@@ -1822,15 +1799,13 @@ dy = (C(2) + 2*C(3)*x)./y;
 
 function y = poly3(C,x)
 %POLY3      Evaluate a polynomial of third order, four coefficients.
-%
 %  POLY3(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3;
 
 function [dy, y] = dpoly3(C,x)
 %DPOLY3     Evaluate the derivative of a polynomial of third order.
-%
-%  [DY Y] = DPOLY3(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
-%  the value of the polynomial.
+%  [DY Y] = DPOLY3(C,X) returns the first derivative, DY = (1/Y) (DY/DX),
+%  and the value of the polynomial.
 %
 %  See also POLY3.
 y = poly3(C,x);
@@ -1838,7 +1813,6 @@ dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 )./y;
 
 function iy = ipoly3(C,x0,x1)
 %IPOLY3     Integrate a polynomial of third order.
-%
 %  IY = IPOLY3(C,X0,X1) integrates a polynomial between X0 and X1.
 %
 %  See also POLY3.
@@ -1847,21 +1821,18 @@ iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
 
 function y = ipoly3_x(C,x0,x1)
 %IPOLY3_X   Integrate a polynomial of third order, divided by x.
-%
 y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
     + C(4).*(x1.^3-x0.^3)/3;
 
 function y = poly4(C,x)
 %POLY4      Evaluate a polynomial of fourth order, five coefficients.
-%
 %  POLY4(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3 + C(5)*x^4.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3 + C(5)*x.^4;
 
 function [dy, y] = dpoly4(C,x)
 %DPOLY3     Evaluate the derivative of a polynomial of fourth order.
-%
-%  [DY Y] = DPOLY4(C,X) returns the first derivative, DY = (1/Y) (DY/DX), and
-%  the value of the polynomial.
+%  [DY Y] = DPOLY4(C,X) returns the first derivative, DY = (1/Y) (DY/DX),
+%  and the value of the polynomial.
 %
 %  See also POLY4.
 y = poly4(C,x);
@@ -1869,7 +1840,6 @@ dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 + 4*C(5)*x.^3)./y;
 
 function iy = ipoly4(C,x0,x1)
 %IPOLY4     Integrate a polynomial of fourth order.
-%
 %  IY = IPOLY4(C,X0,X1) integrates a polynomial between X0 and X1.
 %
 %  See also POLY4.
@@ -1878,13 +1848,11 @@ iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
 
 function y = ipoly4_x(C,x0,x1)
 %IPOLY4     Integrate a polynomial of fourth order, divided by x.
-%
 y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
     + C(4).*(x1.^3-x0.^3)/3 + C(5).*(x1.^4-x0.^4)/4;
 
 function [y, y1, y2] = pdiv3(C,x)
 %PDIV3      Evaluate a polynomial in X^-1 of third order, four coefficients.
-%
 %  PDIV3(C,x) returns y = C(1) + C(2)/x + C(3)/x^2 + C(4)/x^3.
 %
 %  [y y1 y2] = PDIV3(C,x) returns y and the first two derivatives,
@@ -1898,7 +1866,6 @@ end
 
 function [y, y1, y2] = pdiv4(C,x)
 %PDIV4      Evaluate a polynomial in X^-1 of fourth order, five coefficients.
-%
 %  PDIV4(C,x) returns y = C(1) + C(2)/x + C(3)/x^2 + C(4)/x^3 + C(5)/x^4.
 %
 %  [y y1 y2] = PDIV4(C,x) returns y and the first two derivatives,
@@ -1912,16 +1879,17 @@ end
 
 function x = newtony(fun,x0,y,res,iter)
 %NEWTONY    Newton iteration. Controls residual in the function value.
+%  NEWTONY(FUN,X0) finds a solution to F(X) = 0 by Newton iteration,
+%  starting from X = X0. NEWTON expects FUN to be the handle to a function
+%  that returns a vector [F(X) DF(X)], where DF is the derivative of F at
+%  X.
 %
-%  NEWTONY(FUN,X0) finds a solution to F(X) = 0 by Newton iteration, starting
-%  from X = X0. NEWTON expects FUN to be the handle to a function that returns a
-%  vector [F(X) DF(X)], where DF is the derivative of F at X.
+%  NEWTONY(FUN,X0,Y,RES,ITER) finds a solution to F(X) = Y. NEWTONY
+%  iterates until ABS( F(X) - Y ) < RES or more than ITER iterations are
+%  done. Default values are RES = 1e-6 and ITER = 100.
 %
-%  NEWTONY(FUN,X0,Y,RES,ITER) finds a solution to F(X) = Y. NEWTONY iterates
-%  until ABS( F(X) - Y ) < RES or more than ITER iterations are done. Default
-%  values are RES = 1e-6 and ITER = 100.
-%
-%  The exact X is at a distance of approximately RES/DF from the value returned.
+%  The exact X is at a distance of approximately RES/DF from the value
+%  returned.
 %
 %  Example
 %    Given
@@ -1930,7 +1898,7 @@ function x = newtony(fun,x0,y,res,iter)
 %    should give pi, using a function handle to senus.
 %      probablypi = newtony(@senus,3.1,0)
 %
-%  See also the MATLAB-functions function_handle, feval.
+%  See also the MATLAB-functions FUNCTION_HANDLE, FEVAL.
 
 if nargin < 5, iter = 100; end
 if nargin < 4, res = 1e-6; end

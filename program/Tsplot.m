@@ -1,7 +1,7 @@
 function Tsplot(fl,name,ispgfplot)
 %TSPLOT     Plot a T-s Diagram.
-%  TSPLOT(NAME,FLOWSTRUCT,ISPGFPLOT) plots a T-s diagram. If ISPGFPLOT is true,
-%  a pgfplot-file with the name NAME.pgfplot is created.
+%  TSPLOT(FLOWSTRUCT,NAME,ISPGFPLOT) plots a T-s diagram. If ISPGFPLOT is
+%  true, a pgfplot-file with the name NAME.pgfplot is created.
 
 s = fl.info.substance;
 % the reference point is the lowest on the liquid line, (Tr,ps(Tr),0).

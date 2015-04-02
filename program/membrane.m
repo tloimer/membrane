@@ -1,31 +1,33 @@
 function m = membrane(dia,epsilon,km,tname,tau,beta,L)
 %MEMBRANE   Membrane properties.
-%  M = MEMBRANE(DIA,EPSILON,KM,TNAME,TAU,BETA,L) returns a struct that contains
-%  the membrane properties, depending on the pore diameter DIA, the void
-%  fraction EPSILON, the thermal conductivity of the membrane material KM, the
-%  topology of the pore space TNAME, tortuosity TAU, molecular flow correction
-%  factor BETA and membrane thickness L. The topology TNAME can be one of
-%  'porousround', 'porousslit', 'tube' or 'channel'.
+%  MEMBRANE(DIA,EPSILON,KM,TNAME,TAU,BETA,L) returns a struct M that
+%  contains the membrane properties depending on the pore diameter DIA, the
+%  void fraction EPSILON, the thermal conductivity of the membrane material
+%  KM, the topology of the pore space TNAME, tortuosity TAU, molecular flow
+%  correction factor BETA and membrane thickness L. The topology TNAME can
+%  be one of 'porousround', 'porousslit', 'tube' or 'channel'.
 %
-%  M = MEMBRANE('FREE') returns a membrane struct appropriate for free space.
+%  M = MEMBRANE('FREE') returns a membrane struct appropriate
+%  for free space.
 %
 %  M contains the fields
-%    M.tname        Topology.
-%    M.dia          Pore diameter [m].
-%    M.epsilon      Void fraction, porosity.
-%    M.km           Thermal conductivity of the membrane [W/mK].
-%    M.tau          Tortuosity.
-%    M.beta         Molecular flow factor.
-%    M.L            Thickness of the membrane [m].
-%    M.kappa        Permeability [m2].
-%
+%    M.tname        Topology
+%    M.dia          Pore diameter [m]
+%    M.epsilon      Void fraction, porosity
+%    M.km           Thermal conductivity of the membrane [W/mK]
+%    M.tau          Tortuosity
+%    M.beta         Molecular flow factor
+%    M.L            Thickness of the membrane [m]
+%    M.kappa        Permeability [m2]
 %  Functions
-%    M.fcurv        Curvature(costheta) [1/m].
-%    M.fkappa       Permeability(dia,epsilon) [m2].
-%    M.fdia         Diameter(kappa,epsilon) [m].
+%    M.fcurv        Curvature(costheta) [1/m]
+%    M.fkappa       Permeability(dia,epsilon) [m2]
+%    M.fdia         Diameter(kappa,epsilon) [m]
 %
-%  The functions FKAPPA and FDIA depend on the topology TNAME and on TAU while
-%  FCURV additionaly depends on DIA.
+%  The functions FKAPPA and FDIA depend on the topology TNAME and on TAU
+%  while FCURV additionaly depends on DIA.
+%
+%  See also MSTACKSTRUCT.
 
 % Struct constructor. Set free space here and return.
 if nargin == 1 && strcmpi(dia,'free') % case-insensitive string comparison

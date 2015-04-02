@@ -1,4 +1,4 @@
-% Massenstrom über Ccc, kappa/kappa_l = 0.265, 0.9 < P1 < 1.0 
+% Massenstrom über Ccc, kappa/kappa_l = 0.265, 0.9 < P1 < 1.0
 read1103;
 % Liest folgende Variablen aus ../data/data0905.tsv ein:
 %   L, T1, T12tc, T1tc, T2tc, Troom, Vflow, area, beta, datamemname, eps,

@@ -1,11 +1,12 @@
 function [m pK ps] = misotherm(T1,p1,p2,theta,s,mem,ps,pK)
-%MISOTHERM  Isothermal mass flux.
+%MISOTHERM  Isothermal mass flux [kg/m2s].
 %  MISOTHERM(T1,P1,P2,THETA,S,MEM) returns the mass flux according to an
 %  isothermal description.
-%  MISOTHERM(T1,P1,P2,THETA,S,MEM,PS,PK) takes PS and PK instead of calculating
-%  it independently.
-%  [M PK PS] = MISOTHERM(T1,P1,P2,THETA,S,MEM) returns PK and PS. PS and PK can
-%  also be supplied. For PK and PS this is a no-op.
+%  MISOTHERM(T1,P1,P2,THETA,S,MEM,PS,PK) uses the saturation pressure PS =
+%  psat(T1) and the vapor pressure at a curved meniscus PK = pkelv(T1).
+%  [M PK PS] = MISOTHERM(T1,P1,P2,THETA,S,MEM) returns PK and PS, in
+%  addition to the mass flux. If PS and PK are supplied, they are copied to
+%  the output unchanged.
 
 % for p1 > pK				    =======================
 %					  1 ) 3    liq.   7 ( 8    2

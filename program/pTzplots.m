@@ -2,11 +2,11 @@ function pTzplots(fl,name,ispgfplot,isqplot,vpos)
 %PTZPLOTS   Plot p-z, T-z and, optionally, q-z diagrams.
 %  PTZPLOTS(FLOWSTRUCT) Plot a p-z and a T-z diagramm.
 %  PTZPLOTS(FLOWSTRUCT,NAME,ISPGFPLOT,ISQPLOT,VPOS) plots a p-z, a T-z and,
-%  optionally, a q-z diagram. NAME, ISPGFPLOT, ISQPLOT and VPOS are all optional.
-%  If ISPGFPLOT is true, two pgfplot-files are created with the names
-%  pNAME.pgfplot and TNAME.pgfplot, respectively. With ISQPLOT being true, a q-z
-%  plot is created. VPOS gives the vertical position of the figure's bottom on
-%  the screen:
+%  optionally, a q-z diagram. NAME, ISPGFPLOT, ISQPLOT and VPOS are all
+%  optional. If ISPGFPLOT is true, two pgfplot-files are created with the
+%  names pNAME.pgfplot and TNAME.pgfplot, respectively. With ISQPLOT being
+%  true, a q-z plot is created. VPOS gives the distance of the bottom of
+%  the figure from the bottom of the screen, in pixels (defaults to 535).
 
 %fl.info.T1, .p1, .p2, .substance, .membrane, .fmodel, .flsetup
 %fl.sol.T2, .T1, .len, .colors

@@ -1,9 +1,16 @@
 function [minterval,pinterval] = findinterval(shoot,mguess,pzero)
-%FINDINTERVAL Find an interval for the mass flux in which pres changes sign.
-%  FINDINTERVAL(FUNCTION,MGUESS,PZERO) returns an interval for M  in which the
-%  function FUNCTION changes sign. MGUESS is the first guess, PZERO is the
-%  function value for M = 0. PZERO must be smaller than zero. For the GLOBAL
-%  variable VERBOSE > 0, diagnostic output is printed.
+%FINDINTERVAL Find an interval in which a function changes sign.
+%  FINDINTERVAL(FUNCTION,MGUESS,PZERO) returns the interval of the argument
+%  to a function in which the function FUNCTION changes sign. MGUESS is a
+%  guess for the zero crossing, where F(M) = 0. PZERO is the function value
+%  for M = 0. PZERO must be smaller than zero.
+%  [MINTERVAL, PINTERVAL] = FINDINTERVAL(FUNCTION,MGUESS,PZERO) returns the
+%  interval of argument MINTERVAL and the function values at the interval
+%  boundaries PINTERVAL.
+%
+%  For the GLOBAL variable VERBOSE > 0, diagnostic output is printed.
+%
+%  See also FINDZERO.
 
 global VERBOSE
 

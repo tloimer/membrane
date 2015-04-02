@@ -1,12 +1,13 @@
 function b = findzero(presiduum,mguess,p1tol)
-%FINDZERO  Find the zero of a function PRESIDUUM(M)
-%  M = FINDZERO(PRESIDUUM,MGUESS,PTOL) finds a zero to the function PRESIDUUM(M).
-%  FINDZERO returns a solution where the function value is smaller than PTOL.
-%  FINDZERO uses a scalar value MGUESS as an initial guess, an interval MGUESS =
-%  [M1 M2] as an interval in which the function changes sign, or an array MGUESS
-%  = [M1 M2; PRES(M1) PRES(M2)] as an interval with the function values provided.
+%FINDZERO  Find the zero of a function.
+%  FINDZERO(FUNCTION,MGUESS,FTOL) returns M where FUNCTION(M) = 0.
+%  FINDZERO returns a solution where the function value is smaller than
+%  FTOL. FINDZERO uses a scalar value MGUESS as an initial guess, a
+%  vector MGUESS = [M1 M2] as an interval in which the function changes
+%  sign, or an array MGUESS = [M1 M2; FUNCTION(M1) FUNCTION(M2)] as an
+%  interval with the function values provided.
 %
-%  See also FZERO, MNUMADIABAT.
+%  See also FINDINTERVAL, FZERO, MNUMADIABAT.
 
 %  INITIALIZE
 % Information is plotted for trace > 1. Iteration results for trace > 2.

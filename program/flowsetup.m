@@ -1,13 +1,14 @@
-function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
-%FLOWSETUP  Setup of flow properties.
-%  FS = FLOWSETUP(T2,TMAX,THETA,S,MEM,F) returns a struct FS that contains flow
-%  properties for a combination of contact angle THETA (in degrees), a substance
-%  S, a membrane MEM and a fmodel F. The integral of dh/dp over temperature T is
-%  calculated between T2 and at least TMAX.
+function flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
+%FLOWSETUP  Setup flow properties.
+%  FLOWSETUP(T2,TMAX,THETA,S,MEM,F) returns a struct FS that contains flow
+%  properties for a combination of contact angle THETA (in degrees), a
+%  substance S, a homogeneous membrane MEM and a fmodel F. The integral of
+%  dh/dp over temperature T is calculated between T2 and at least TMAX.
 %
 %  FREEFLOW = FLOWSETUP(S) sets the flowstruct FREEFLOW to properties
-%  appropriate for flow through free space. Uses the homogeneous flow model,
-%  FMODEL('plug'). Sets FREEFLOW.hgK and FREEFLOW.intdhdpsatdT to empty matrices.
+%  appropriate for flow through free space. Uses the homogeneous flow
+%  model, FMODEL('plug'). Sets FREEFLOW.hgK and FREEFLOW.intdhdpsatdT to
+%  empty matrices.
 %
 %  Fields:
 %    FS.curv              Curvature.
@@ -16,22 +17,22 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f) %----------------- flowsetup
 %    FS.pkelv(T)          pK
 %    FS.pkpcap(T)         pk and capillary pressure pcap, returns [pk pcap]
 %    FS.dpkdT(T)          [dpK/dT pk]
-%    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T)).
-%    FS.hvapK(T)          Enthalpy of vaporization [J/kg].
-%    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg].
-%    FS.q2ph(m,T,a)       Heat flux, and two-phase pressure in two-phase flow.
-%    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid.
-%    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT.
-%    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow).
-%    FS.knudsen(T,p)      Knudsen number.
-%    FS.nu2ph(T,pk,a)     Apparent 2ph viscosity, using app. vapor viscosity.
-%    FS.kmgas(T)          Heat conductivity of vapor-filled membrane.
-%    FS.kmliq(T)          Heat conductivity of liquid-filled membrane.
-%    FS.k2ph(T,a)         Heat conductivity of two-phase filled membrane.
-%    FS.xdot(T,pk,a)      Vapor mass flow fraction.
-%    FS.odemaxstep(range,delta) Minimum number of integration steps.
+%    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T))
+%    FS.hvapK(T)          Enthalpy of vaporization [J/kg]
+%    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg]
+%    FS.q2ph(m,T,a)       Heat flux, and two-phase pressure in two-phase flow
+%    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid
+%    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT
+%    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow)
+%    FS.knudsen(T,p)      Knudsen numbe.
+%    FS.nu2ph(T,pk,a)     Apparent 2ph viscosity, using app. vapor viscosity
+%    FS.kmgas(T)          Thermal conductivity of vapor-filled membran.
+%    FS.kmliq(T)          Thermal conductivity of liquid-filled membrane
+%    FS.k2ph(T,a)         Thermal conductivity of two-phase filled membrane
+%    FS.xdot(T,pk,a)      Vapor mass flow fraction
+%    FS.odemaxstep(range,delta)   Minimum number of integration steps
 %
-%  See also SUBSTANCE, MEMBRANE, FMODEL.
+%  See also SUBSTANCE, MEMBRANE, MSTACKSTRUCT, FMODEL.
 
 flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
   'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'q2ph',[],'qminqmax',[],...
@@ -181,7 +182,6 @@ flsetup.intdhdpdpsatdT = @(T) deval(soldhdps,T);
 
 function [pk, pcap] = pkpcap(T) %---------------------------------------- pkpcap
 %PKPCAP     Vapor pressure at a curved meniscus and capillary pressure.
-%
 % [PK, PCAP] = PKPCAP(T) returns the equilibrium pressure at a curved meniscus,
 % PK, and the capillary pressure due to Young's-Laplace equation.
 sigma = s.sigma(T);
@@ -201,7 +201,6 @@ end %--------------------------------------------------------------- end Infzero
 
 function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
-%
 % [DPK PK] = DPKDT(T) returns pk and dpk/dT. A copy from HVAPK, for convenience.
 
 % See below.
@@ -219,7 +218,6 @@ end %--------------------------------------------------------------- end dpsatdT
 
 function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 %HVAPK      Enthalpy of vaporization at a curved interface.
-%
 % [PK DPK HVK DPCAP PCAP] = HVAPK(T) returns the enthalpy of vaporization,
 % the vapor pressure, the derivatives of the vapor pressure and the capillary
 % pressure with respect to temperature at a curved interface as well as the
@@ -277,7 +275,6 @@ end %------------------------------------------------------------------ end q2ph
 
 function [qmin qmax hvapK dpk dpcap] = qminqmax(m,T) %----------------- qminqmax
 %QMINQMAX   Minimum and maximum heat flux for vapor and liquid flow, respectively.
-%
 % [QMIN QMAX HVAPK DPK DPCAP] = QMINMAX(T) returns the minimum heat flux, such
 % that a vapor remains a vapor flow, and the maximum heat flux allowed for a
 % liquid to remain a liquid flow. Both liquid and vapor are at their states in
@@ -299,7 +296,6 @@ end %-------------------------------------------------------------- end qminqmax
 
 function [qmin qmax hvapK dpk dpcap] = qminqmaxfree(T) %----------- qminqmaxfree
 %QMINQMAXFREE QMINQMAX for free space.
-%
 % See also FLOWSETUP>QMINQMAX.
 
 [pk dpk hvapK dpcap pcap] = flsetup.hvapK(T);
@@ -312,7 +308,6 @@ end %---------------------------------------------------------- end qminqmaxfree
 
 function nu2app = nu2phapp(T,pk,a) %----------------------------------- nu2phapp
 %NU2PHAPP   Apparent viscosity (Knudsen + viscous flow) of the 2ph-mixture.
-%
 % NU2PHAPP(T,P,A) returns the apparent kinematic viscosity [m2/s] that results
 % from assuming an apparent viscosity for the vapor flow,
 %   nuapp = nug / (1 + beta*Kn).

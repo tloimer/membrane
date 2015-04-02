@@ -1,37 +1,37 @@
-function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
+function ms = mstackstruct(theta,mem,f)
 %MSTACKSTRUCT Construct a membrane stack structure MS.
-%  MSTACKSTRUCT(THETA,MEMBRANE,FMODEL) constructs a structure which describes a
-%  stack of individual membranes, each of which may consist of different layers.
-%  The structure of the membrane stack is given by passing a cell vector MEMBRANE
-%  of further cell vectors. The first level corresponds to the separate membranes
-%  in the stack, the second level corresponds to the layers in each membrane. The
-%  membrane stack structure MS is constructed in a way to also accomodate the
-%  solution.
+%  MSTACKSTRUCT(THETA,MEMBRANE,FMODEL) constructs a structure which
+%  describes a stack of individual membranes, each of which may consist of
+%  different layers. The structure of the membrane stack is given by
+%  passing a cell vector MEMBRANE of further cell vectors. The first level
+%  corresponds to the separate membranes in the stack, the second level
+%  corresponds to the layers in each membrane. The membrane stack structure
+%  MS is constructed in a way to also accomodate the solution.
 %
 %  Invoke MS = MS.WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) after creating a MS.
 %
-%  The membrane stack structure MS contains the fields
-%    MS.m
-%    MS.T1
-%    MS.p1in
-%    MS.p1sol
-%    MS.a1
-%    MS.q1
-%    MS.T2
-%    MS.p2
-%    MS.a2
-%    MS.q2
+%  The membrane stack struct MS contains the fields
+%    MS.m               Mass flux [kg/m2s]
+%    MS.T1              Upstream temperature [K]
+%    MS.p1in            Upstream pressure, desired [Pa]
+%    MS.p1sol           Upstream pressure, solution [Pa]
+%    MS.a1              Upstream vapor fraction
+%    MS.q1              Heat flux [W/m2]
+%    MS.T2              Downstream temperature [K]
+%    MS.p2              Downstream pressure [Pa]
+%    MS.a2              Downstream vapor fraction
+%    MS.q2              Downstream heat flux [W/m2]
 %    MS.colors          Colors to plot liquid, gaseous and two-phase flow.
-%    MS.printsetup      Print the membrane and layer structure.
-%    MS.printsolution   Print the solution, e.g., after mnumadiabat is called.
-%    MS.plotsolution    Plot temperature and pressure distributions.
-%    MS.plotT           Plot temperature distribution.
-%    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct.
-%    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS.
-%    MS.mfluxliquid     Mass flux of the liquid through the membrane stack.
-%    MS.mfluxknudsen    Purely free molecular flux of the gas phase.
-%    MS.mfluxviscous    Purely viscous mass flux of the gas phase.
-%    MS.freesetup       Flow setup for the free space between membranes.
+%    MS.printsetup      Print the membrane and layer structure
+%    MS.printsolution   Print the solution, e.g., after mnumadiabat is called
+%    MS.plotsolution    Plot temperature and pressure distributions
+%    MS.plotT           Plot temperature distribution
+%    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct
+%    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS
+%    MS.mfluxliquid     Mass flux of the liquid through the membrane stack
+%    MS.mfluxknudsen    Purely free molecular flux of the gas phas.
+%    MS.mfluxviscous    Purely viscous mass flux of the gas phase
+%    MS.freesetup       Flow setup for the free space between membranes
 %    MS.substance
 %    MS.membrane
 %  MS.membrane is a struct of length length(MEMBRANE). It contains
@@ -50,10 +50,14 @@ function ms = mstackstruct(theta,mem,f) %-------------------------- mstackstruct
 %    MS.MEMBRANE.LAYER.flsetup
 %    MS.MEMBRANE.LAYER.calc
 %    MS.MEMBRANE.LAYER.flow
-%  MS.MEMBRANE.LAYER.flow is a struct, the length of which corresponds to the
-%  individual flow regimes in a layer.
+%  MS.MEMBRANE.LAYER.flow is a struct, the length of which corresponds to
+%  the individual flow regimes in a layer.
 %
-%  See also ASYM, FMODEL, MEMBRANE, MSTACKSTRUCT>WRITEFLOWSETUPS, SUBSTANCE.
+%  See also ASYM, FMODEL, MEMBRANE, SUBSTANCE, FLOWSETUP,
+%           MSTACKSTRUCT>WRITEFLOWSETUPS, MSTACKSTRUCT>MFLUXVISCOUS,
+%           MSTACKSTRUCT>MFLUXLIQUID, MSTACKSTRUCT>MFLUXKNUDSEN,
+%           MSTACKSTRUCT>PRINTSETUP, MSTACKSTRUCT>PRINTSOLUTION,
+%           MSTACKSTRUCT>PLOTSOLUTION, MSTACKSTRUCT>PLOTT, 
 
 %  To plot the upstream boundary layer, for the z-coordinate use the
 %  transformation (from FLOW12.m)
@@ -142,9 +146,10 @@ end
 end %----------------------------------------------------------- end expand2cell
 
 function ms = writeflowsetups(T1,T2,s,ms) %--------------------- writeflowsetups
-%WRITEFLOWSETUPS Compute and write flow setup structs to the membrane struct.
-%  MS = WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) writes flow setup structures to each
-%  layer in the membrane struct MS. The substance is written to ms.substance.
+%WRITEFLOWSETUPS Add flow setup structs to a membrane stack struct.
+%  MS = WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) writes flow setup structures to
+%  each layer in the membrane struct MS. The substance is written to
+%  MS.substance.
 
 % cycle through all membranes
 nmembranes = length(ms.membrane);
@@ -162,10 +167,11 @@ ms.freesetup = flowsetup(s);
 end %------------------------------------------------------- end writeflowsetups
 
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
-%MFLUXLIQUID Mass flux for the flow of liquid through the membrane stack.
-%  Returns the gaseous mass flux, if the fluid can not condense.
-%
-%  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
+%MFLUXLIQUID Mass flux for the flow of the liquid phase.
+%  MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS) returns the mass flux of the liquid
+%  phase through a membrane stack MS. Does not err if the temperature T1 is
+%  above the critical temperature of SUBSTANCE, but returns the mass flux
+%  for the flow of the gaseous phase.
 
 % With m = (kappa_i/nu) * (p_i - p_(i-1)) / L_i,   p0 |XX| p1 |XXX| p2 ... |X| pn
 %						       L1,kap1  L2     .... Ln
@@ -193,10 +199,9 @@ end
 end %----------------------------------------------------------- end mfluxliquid
 
 function m = mfluxknudsen(T1,p1,p2,s,ms) %------------------------- mfluxknudsen
-%MFLUXKNUDSEN Mass flux for the flow of liquid through the membrane stack.
-%  Returns the gaseous mass flux, if the fluid can not condense.
-%
-%  M = MFLUXLIQUID(T1,P1,P2,SUBSTANCE,MS)
+%MFLUXKNUDSEN Mass flux for purely molecular flow [kg/m2s].
+%  MFLUXKNUDSEN(T1,P1,P2,SUBSTANCE,MS) computes the mass flux of SUBTANCE
+%  for purely molecular flow through the membrane stack MS.
 
 %   m = kappa beta Kn/nug dp/dz, Kn/nu = f(T),
 %
@@ -223,11 +228,10 @@ end %---------------------------------------------------------- end mfluxknudsen
 
 
 function m = mfluxviscous(T,p1,p2,s,ms) %-------------------------- mfluxviscous
-%MFLUXVISCOUS Mass flux for the viscous flow of gas through the membrane stack.
-%  Isothermal flow of the ideal gas, purely viscous without free molecular flow
-%  contribution.
-%
-%  M = MFLUXVISCOUS(T1,P1,P2,SUBSTANCE,MS)
+%MFLUXVISCOUS Mass flux for the viscous flow of ga.
+%  MFLUXVISCOUS(T1,P1,P2,SUBSTANCE,MS) computes the mass flux for the
+%  isothermal, purely viscous flow of the ideal gas, without
+%  free molecular flow contribution.
 
 % Compute a guess for the mass flux.
 % With
@@ -253,8 +257,8 @@ end %---------------------------------------------------------- end mfluxviscous
 
 function fl = singlemstofl(ms) %----------------------------------- singlemstofl
 %SINGLEMSTOFL Convert a mstackstruct for a homogeneous membrane to a flowstruct.
-%  FL = MSANY.SINGLEMSTOFL(MS) returns the flowstruct FL from a MSTACKSTRUCT MS
-%  containing a single membrane with a single layer.
+%  FL = MSANY.SINGLEMSTOFL(MS) returns the flowstruct FL from a
+%  MSTACKSTRUCT MS containing a single membrane with a single layer.
 flow = [ms.membrane.layer.flow ms.membrane.flow];
 fl = struct('info',struct('membrane',ms.membrane.layer.matrix),...
   'sol',struct('len',-length(flow),'states','--'),'flow',flow);
@@ -289,12 +293,12 @@ end %------------------------------------------------------------ end printsetup
 
 function printsolution(ms,pa) %----------------------------------- printsolution
 %PRINTSOLUTION Print temperatures and pressures at special locations.
-%  MSANY.PRINTSOLUTION(MS) Print the solution stored in the membranestruct MS.
-%  The upstream and downstream states in each flow regime are printed. This is
-%  equivalent to the upstream and downstream state at each front.
+%  MSANY.PRINTSOLUTION(MS) Print the solution stored in the membranestruct
+%  MS. The upstream and downstream states in each flow regime are printed.
+%  This is equivalent to the upstream and downstream state at each front.
 %
-%  MSANY.PRINTSOLUTION(MS,'phase') In addition to the above, print the locations
-%  of the fronts of phase change.
+%  MSANY.PRINTSOLUTION(MS,'phase') In addition to the above, print the
+%  locations of the fronts of phase change.
 
 if nargin == 1
   pa='none'
@@ -416,6 +420,8 @@ end % --------------------------------------------------------- end upstreamflow
 
 function plotsolution(ms) %---------------------------------------- plotsolution
 %PLOTSOLUTION Plot temperature and pressure distributions.
+%  MSANY.PLOTSOLUTION(MS) plots the temperature and pressure distributions
+%  for the solution stored in MS.
 
 mark = '+';
 drawingarea = get(0,'ScreenSize'); % [left bottom width height]
@@ -575,7 +581,6 @@ end %---------------------------------------------------------- end plotsolution
 
 function plotT(ms,i) %---------------------------------------------------- plotT
 %PLOTT      Plot temperature.
-%
 %  PLOTT(MS,I) Plot temperature distribution in the I-th membrane.
 
 if nargin == 1

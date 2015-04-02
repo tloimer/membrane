@@ -1,25 +1,26 @@
 function [p1,ms] = asym(m,state,ms,solver)
 %ASYM       Flow through a porous medium consisting of several layers.
-%  ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the solution for the flow of a fluid
-%  at a downstream state STATE through an assemblage of membranes described by
-%  the membrane struct MSTACKSTRUCT. The solution tolerances are controlled via
-%  the struct SOLVER.
+%  ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the upstream pressure for the
+%  mass flux M of the fluid MSTACKSTRUCT.SUBSTANCE through an assemblage of
+%  membranes described by the membrane struct MSTACKSTRUCT. The downstream
+%  state of the fluid is given by STATE, the solution tolerances are
+%  controlled via the struct SOLVER.
 %
-%  [P1,MSTACKSTRUCT] = ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the upstream
-%  pressure P1 and a MSTACKSTRUCT describing the solution.
+%  [P1,MSTACKSTRUCT] = ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the
+%  upstream pressure P1 and a MSTACKSTRUCT describing the solution.
 %
-%  Restrictions: The upstream state must be a gaseous phase, because the liquid
-%  film and the temperature boundary layer integrators upstream of the membrane
-%  (ifreevapor, ifreeliquid) use termination conditions that work only with an
-%  gaseous upstream state.
-%  The vapor phase integrator (integratevapor) always starts at the downstream
-%  end of a layer.
+%  Restrictions: The upstream state must be a gaseous phase, because the
+%  liquid film and the temperature boundary layer integrators upstream of
+%  the membrane (ifreevapor, ifreeliquid) use termination conditions that
+%  work only with an gaseous upstream state.
+%  The vapor phase integrator (integratevapor) always starts at the
+%  downstream end of a layer.
 %  For a two-phase upstream state, integration direction would have to be
 %  downstream.
 %
 %  ASYM>FRONT should probably be a subfunction or nested function in STATE,
-%  STATE1 = STATE2.FRONT(STATE2,...). However, algorithms in FRONT and INTEGRATE
-%  are partially similar, therefore they are kept in one place.
+%  STATE1 = STATE2.FRONT(STATE2,...). However, algorithms in FRONT and
+%  INTEGRATE are partially similar, therefore they are kept in one place.
 %
 %  See also DOWNSTREAMSTATE, MSTACKSTRUCT, FLOWSETUP, SOLVERSTRUCT.
 

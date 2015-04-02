@@ -15,7 +15,7 @@ $ git init --separate-git-dir ~/matlab.git
 $ .
 $ .
 $ .
-$ git status; git log; git show; git diff; git diff --cached; 
+$ git status; git log; git show; git diff; git diff --cached;
 $ git log --oneline --graph --decorate --all -40
 
 
@@ -61,7 +61,7 @@ i.e., workflow:
 git checkout -b asym
  hack..hack..hack
 git commit .. git commit
-git checkout master 
+git checkout master
 git merge --no-ff [--no-commit] asym
 # creates a commit with the merge-message "Merge branch 'asym'". Probably use
 git merge --no-ff -m 'Version asym' [--no-commit] asym

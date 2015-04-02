@@ -1,4 +1,4 @@
-function solver = solverstruct(solvertype) %----------------------- solverstruct
+function solver = solverstruct(solvertype)
 %SOLVERSTRUCT Construct a solver struct.
 %  SOLVERSETUP returns a struct SOLVER set up for crude tolerances
 %
@@ -9,7 +9,9 @@ function solver = solverstruct(solvertype) %----------------------- solverstruct
 %  SOLVER.partialsolution is obsolete, but still supported.
 %  SOLVER.partialsolution = ~SOLVER.fullsolution.
 %
-%  See also ASYM, MSTACK>SOLVERSETUP.
+%  Used in MGASEOUS, MNUMADIABAT.
+%
+%  See also ASYM, MSTACKSTRUCT>WRITEFLOWSETUP.
 
 solver = struct('rtol',1e-3,'atol',1e-5,'tola',1e-6,'maxTperstep',2,...
   'maxpperstep',1e5,'odemaxstep',[],...
@@ -26,6 +28,3 @@ end
 % not change more than maxTperstep (maxpperstep) within one step.
 solver.odemaxstep = ... % 1/max(minsteps,...
   @(range,maxstep) 1/max(2,pow2(ceil(log2(abs(range)/maxstep))));
-
-
-end %---------------------------------------------------------- end solverstruct

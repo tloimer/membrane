@@ -1,13 +1,13 @@
-function state = downstreamstate(T2,p2,a2,q2,s,m) %------------- downstreamstate
-%DOWNSTREAMSTATE Returns a struct STATE, probably calculating missing values.
-%
-%  STATE = DOWNSTREAMSTATE(T2,P2,A2,Q2,SUBSTANCE,MASSFLUX) constructs and returns
-%  a struct STATE that describes the downstream state. If A2 is empty, the state
-%  of the fluid is calculated by comparing P2 with the saturation pressure,
-%  i.e., assuming free space. A saturated liquid or saturated vapor can be given
-%  by setting A2 to 0 or 1, respectively, ommitting P2. For two-phase flow, the
-%  homogeneous flow model FMODEL('plug') is used. Does not need MEMBRANE('free')
-%  or FLOWSETUP(S) for the free space. (Why did i write those?)
+function state = downstreamstate(T2,p2,a2,q2,s,m)
+%DOWNSTREAMSTATE Return a STATE struct.
+%  DOWNSTREAMSTATE(T2,P2,A2,Q2,SUBSTANCE,MASSFLUX) constructs and returns
+%  a struct STATE that describes the downstream state. If A2 is empty, the
+%  state of the fluid is calculated by comparing P2 with the saturation
+%  pressure, i.e., assuming free space. A saturated liquid or saturated
+%  vapor can be given by setting A2 to 0 or 1, respectively, ommitting P2.
+%  For two-phase flow, the homogeneous flow model FMODEL('plug') is used.
+%  Does not need MEMBRANE('free') or FLOWSETUP(S) for the free space. (Why
+%  did i write those?)
 %
 %  If A2 is empty and P2 = PSAT, a state of a saturated vapor is returned.
 %
@@ -60,8 +60,7 @@ end %%% END DOWNSTREAMSTATE %%%%%%%%%%%%%%%%%%%%%%%%%%%% END DOWNSTREAMSTATE %%%
 %%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
 function state = avapor(T,p,q) %----------------------------------------- avapor
-% AVAPOR    Construct and return the struct STATE of a vapor.
-%
+%AVAPOR     Construct and return a STATE struct for a vapor.
 %  STATE = AVAPOR(T,P,Q)
   state = statestruct;
   state.T = T;
@@ -72,8 +71,7 @@ function state = avapor(T,p,q) %----------------------------------------- avapor
 end %---------------------------------------------------------------- end avapor
 
 function state = aliquid(T,p,q) %--------------------------------------- aliquid
-% ALIQUID   Construct and return the struct STATE of a liquid.
-%
+%ALIQUID    Construct and return a STATE struct for a liquid.
 %  STATE = ALIQUID(T,P,Q)
   state = statestruct;
   state.T = T;
@@ -84,8 +82,7 @@ function state = aliquid(T,p,q) %--------------------------------------- aliquid
 end %--------------------------------------------------------------- end aliquid
 
 function state = atwophase(T,q_mh,hvapK,pk,dpk,dpcap) %--------------- atwophase
-% ATWOPHASE Construct and return the struct STATE of a two-phase mixture.
-%
+%ATWOPHASE  Construct and return a STATE struct for a two-phase mixture.
 %  STATE = ATWOPHASE(T,Q_MH,HVAPK,PK,DPK,DPCAP)
   state = statestruct;
   state.T = T;
@@ -98,8 +95,7 @@ function state = atwophase(T,q_mh,hvapK,pk,dpk,dpcap) %--------------- atwophase
 end %------------------------------------------------------------- end atwophase
 
 function state = statestruct %-------------------------------------- statestruct
-%STATESTRUCT Construct a STATESTRUCT.
-%
+%STATESTRUCT Construct a struct STATE.
 %  STATE = STATESTRUCT constructs the struct STATE with the fields
 %    STATE.T        Temperature [K]
 %    STATE.p        Pressure [Pa]
