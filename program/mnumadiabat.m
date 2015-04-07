@@ -1,8 +1,8 @@
 function [m,ms] = mnumadiabat(T1,p1,p2,s,ms,accuracy)
-%MNUMADIABAT Adiabatic flow through a membranestack.
+%MNUMADIABAT Mass flux for adiabatic flow through layered membranes.
 %  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS) returns the mass flux [kg/m2s] for
-%  adiabatic flow of SUBSTANCE through a membrane struct MS. The membrane
-%  struct MS is constructed with MSTACKSTRUCT.
+%  adiabatic flow of SUBSTANCE through a stack of layered membranes MS. The
+%  membrane struct MS is constructed with MSTACKSTRUCT.
 %
 %  MNUMADIABAT(T1,P1,P2,SUBSTANCE,MS,'crude') sets crude solver tolerances.
 %

@@ -1,9 +1,10 @@
 function m = membrane(dia,epsilon,km,tname,tau,beta,L)
-%MEMBRANE   Membrane properties.
-%  MEMBRANE(DIA,EPSILON,KM,TNAME,TAU,BETA,L) returns a struct M that
-%  contains the membrane properties depending on the pore diameter DIA, the
-%  void fraction EPSILON, the thermal conductivity of the membrane material
-%  KM, the topology of the pore space TNAME, tortuosity TAU, molecular flow
+%MEMBRANE   A homogeneous membrane.
+%  MEMBRANE(DIA,EPSILON,KM,TNAME,TAU,BETA,L) returns a struct that
+%  represents a homogeneous membrane. The returned struct M contains
+%  membrane properties depending on the pore diameter DIA, the void
+%  fraction EPSILON, the thermal conductivity of the membrane material KM,
+%  the topology of the pore space TNAME, tortuosity TAU, molecular flow
 %  correction factor BETA and membrane thickness L. The topology TNAME can
 %  be one of 'porousround', 'porousslit', 'tube' or 'channel'.
 %

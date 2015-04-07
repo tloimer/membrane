@@ -1,10 +1,10 @@
 function [p1,ms] = asym(m,state,ms,solver)
-%ASYM       Flow through a porous medium consisting of several layers.
+%ASYM       Upstream pressure for adiabatic flow through a MSTACKSTRUCT.
 %  ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the upstream pressure for the
 %  mass flux M of the fluid MSTACKSTRUCT.SUBSTANCE through an assemblage of
-%  membranes described by the membrane struct MSTACKSTRUCT. The downstream
-%  state of the fluid is given by STATE, the solution tolerances are
-%  controlled via the struct SOLVER.
+%  membranes described by the struct MSTACKSTRUCT. The downstream state of
+%  the fluid is given by STATE, the solution tolerances are controlled via
+%  the struct SOLVER.
 %
 %  [P1,MSTACKSTRUCT] = ASYM(M,STATE,MSTACKSTRUCT,SOLVER) returns the
 %  upstream pressure P1 and a MSTACKSTRUCT describing the solution.

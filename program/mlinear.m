@@ -1,16 +1,16 @@
 function m = mlinear(p1,p2,T1,theta,s,mem,f)
-%MLINEAR    Mass flux from linear theory [kg/m2s].
-%  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux of substance S
-%  through membrane M according to linear theory. The contact angle is
-%  given by THETA and F is the two-phase flow model. For P1 = PSAT(T1), the
-%  mass flux is calculated as given in JMS07 [Loimer, J. Membr. Sci. 301,
-%  pp. 107-117, 2007]. For wetted systems and PK - N*(P1-P2) < P1 < PSAT,
-%  the mass flux is obtained from an linear interpolation between MGAS and
-%  MLINEAR(P1=PSAT), see JMS11 [Loimer, J. Membr, Sci. 383, pp. 104-115,
-%  2011]. P1 [Pa] is the upstream pressure, P2 [Pa] the downstream
-%  pressure, and T1 [K] is the upstream temperature. The substance S,
-%  membrane M and two-phase flow model F are provided via structs, see
-%  SUBSTANCE, MEMBRANE and FMODEL.
+%MLINEAR    Mass flux from linear theory through a homogeneous membrane.
+%  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux [kg/m2s] of
+%  substance S through membrane M according to a linear theory. The contact
+%  angle is given by THETA and F is the two-phase flow model. For P1 =
+%  PSAT(T1), the mass flux is calculated as given in JMS07 [Loimer,
+%  J. Membr. Sci. 301, pp. 107-117, 2007]. For wetted systems and
+%  PK - N*(P1-P2) < P1 < PSAT, the mass flux is obtained from an linear
+%  interpolation between MGAS and MLINEAR(P1=PSAT), see JMS11 [Loimer, J.
+%  Membr, Sci. 383, pp. 104-115, 2011]. P1 [Pa] is the upstream pressure,
+%  P2 [Pa] the downstream pressure, and T1 [K] is the upstream temperature.
+%  The substance S, membrane M and two-phase flow model F are provided via
+%  structs, see SUBSTANCE, MEMBRANE and FMODEL.
 %
 %  See also SUBSTANCE, MEMBRANE, FMODEL, MLINEAR>MLINPSAT.
 

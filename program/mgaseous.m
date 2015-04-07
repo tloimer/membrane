@@ -1,7 +1,7 @@
 function [m,ms] = mgaseous(T,p1,p2,s,ms,type,accuracy)
-%MGASEOUS    Mass flux for isothermal gaseous flow [kg/m2s].
-%  MGASEOUS(T1,P1,P2,SUBSTANCE,MS) returns the mass flux for the
-%  isothermal, gaseous flow of SUBSTANCE through the membrane struct MS.
+%MGASEOUS    Mass flux for isothermal gaseous flow.
+%  MGASEOUS(T1,P1,P2,SUBSTANCE,MS) returns the mass flux [kg/m2s] for the
+%  isothermal, gaseous flow of SUBSTANCE through the membrane stack MS.
 %  Viscous and free molecular flow are taken into account. MS is a struct
 %  constructed with MSTACKSTRUCT. Accurate solver settings are used.
 %

@@ -1,5 +1,5 @@
 function ms = mstackstruct(theta,mem,f)
-%MSTACKSTRUCT Construct a membrane stack structure MS.
+%MSTACKSTRUCT A stack of membranes, each consisting of several layers.
 %  MSTACKSTRUCT(THETA,MEMBRANE,FMODEL) constructs a structure which
 %  describes a stack of individual membranes, each of which may consist of
 %  different layers. The structure of the membrane stack is given by

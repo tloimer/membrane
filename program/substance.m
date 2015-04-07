@@ -1,8 +1,9 @@
 function s = substance(name)
 %SUBSTANCE  Material properties of a substance.
-%  SUBSTANCE(NAME) returns a struct S that contains functions to calculate
-%  material properties for the substance NAME. The functions do not check
-%  their range of validity. Look for lines % Range: ... in the source code.
+%  SUBSTANCE(NAME) returns a struct that represents the substance NAME. The
+%  returned struct S contains functions to calculate various material
+%  properties. The functions do not check their range of validity. Look for
+%  lines % Range: ... in the source code.
 %
 %  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane'.
 %
