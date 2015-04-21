@@ -14,6 +14,7 @@
 %   mgaseous      - Mass flux for isothermal gaseous flow.
 %   misotherm     - Isothermal mass flux through a homogeneous membrane.
 %   mlinear       - Mass flux from linear theory through a homogeneous membrane.
+%   calctaubeta   - Calculate tau and beta.
 %   See also functions in MSTACKSTRUCT, see below.
 %
 % Plot.
