@@ -6,6 +6,7 @@
 %   fmodel        - Two-phase flow model.
 %   membrane      - A homogeneous membrane.
 %   mstackstruct  - A stack of membranes, each consisting of several layers.
+%   readdata      - Read data from a file.
 %
 % Compute.
 %   mnumadiabat   - Mass flux for adiabatic flow through layered membranes.
