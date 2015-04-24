@@ -14,8 +14,6 @@ function [m,ms] = mgaseous(T,p1,p2,s,ms,type,accuracy)
 %
 %  See also MGASEOUS>GASFLOW, MSTACKSTRUCT, SUBSTANCE.
 
-% TODO: Test mgaseous! Rewrite tests/testviscous.m, probably.
-
 if s.ps(T) < p1
   error('The usptream state is a liquid. Not implemented.');
 end
@@ -37,11 +35,21 @@ ms.q2 = 0;
 
 ms.substance = s;
 
-mguess = ms.mfluxviscous(T,p1,p2,s,ms);
-if strcmp(type,'gaseous')
-  % T2 = 1000 - surely supercritical
-  ms = ms.writeflowsetups(T,1000,s,ms);
+% Test for first char of 'gaseous', 'viscous' or 'knudsen'.
+switch type(1)
+case 'v'
+  mguess = ms.mfluxviscous(T,p1,p2,s,ms);
+case 'k'
+  mguess = ms.mfluxknudsen(T,p1,p2,s,ms);
+case 'g'
+  mguess = ms.mfluxviscous(T,p1,p2,s,ms) + ms.mfluxknudsen(T,p1,p2,s,ms);
+otherwise
+  error(['Expected "gaseous", "viscous" or "knudsen", ' type ' given.']);
 end
+
+% Set a large temperature and thus avoid computing phase change functions in
+% flowsetup.
+ms = ms.writeflowsetups(T,1000,s,ms);
 
 % Set up the solver and solution iteration
 solver = solverstruct(accuracy);
@@ -119,10 +127,18 @@ function [p9,flow] = integratevapor(m,T,p2,flow,mem,fs,s,solver) %integratevapor
 % pscale/zscale dpw/dzw = -m nu/kap,
 %   dpw/dzw = -m*mem.L/kappa*pscale nu,  O(pw) = 1, O(dpw/dzw) = m*zscale/...
 
-if strcmp(solver.gasflow,'gaseous')
+switch solver.gasflow(1)  % test first char of 'gaseous', 'viscous' or 'knudsen'
+case 'g'
   nu = fs.nuapp;
-else % 'viscous'
+case 'v'
   nu = s.nug;
+case 'k'
+% With nuapp = nug/(1 + beta Kn) = 1/(1/nug + beta Kn/nug),
+%   Kn = 3 nug sqrt(pi/(8*R*T)) / dia,
+%   kn_nu = 3*sqrt(pi/(8*s.R*T)) / mem.dia
+  nu = @(T,p) mem.dia * sqrt(8*s.R*T/pi) / (3*mem.beta);
+otherwise
+  error('Flow type must be specified.');
 end
 %  CHARACTERISTIC SCALES
 % scales to make dimensionless

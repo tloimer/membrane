@@ -24,9 +24,9 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
 %    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT
 %    FS.nuapp(T,p)        Apparant vapor viscosity (viscous + molecular flow)
-%    FS.knudsen(T,p)      Knudsen numbe.
+%    FS.knudsen(T,p)      Knudsen number
 %    FS.nu2ph(T,pk,a)     Apparent 2ph viscosity, using app. vapor viscosity
-%    FS.kmgas(T)          Thermal conductivity of vapor-filled membran.
+%    FS.kmgas(T)          Thermal conductivity of vapor-filled membrane
 %    FS.kmliq(T)          Thermal conductivity of liquid-filled membrane
 %    FS.k2ph(T,a)         Thermal conductivity of two-phase filled membrane
 %    FS.xdot(T,pk,a)      Vapor mass flow fraction
