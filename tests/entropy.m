@@ -30,7 +30,7 @@ plot(butgpT300, butgsT300-butgsT300(end),'-+',...
 ylabel('s [J/kgK]');
 xlabel('p [bar]');
 legend('Nist','matlab');
-title('vapor phase');
+title('butane, 300 K, vapor phase');
 
 figure('Name',mfilename);
 plot(butlpT300, butlsT300-butlsT300(1),'-+',...
@@ -38,4 +38,4 @@ plot(butlpT300, butlsT300-butlsT300(1),'-+',...
 ylabel('s [J/kgK]');
 xlabel('p [bar]');
 legend('Nist','matlab');
-title('liquid phase');
+title('butane, 300K, liquid phase');

@@ -74,9 +74,10 @@ for i = 1:lendata
   ii = ind(i);
   mm = find(strcmp(datamemname(ii),memname));
   if ~isscalar(mm), error([upper(mfilename) ': More than one membrane!']); end
-  mstacktest(i) = mstack(T1(ii),p1(ii),p2(ii),theta,...
-    substance(substancename{ii}),...
-    membrane(poredia(mm),eps(mm),1.38,model{mm},tau(mm),beta(mm),L(mm)), f);
+  ms = mstackstruct(theta,  membrane(poredia(mm),eps(mm),1.38,...
+				model{mm},tau(mm),beta(mm),L(mm)),  f);
+  mstacktest(i) = mnumadiabat(T1(ii),p1(ii),p2(ii), ...
+			      substance(substancename{ii}),ms);
 end
 
 mcg = mcalc(isexp)./mgas(isexp);
@@ -88,9 +89,9 @@ semilogx(kappa(isexp)./kapll(isexp),mcg,'ok',...
 xlim([0.1 10]);
 ylim([0 12]);
 xlabel('\kappa/\kappa_l');
-ylabel(sprintf('m_{gas}'),'Rotation',0);
+ylabel('massflux/massflux_{gas}','Rotation',90);
 set(gca,'XTickLabel',[0.1 1 10]); %,...
-legend('mnum', 'mstack', 'Location','NorthEast');
+legend('calc. 1105', 'calc. current', 'Location','NorthEast');
 legend('boxoff');
 %box('on');
 

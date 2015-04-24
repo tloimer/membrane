@@ -69,6 +69,8 @@ f = fmodel('homogeneous');
 s = substance(thissubstance{1});
 theta=0;
 
+ms = mstackstruct(theta,mem,f);
+
 % Abkürzungen
 meg = mexp(isexp)./mgas(isexp);
 
@@ -81,7 +83,8 @@ for i = 1:lendata
     fprintf('%s: # %u, altes mnum: mguess %.3g, mcalc %.3g.\n',...
       upper(mfilename),ii,mguess(ii),mcalc(ii));
   end
-  mstacktest(i) = mstack(T1(ii),p1(ii),p2(ii),theta,s,mem,f);
+  mstacktest(i) = mnumadiabat(T1(ii),p1(ii),p2(ii),s,ms);
+%  mstacktest(i) = mstack(T1(ii),p1(ii),p2(ii),theta,s,mem,f);
 %  mstacktest(i) = mnum(T1(ii),p1(ii),p2(ii),theta,s,mem,f);
 end
 
@@ -90,8 +93,8 @@ hl = plot(Ccc(isexp),mcalc(isexp),'ok',Ccc(isexp),mstacktest,'+k');
 xlim([0 10]);
 %ylim([0 10]);
 xlabel('C_{cc}');
-ylabel('m','Rotation',0);
-legend('calc. mnum','calc. mstack','Location','NorthWest');
+ylabel('permeance [s]','Rotation',90);
+legend('calc. 1105','calc. current','Location','NorthWest');
 
 legend('boxoff');
 box('on');

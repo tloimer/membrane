@@ -39,9 +39,10 @@ for i = 3:-1:1
   mm = mems(i);
   mem(i) = membrane(poredia(mm),eps(mm),1.38,model{mm},tau(mm),beta(mm),L(mm));
 end
+ms = mstackstruct(theta,mem,f);
 for i = 1:2
   %disp(s(i).name);
-  m =  mstack(T1,psat(i),psat(i)-p12,theta,s(i),mem,f);
+  m = mnumadiabat(T1,psat(i),psat(i)-p12,s(i),ms);
 end
 
 pred = [0.6:0.05:0.85 0.9:0.02:1];
@@ -66,10 +67,11 @@ for j = 1:lenpred
     mm = mems(j,i);
     mem(i) =membrane(poredia(mm),eps(mm),1.38,model{mm},tau(mm),beta(mm),L(mm));
   end
+  ms = mstackstruct(theta,mem,f);
   for i = 1:2
     p1 = pred(j)*psat(i);
-    [m(i,j) mguess] = mstack(T1,p1,p1-p12,theta,s(i),mem,f);
-    m(i,j) = m(i,j)/mguess;
+    [m(i,j) ms] = mnumadiabat(T1,p1,p1-p12,s(i),ms);
+    m(i,j) = m(i,j)/ms.mfluxviscous(T1,p1,p1-p12,s(i),ms);
   end
 end
 
@@ -78,7 +80,7 @@ figure('Name',mfilename);
 plot(pred,m(2,:),'kx',pred,m(1,:),'k+');
 legend('butane','isobutane','Location','Best'); legend('boxoff');
 xlabel('p_1/p_{sat}');
-ylabel('mflux/mgas');
+ylabel('mflux/mflux_{viscous}');
 xlim([0.55 1.05]);
 
 % Print information on membranes.

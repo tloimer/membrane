@@ -1,7 +1,7 @@
 %TESTMNUMADIABAT Test asym.m, mstackstruct.m and mnumadiabat
 
 global VERBOSE;
-VERBOSE = 0;
+savedVERBOSE = VERBOSE;
 % Verbositiy levels:
 % 0 - nothing
 % 1 - print diagnostic output from internally available data
@@ -29,6 +29,8 @@ iso = substance('isobutane');
 n2 = substance('nitrogen');
 
 f = fmodel('plug');
+
+fprintf(['Diagnostic output ' upper(mfilename) '\n']);
 
 fprintf(['Large pores, two-phase flow. This triggered an error. Findzero was used\n'...
 '(commit e12964f), solver accuracy switching was removed (commit b1b062), nothing\n'...
@@ -68,15 +70,15 @@ msok = mstmp;
 msok.m = 0.0017;
 [p1ok,msok] = asym(msok.m,state2,msok,solvacc);
 msok.p1sol = p1ok;
-mstmp.printsolution(msok);
+mstmp.printsolution(msok,'phase');
 
 msirr = mstmp;
 msirr.m = 0.00246995;
 [p1irr,msirr] = asym(msirr.m,state2,msirr,solvacc);
 msok.p1sol = p1irr;
-mstmp.printsolution(msirr);
+mstmp.printsolution(msirr,'phase');
 
-fprintf('To resume, type "return".\n');
+%fprintf('To resume, type "return".\n');
 %keyboard;
 
 fprintf(['\nThese iterations failed, crude and accurate solver,'...
@@ -90,11 +92,15 @@ for dia = [300 600]
   flow12vsasym(290.5,1.9e5,1.0e5,0,but,memtmp,f,'crude')
   fprintf('\nAccurate solver in asym\n');
   flow12vsasym(290.5,1.9e5,1.0e5,0,but,memtmp,f)
-  VERBOSE = 0;
 end
+VERBOSE = savedVERBOSE;
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard;
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 clear memtmp mstmp msok msirr T1 T2 p1 p2 state2 solvacc p1ok p1irr dia;
 
 fprintf(['\nNow crude vs. accurate solver shows little difference,\n',...
@@ -108,10 +114,11 @@ for i = 1:length(dia)
   memtmp = membrane(dia(i)*1e-9,0.5,0.8,'porousround',8.1,1,2e-3);
   [mflow(i),mcrude(i),maccurate(i),pflow(i),pcrude(i),pacc(i)] ...
       = flow12andasym(290.5,1.9e5,1e5,0,but,memtmp,f);
-  fprintf('%d nm: flow12 = %.4g g/m2s, crude %.1f%%, accurate %.1f%%\n',...
-	  dia(i),mflow(i)*1e3,100*mcrude(i)/mflow(i),100*maccurate(i)/mflow(i));
-  fprintf('p1calc - p1: %+.0f Pa,   %+.0f Pa,   %+.0f Pa\n',...
-	  pflow(i),pcrude(i),pacc(i));
+  fprintf(['%d nm: flow12 = %.4g g/m2s, deviations: crude %+.1f%%, '...
+	   'accurate %+.1f%%\n'], dia(i), mflow(i)*1e3,...
+	  100*(mcrude(i)/mflow(i)-1),100*(maccurate(i)/mflow(i)-1));
+  fprintf('p1calc - p1: %s %+.0f Pa,  %s %+.0f Pa,  %s %+.0f Pa\n',...
+	  'flow12',pflow(i),'crude',pcrude(i),'accurate',pacc(i));
 end
 figure('Name','Massflux - diameter');
 plot(dia,mflow*1e3,'ks',dia,mcrude*1e3,'ro',dia,maccurate*1e3,'k+');
@@ -130,8 +137,13 @@ legend('flow12','crude','accurate');
 legend('Location','Best');
 legend('boxoff');
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
+clear('mflow','mcrude','maccurate','pflow','pcrude','pacc','dia');
 
 fprintf('\nThe (nearly) systematic testing of all possible cases starts.\n\n');
 
@@ -148,8 +160,12 @@ fprintf('\nStill a film, ideally wetting\n');
 % also tested to revert last change (heatfluxcriterion) - both are necessary
 flow12vsasym(290.5,1.9e5,1e5,0,but,mem1,f)
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 
 fprintf('\nLarger pore diameter, no liquid film any more\n');
 flow12vsasym(290.5,1.9e5,1e5,0,but,mem2,f)
@@ -160,8 +176,12 @@ flow12vsasym(290.5,1.9e5,1.7e5,0,but,mem1,f)
 fprintf('\nLarger pores, no film, liquid in the entire membrane.\n');
 flow12vsasym(290.5,1.9e5,1.82e5,0,but,mem2,f)
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 
 fprintf('\nLarge pores, two-phase flow\n');
 flow12vsasym(290.5,1.9e5,1.0e5,0,but,mem3,f);
@@ -176,8 +196,12 @@ flow12vsasym(290.5,1.9e5,1.886e5,0,but,mem3,f)
 fprintf('\nLiquid in the entire membrane\n');
 flow12vsasym(290.5,1.9e5,1.887e5,0,but,mem3,f)
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 
 fprintf('\nNon-wetting cases\n\n');
 
@@ -196,8 +220,12 @@ flow12vsasym(290.5,1.9e5,0.5e5,95,but,mem3,f);
 fprintf('\nStill 95 degree contact angle, a liquid film and two-phase flow\n');
 flow12vsasym(290.5,1.9e5,1.0e5,95,but,mem4,f);
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 
 fprintf('\nContact angle theta = 90, saturated vapor\n');
 
@@ -212,8 +240,12 @@ flow12vsasym(290.5,psat1,1e5,90,but,mem3,f);
 fprintf('\nTwo-phase flow, runs after commit 80513d8\n');
 flow12vsasym(290.5,psat1,1.0e5,90,but,mem4,f);
 
-fprintf('To remove figures, type "close all". To resume, type "return".\n');
-keyboard
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
 
 fprintf(['\nThe same as above, now with one ore more support layers and ',...
 'additional membranes.\nRunning after commit 6047925, but temperatures far off.\n']);
@@ -233,22 +265,24 @@ fprintf(['\nFirst, the low-pressure difference cases, ',...
 
 fprintf('\nLiquid film - liquid flow\n');
 ms = mstackstruct(0,ms1,f);
-[~,ms] = mnumadiabat(290.5,psat1,1.7e5,but,ms); ms.printsolution(ms);
+[~,ms] = mnumadiabat(290.5,psat1,1.7e5,but,ms); ms.printsolution(ms,'phase');
 
 fprintf('\nLiquid flow through the entire membrane\n');
 ms = mstackstruct(0,ms2,f);
-[~,ms] = mnumadiabat(290.5,psat1,1.82e5,but,ms); ms.printsolution(ms);
+[~,ms] = mnumadiabat(290.5,psat1,1.82e5,but,ms); ms.printsolution(ms,'phase');
 
 fprintf('\nLarge pressure difference cases, evaporation within the membrane\n');
 
 fprintf('\nLiquid film - liquid flow - vapor flow\n');
 ms = mstackstruct(0,ms1,f);
-[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms);
+[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms,'phase');
 
 fprintf('\nLiquid flow - vapor flow\n');
 ms = mstackstruct(0,ms2,f);
-[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms);
+[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms,'phase');
 
 fprintf('\nTwo-phase flow - vapor flow\n');
 ms = mstackstruct(0,ms3,f);
-[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms);
+[~,ms] = mnumadiabat(290.5,psat1,1e5,but,ms); ms.printsolution(ms,'phase');
+
+clear('-regexp','savedVERBOSE','mem?','ms?','psat1','but','iso','n2','f','i');
