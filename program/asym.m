@@ -451,7 +451,8 @@ switch state.phase
     % allow   q1 >= qmin - minute correction   (instead of q1 >= qmin.)
     dotx = state.q_mh/(m*state.hvapK);
     % 1 - dotx < 0.001 (dotx > 0.999) should have been caught in front, case '2'
-    warning('Two-phase flow in free space, 1 - dotx = %.3g.', 1 - dotx);
+    warning('Two-phase flow in free space, 1 - dotx = %.3g, should be zero.',...
+	    1 - dotx);
     state.q = 0; % This is the signal for the upstream front code to terminate.
     % state.p was set in the front, state.p = state.pk.
     % This should be:

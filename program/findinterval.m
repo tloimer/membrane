@@ -9,6 +9,7 @@ function [minterval,pinterval] = findinterval(shoot,mguess,pzero)
 %  boundaries PINTERVAL.
 %
 %  For the GLOBAL variable VERBOSE > 0, diagnostic output is printed.
+%  For VERBOSE > 2, the interval search is plotted.
 %
 %  See also FINDZERO.
 
@@ -125,17 +126,22 @@ if mold == 0 % if ~mold
 end
 
 if VERBOSE > 0
-  fprintf('%s: Found an interval, %.3g - %.3g g/m2s.\n', mfilename,minterval*1e3);
   fprintf('%s: %u function calls.\n', mfilename,fcount);
+  fprintf('%s: Found an interval, %.3g - %.3g g/m2s.\n',...
+	  mfilename, minterval*1e3);
 
   if VERBOSE > 2
     % Plot pressure-residuum versus mass flux over the found mass flux interval
-    mm = [minterval(1):(minterval(2)-minterval(1))/11:minterval(2) minterval(2)];
+    fprintf([mfilename ': Plot pressure residuum versus mass flux ' ...
+	     'over the interval.\n  ------------\n']);
+    mm = [minterval(1):(minterval(2)-minterval(1))/11:minterval(2)...
+	  minterval(2)];
     pp = mm;
     for i = 1:length(mm)
       pp(i) = shoot(mm(i));
     end
     fprintf('%12.6g g/m2s,  %12.6g Pa\n',[mm*1e3; pp]);
+    fprintf('  ------------\n');
     figure('Name',upper(mfilename));
     plot(mm,pp,'k*');
   end

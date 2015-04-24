@@ -301,7 +301,7 @@ function printsolution(ms,pa) %----------------------------------- printsolution
 %  locations of the fronts of phase change.
 
 if nargin == 1
-  pa='none'
+  pa='none';
 end
 
 % Print the substance and upstream condition
@@ -329,7 +329,8 @@ for i = 1:nmembranes
       fprintf('    at liquid film, T =%+6.2f K',...
 	      ms.membrane(i).flow(1).T(end) - ms.T2);
       if strcmp(pa,'phase')
-        fprintf(', z = %.3g mm, z/L1 = %.2f\n', ms.membrane(i).flow(1).z(end)*1e3,...
+        fprintf(', z = %.3g mm, z/L1 = %.2f\n',...
+		ms.membrane(i).flow(1).z(end)*1e3,...
 		ms.membrane(i).flow(1).z(end)/ms.membrane(i).layer(1).matrix.L);
       else
 	fprintf('\n');
