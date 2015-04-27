@@ -20,6 +20,7 @@ function m = membrane(dia,epsilon,km,tname,tau,beta,L)
 %    M.beta         Molecular flow factor
 %    M.L            Thickness of the membrane [m]
 %    M.kappa        Permeability [m2]
+%    M.area         Area [m2]
 %  Functions
 %    M.fcurv        Curvature(costheta) [1/m]
 %    M.fkappa       Permeability(dia,epsilon) [m2]
@@ -36,12 +37,12 @@ if nargin == 1 && strcmpi(dia,'free') % case-insensitive string comparison
   % file run through
   m = struct('tname','free','dia',Inf,'epsilon',1,'km',0,'tau',1,'beta',0,...
     'L',Inf,'kappa',Inf,'fcurv',@(a)0,'fkappa',@(a,b)Inf,...
-    'fdia',@(k,e)sqrt(k./e));
+    'fdia',@(k,e)sqrt(k./e),'area',[]);
     % to vektorize, @(a)0 should be @(a)zeros(size(a))
   return
 else
   m = struct('tname',tname,'dia',dia','epsilon',epsilon,'km',km,'tau',tau, ...
-    'beta',beta,'L',L,'kappa',[],'fcurv',[],'fkappa',[],'fdia',[]);
+    'beta',beta,'L',L,'kappa',[],'fcurv',[],'fkappa',[],'fdia',[],'area',[]);
 end
 
 % thermal conductivity of the membrane material [W/mK];

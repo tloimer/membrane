@@ -78,4 +78,14 @@ else
   close all;
 end
 
+testcalctaubeta;
+if exist('INTERACTIVE') && INTERACTIVE
+  fprintf('To remove figures, type "close all". To resume, type "return".\n');
+  keyboard;
+else
+  close all;
+end
+clear all;
+
+
 fprintf('All tests passed.\n');

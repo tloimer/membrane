@@ -1,14 +1,16 @@
 function calctaubeta(mem,data)
 %CALCTAUBETA Calculate tau and beta.
-%  CALCTAUBETA(MEM,DATA) computes the tortuosity tau and molecular flow
+%  CALCTAUBETA(MEM,DATA) computes the tortuosity tau and the molecular flow
 %  correction factor beta for the homogeneous membrane MEM, given the
-%  permeance data DATA. The values of tau and beta are calculated by
-%  different methods and are displayed. The membrane MEM must be
-%  initialized with a value of 1 for the tortuosity TAU.
+%  permeance data DATA. The membrane MEM must contain a field 'area'. The
+%  results for tau and beta are displayed. The permeance data as well as
+%  the 95% confidence intervals for tau and beta on the one hand and for
+%  the permeance data on the other hand are plotted.
+%
+%  See also MEMBRANE, READDATA.
 
 % Copied and reworked from 11jms/matlab3/membranes11.m. Membranes11.m,
 % in turn, derived from 11jms/matlab/calctaubeta.m.
-% 
 
 % CALCTAUBETA Berechne tau und beta durch lineare Regression an N2-Daten.
 % Mit Darcy'schem Gesetz, massflux = (kappa/nu_app) (del p/L), del p = p1 - p2;
@@ -38,10 +40,17 @@ if ~all(strcmp(s.name,{data.substance{2:len}}))
   error('All data must be measured with the same substance.');
 end
 
+if mem.tau ~= 1
+  new = membrane(mem.dia,mem.epsilon,mem.km,mem.tname,1,8.1,mem.L);
+  new.area = mem.area;
+  mem = new;
+end
+
 % Sort after (p1 + p2) / 2
 pmean = 0.5 * (data.p1 + data.p2);
 [pmean ind] = sort(pmean,1);
 
+% Set the mean temperature within the membrane.
 if isfield(data,'T1')
  if isfield(data,'T2')
    Tmean = 0.5 * (data.T1(ind) + data.T2(ind));
@@ -49,16 +58,27 @@ if isfield(data,'T1')
    Tmean = data.T1(ind);
  end
 else
- if isfield(data,'Troom')
+ if isfield(data,'Troom') && all(isfinite(data.Troom))
    Tmean = data.Troom(ind);
  else
-   error('Temperature not given. At least the field ''Troom'' must be present.');
+   error('Neither upstream nor room temperature given.');
  end
+end
+
+% Set the room temperature
+if isfield(data,'Troom')
+  Tr = data.Troom(ind);
+  if any(~isfinite(Tr))
+    Tinf = find(~isfinite(Tr));
+    Tr(Tinf) = Tmean(Tinf);
+  end
+else
+  Tr = Tmean;
 end
 
 % s.v is vectorizable, with column vectors Troom and proom
 permeance = data.volume(ind) .* mem.L ./ (data.duration(ind) .* mem.area ...
-		.* s.v(data.Troom(ind),data.proom(ind)) ...
+		.* s.v(Tr,data.proom(ind)) ...
 		.* (data.p1(ind) - data.p2(ind)));
 nu = s.nug(Tmean,pmean);
 kn_nu = 3*sqrt(pi./(8*s.R*Tmean)) / mem.dia;
@@ -105,13 +125,13 @@ varmxp = stats(4) + varb_txp;
 rdaten = [taur betar 1/tr b(1) sqrt([varb2 varb_tau varb_txp varmxp])];
 
 memtb = membrane(mem.dia,mem.epsilon,mem.km,mem.tname,tr,br,mem.L);
-
-% Plot the data
 regressplot(permeance, pmean, Tmean, s, memtb, rstd, len, rxmean, rsumsq);
+
+
+%%% SUBFUNCTIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SUBFUNCTIONS %%%
 
 function regressplot(perm, pmean, Tmean, s, mem, rstd, len, rxmean, rsumsq)
 %REGRESSPLOT Visualize the result of a linear regression.
-%  REGRESSPLOT(PERM,PMEAN,TMEAN,RSTD,LEN,XIMEAN,SUMSQ)
 
 % pmean is already sorted in ascending order.
 gran = 0.2e5;		% granularity for display: 0.2 bar
