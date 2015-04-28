@@ -107,23 +107,14 @@ fprintf(['  statistical parameters\n' ...
   rstd, len, rxmean, rsumsq);
 
 % Better use correct statistics.
-% This would be, I believe, the values of tau and beta.
-% Just print them for informational purposes.
+% This would be, I believe, the values of tau and beta, if not used in the
+% combination 1/tau, beta/tau. Just print for informational purposes.
 varb2 = stats(4)/rsumsq;
 taur = tr*(1+varb2*tr^2); betar = br*(1+2*varb2*tr^2);
 fprintf('regression for tau and beta: tau = %0.4f, beta = %0.4f.\n',...
   taur,betar);
 
-% Data to print the region in which, with 95% confidence, the line given by tau
-% and beta should lie, and the region in which 95% of mass flux data should lie.
-% Compare the below with 11jms/matlab3/validate/showN2.m, then delete all below.
-% Regressionsdaten
-varb_tau = stats(4)*(1/len + rxmean^2/rsumsq);
-xp = 1./(s.nug(298.15,2.5e5)*3*sqrt(pi/(8*s.R))/(sqrt(298.15)*mem.dia));
-varb_txp = stats(4)*(1/len + (xp - rxmean)^2/rsumsq);
-varmxp = stats(4) + varb_txp;
-rdaten = [taur betar 1/tr b(1) sqrt([varb2 varb_tau varb_txp varmxp])];
-
+% Plot the result.
 memtb = membrane(mem.dia,mem.epsilon,mem.km,mem.tname,tr,br,mem.L);
 regressplot(permeance, pmean, Tmean, s, memtb, rstd, len, rxmean, rsumsq);
 
@@ -151,11 +142,17 @@ cperm = mem.kappa * (1./cnu + mem.beta*ckn_nu);
 % for tau and beta, respectively.
 cerrfac = 1/len + (1./(cnu*ckn_nu) - rxmean).^2/rsumsq;
 student = tinv(0.975, len-2);
-crstd = student * mem.kappa * ckn_nu * rstd * sqrt(cerrfac);
-cmstd = student * mem.kappa * ckn_nu * rstd * sqrt(1+cerrfac);
+% For the regression, tau was set to 1 and the regression was done on
+% perm/(kappa*kn_nu). The membrane mem available here has tau and beta set from
+% the results of the regression. Hence, mem.kappa = the original kappa/tau. For
+% the confidence interval, mem.kappa must be multiplied by tau to get the
+% original kappa.
+crstd = student * mem.kappa * mem.tau * ckn_nu * rstd * sqrt(cerrfac);
+cmstd = student * mem.kappa * mem.tau * ckn_nu * rstd * sqrt(1+cerrfac);
 
 cx = [cp;NaN;cp]*1e-5;	% Use NaN or Inf to put a gap into a line.
-plot(pmean*1e-5,perm,'k*', cp*1e-5,cperm,'k-', ...
-     cx,[cperm+crstd;NaN;cperm-crstd],'--', cx,[cperm+cmstd;NaN;cperm-cmstd]);
+plot(pmean*1e-5,perm,'k*', cp*1e-5,cperm,'k-',...
+     cx,[cperm+crstd;NaN;cperm-crstd],'--',...
+     cx,[cperm+cmstd;NaN;cperm-cmstd],':');
 xlabel('p_{mean} [bar]');
 ylabel('permeance [sec]');
