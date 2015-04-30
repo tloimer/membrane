@@ -4,13 +4,21 @@ function calctaubeta(mem,data)
 %  correction factor beta for the homogeneous membrane MEM, given the
 %  permeance data DATA. The membrane MEM must contain a field 'area'. The
 %  results for tau and beta are displayed. The permeance data as well as
-%  the 95% confidence intervals for tau and beta on the one hand and for
-%  the permeance data on the other hand are plotted.
+%  the 95% confidence intervals for the regression line and for the
+%  permeance data are plotted.
+%
+%  The regression line is constructed for
+%    permeance/(kn_nu*mem.kappa) = beta/tau + (1/tau)/(kn_nu*nu)
+%  with permeance = massflux * L / (p1 - p2), nu_app = nu / (1 + beta*Kn),
+%  kn_nu = Kn/nu. Hence, the regression line and especially the confidence
+%  intervals are valid for beta/tau and 1/tau, not for tau and beta.
+%  (Usually, the differences are small).
 %
 %  See also MEMBRANE, READDATA.
 
 % Copied and reworked from 11jms/matlab3/membranes11.m. Membranes11.m,
 % in turn, derived from 11jms/matlab/calctaubeta.m.
+% History of documentation below.
 
 % CALCTAUBETA Berechne tau und beta durch lineare Regression an N2-Daten.
 % Mit Darcy'schem Gesetz, massflux = (kappa/nu_app) (del p/L), del p = p1 - p2;
@@ -30,6 +38,10 @@ function calctaubeta(mem,data)
 % entspricht in der üblichen Statistik-Notation
 %  hat alpha (oder hat beta_0) = (beta/tau),
 %  hat beta (oder hat beta_1) = (1/tau).
+
+% Literature: A.V. Metcalfe, Statistics in Engineering, 1994.
+% See pages 209ff for linear regression, pages 163ff for the
+% Student-distribution
 
 len = size(data.substance,1);
 
@@ -84,10 +96,27 @@ nu = s.nug(Tmean,pmean);
 kn_nu = 3*sqrt(pi./(8*s.R*Tmean)) / mem.dia;
 
 % Regression:
-%  perm/(kn_nu*mem.kappa) = (1/tau)/(kn_nu*nu) + (beta/tau)
+%  perm/(kn_nu*mem.kappa) = beta/tau + (1/tau)/(kn_nu*nu)
 xi = 1./(nu.*kn_nu);
 [b,bint,r,rint,stats] = ...
   regress(permeance./(mem.kappa.*kn_nu), [ones(len,1) xi]);
+% [b,bint,r,rint,stats] = regress(y,[x1 x2]) computes
+%   y = b(1)*x1 + b(2)*x2,
+%   bint - confidence intervals vor b,
+%   r - errors, i.e., deviation from the regress line,
+%   rint - 95% confidence intervals for the data, centered at r_i, should
+%          therefore contain 0, otherwise this point is an outlier,
+%   stats - stats(1) - R^2 statistics, stat(2) - F statistic,
+%           stat(3) - p-value,
+%   stats(4) - estimate of std. dev^2 = sum r^2 / (n - 2),
+%              n - number of observations
+%  The confidence interval for the regress line, at point x1 = 1 and x2 = xi,
+%  is given by
+%    tinv(0.975,n-2) * std.dev * sqrt(1/n + (xi-mean(x))^2 / sum(xj-mean(x))^2).
+%  For the confidence interval for the data, at x1 = 1 and x2 = xi, 1 must be
+%  added to the expression under the square root,
+%    tinv(0.975,n-2) * std.dev
+%          * sqrt(1 + 1/n + (xi-mean(x))^2 / sum(xj-mean(x))^2).
 
 % To compute the mass flux, 1/tau and beta/tau are used, hence regress on those.
 fprintf('regression for 1/tau, beta/tau, 95%% confidence interval\n');
@@ -99,8 +128,8 @@ fprintf(' beta = %0.4f + %0.4f - %0.4f (beta/tau = %0.4f +/- %0.4f)\n',...
   br,brhi-br,br-brlo, b(1),bint(1,2)-b(1));
 
 % Statistics for the output
-rstd = sqrt(stats(4));
-rsumsq = var(xi,1)*len;
+rstd = sqrt(stats(4));	% stats(4) = sum of errors^2 / (n - 2)
+rsumsq = var(xi,1)*len;	% var(X,1) = sum (xi - mean(x))^2 / n
 rxmean = mean(xi);
 fprintf(['  statistical parameters\n' ... 
   '  std. dev. %.4f,  samples %d,  mean %.4g,  sum sq. err %.4g\n'], ...
