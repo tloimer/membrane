@@ -10,7 +10,7 @@
 % substancename datamemname exp_id T1 p1 p2 Vflow Troom T1tc T2tc T12tc
 % Membrandaten;
 % memname poredia L memdia eps model tau beta rstd rlen rxmean rsumsq
-%load /home/tloimer/projects/11jms/matlab3/results1105
+%load('data/results1105');
 % enthält: kap_kc, kappac, psat1, pK1, T2calc, mexp, mgas, miso, mcalc, fl0,
 %   kappa, kapKK, kapll, n, Ccc, mguess, mlinp1sat
 

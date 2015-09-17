@@ -3,7 +3,7 @@ read1103;
 % Liest folgende Variablen aus ../data/data0905.tsv ein:
 %   L, T1, T12tc, T1tc, T2tc, Troom, Vflow, area, beta, datamemname, eps,
 %   exp_id, memdia, memname, model, p1, p2, poredia, substancename, tau
-load /home/tloimer/projects/11jms/matlab3/results1105
+load('data/results1105');
 % enthält: kap_kc, kappac, psat1, pK1, T2calc, mexp, mgas, miso, mcalc, fl0,
 %   kappa, kapKK, kapll, n, Ccc, mguess, mlinp1sat
 

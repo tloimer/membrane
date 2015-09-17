@@ -2,7 +2,7 @@
 % memname,poredia,L,memdia,eps,model,tau,beta
 % substancename datamemname exp_id T1 p1 p2 Vflow Troom T1tc T2tc T12tc
 
-fid = fopen('/home/tloimer/projects/11jms/data/membranes11.tsv');
+fid = fopen('data/membranes11.tsv');
 %fid = fopen('../data/membranes');
 % membranes:
 % membrane material wetting poredia[nm] L[mm] memdia[mm] eps[%] model tau beta
@@ -15,7 +15,7 @@ fclose(fid);
    = deal(data{:});
 %data:
 % substance membrane exp_id T1[C] p1 p2 Q[ml/min] Troom[C]
-fid = fopen('/home/tloimer/projects/11jms/data/data0905.tsv');
+fid = fopen('data/data0905.tsv');
 data = textscan(fid,'%s%s%s%n%n%n%n%n%n%n%n',...
   'HeaderLines',1,'ReturnOnError',0,'Delimiter','\t');
 fclose(fid);

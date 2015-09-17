@@ -4,7 +4,7 @@ function testmstack
 %global VERBOSE
 
 % Read the membrane data, copied from read1103.m.
-fid = fopen('/home/tloimer/projects/11jms/data/membranes11.tsv');
+fid = fopen('data/membranes11.tsv');
 data = textscan(fid,'%s%n%n%n%n%s%n%n%n%n%n%n',...
   'HeaderLines',1,'ReturnOnError',0,'Delimiter','\t');
 fclose(fid);
