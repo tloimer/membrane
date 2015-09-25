@@ -4,7 +4,7 @@ function state = downstreamstate(T2,p2,a2,q2,s,m)
 %  a struct STATE that describes the downstream state. If A2 is empty, the
 %  state of the fluid is calculated by comparing P2 with the saturation
 %  pressure, i.e., assuming free space. A saturated liquid or saturated
-%  vapor can be given by setting A2 to 0 or 1, respectively, ommitting P2.
+%  vapor can be given by setting A2 to 0 or 1, respectively, omitting P2.
 %  For two-phase flow, the homogeneous flow model FMODEL('plug') is used.
 %  Does not need MEMBRANE('free') or FLOWSETUP(S) for the free space. (Why
 %  did i write those?)
@@ -47,10 +47,7 @@ switch a2
     % q_mh is relative to the enthalpy of the liquid at T2!
     hvap = s.hvap(T2);
     q_mh = q2 + m*homogeneous.xdot(a2,s.v(T2,p2),1/s.rho(T2))*hvap;
-    state = atwophase(T2,q_mh,hvap,p2,0,0);
-    % state.pliq is needed for the front, but not at the beginning (downstream
-    % end) of the two-phase integrator. Therefore, atwophase does not set pliq.
-    state.pliq = p2;
+    state = atwophase(T2,q_mh,hvap,p2,0,0,0);
     state.q = q2; % must be zero here, though. Or, to simulate a two-dimensional
     % heat loss?
 end
@@ -81,7 +78,7 @@ function state = aliquid(T,p,q) %--------------------------------------- aliquid
   state.phase = 'l';
 end %--------------------------------------------------------------- end aliquid
 
-function state = atwophase(T,q_mh,hvapK,pk,dpk,dpcap) %--------------- atwophase
+function state = atwophase(T,q_mh,hvapK,pk,pcap,dpk,dpcap) %---------- atwophase
 %ATWOPHASE  Construct and return a STATE struct for a two-phase mixture.
 %  STATE = ATWOPHASE(T,Q_MH,HVAPK,PK,DPK,DPCAP)
   state = statestruct;
@@ -90,6 +87,7 @@ function state = atwophase(T,q_mh,hvapK,pk,dpk,dpcap) %--------------- atwophase
   state.phase = '2';
   state.hvapK = hvapK;
   state.pk = pk;
+  state.pliq = pk - pcap;
   state.dpk = dpk;
   state.dpcap = dpcap;
 end %------------------------------------------------------------- end atwophase

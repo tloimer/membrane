@@ -85,7 +85,11 @@ for i = nmembranes:-1:1
 
 % Next membrane
 end
-p1 = state.p;
+if isempty(state.p)	% equivalent to: state.phase == '2'
+  p1 = state.pk;
+else
+  p1 = state.p;
+end
 
 end %%% END ASYM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END ASYM %%%
 
@@ -144,7 +148,6 @@ function state1 = front(state2,fs,m,s) %---------------------------------- front
 %    STATE1.dpcap.
 %
 %  See also DOWNSTREAMSTATE, ASYM.
-
 
 % Some abbreviations, for simplicity.
 T2 = state2.T;
@@ -271,7 +274,7 @@ end
 
 function [canbecomevapor,canbecomeliquid,hvapK1,dpk1,dpcap1] = heatfluxcriterion
 %HEATFLUXCRITERION Return whether a fluid can become vapor or liquid upstreams.
-  [qmin,qmax,hvapK1,dpk1,dpcap1] = fs.qminqmax(m,T2);
+  [qmin,qmax,hvapK1,dpk1,dpcap1,pcap1] = fs.qminqmax(m,T2);
   % canbecomevapor = q1 >= qmin    ---> flow   vapor 1 | state 2 <--- compute
   % canbecomeliquid = q1 <= qmax   ---> flow  liquid 1 | any state 2
   % The heat flux q1 is, depending on the phase change tabulated below,
@@ -356,7 +359,7 @@ function interface_2phliq %-----------------------------------------------------
   % Solve for q1 and a1 in the integrator, not here. Also, pass a few variables
   % (dpk, dpcap, ...), so they need not calculated twice.
   q_mh12 = q2;
-  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,dpk1,dpcap1);
+  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,pcap1,dpk1,dpcap1);
   % set a (dummy) pressure, if the liquid integrator just stops at the upstream
   % membrane front, and theta = 90; Then, this pressure is even correct.
   % state1.p = pk1;
@@ -366,7 +369,7 @@ function interface_2phvap %-----------------------------------------------------
   % Solve for q1 and a1 in the integrator. Two-phase flow is fully determined by
   % the temperature and flux of enthalpy.
   q_mh12 = q2 + m*hvapK1; % = q2 + m*hvapK2, because p2 = pk1.
-  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,dpk1,dpcap1);
+  state1 = state2.atwophase(T2,q_mh12,hvapK1,pk1,pcap1,dpk1,dpcap1);
   % set a (dummy) pressure, if the vapor integrator just stops at the upstream
   % membrane front, and theta = 90; Then, this pressure is even correct.
   % state1.p = pk1;
@@ -458,7 +461,7 @@ switch state.phase
     % This should be:
     % f = fmodel('plug'); a = f.a(dotx,s.v(state.T,..),1/s.rho(...))
     % homogeneous flow model: inverse function to f.xdot
-    a = dotx./(1 + dotx.*(1-1./(s.rho(state.T).*s.v(state.T,state.p))));
+    a = dotx./(1 + dotx.*(1-1./(s.rho(state.T).*s.v(state.T,state.pk))));
     flow = writeflow(flow,{'z','T','p','a','q','color'},...
 			  {0,state.T,state.p,a,state.q,'g'});
   otherwise
@@ -530,7 +533,7 @@ options=odeset('Events',@term92w,...%'AbsTol',atol*[1 1 -coeff1*cpg2],...
 sol92 = ode45(@int92w,[1 0],[0 0 q2w],options);
 
 %function dy = int92(z,y)
-%% dimensional. Equations see above.
+%dimensional. Equations see above.
 %T = y(1);  p = y(2);  q = y(3);
 %dp = -m*s.nug(T,p)/mem.kappa;  dT = -q/kmgas(T);
 %[dhdp cpg] = s.dhcpg(T,p);

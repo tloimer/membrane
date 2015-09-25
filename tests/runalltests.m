@@ -87,5 +87,6 @@ else
 end
 clear all;
 
+test2ph;
 
 fprintf('All tests passed.\n');

@@ -273,12 +273,12 @@ q = m*flsetup.nu2ph(T,pk,a)*flsetup.k2ph(T,a)/((dpk-(1-a)*dpcap)*mem.kappa);
 p2ph = pk - (1-a)*pcap;
 end %------------------------------------------------------------------ end q2ph
 
-function [qmin qmax hvapK dpk dpcap] = qminqmax(m,T) %----------------- qminqmax
+function [qmin qmax hvapK dpk dpcap pcap] = qminqmax(m,T) %------------ qminqmax
 %QMINQMAX   Minimum and maximum heat flux for vapor and liquid flow, respectively.
-% [QMIN QMAX HVAPK DPK DPCAP] = QMINMAX(T) returns the minimum heat flux, such
-% that a vapor remains a vapor flow, and the maximum heat flux allowed for a
-% liquid to remain a liquid flow. Both liquid and vapor are at their states in
-% equilibrium with the other phase at a curved meniscus.
+% [QMIN QMAX HVAPK DPK DPCAP PCAP] = QMINMAX(T) returns the minimum heat
+% flux, such that a vapor remains a vapor flow, and the maximum heat flux
+% allowed for a liquid to remain a liquid flow. Both liquid and vapor are at
+% their states in equilibrium with the other phase at a curved meniscus.
 
 % The minimum heat flux, such that a vapor remains a vapor (does not
 % become too cold upstream of 1) is found from
@@ -294,7 +294,7 @@ qmin = m*flsetup.kmgas(T)*flsetup.nuapp(T,pk)/(mem.kappa*dpk);
 qmax = m*flsetup.kmliq(T)*s.nul(T)/(mem.kappa*(dpk-dpcap));
 end %-------------------------------------------------------------- end qminqmax
 
-function [qmin qmax hvapK dpk dpcap] = qminqmaxfree(T) %----------- qminqmaxfree
+function [qmin qmax hvapK dpk dpcap pcap] = qminqmaxfree(T) %------ qminqmaxfree
 %QMINQMAXFREE QMINQMAX for free space.
 % See also FLOWSETUP>QMINQMAX.
 
