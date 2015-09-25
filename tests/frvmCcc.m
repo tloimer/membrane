@@ -58,7 +58,9 @@ isexp = isvapor & isT12ok & kappall>0.265 & kappall<0.266 & P1>0.9;
 thismem = unique(datamemname(isexp));
 thissubstance = unique(substancename(isexp));
 
-if length(thissubstance) > 1, error; end
+if length(thissubstance) > 1
+  error('More than one substance');
+end
 
 i = find(strcmp(thismem,memname));
 if ~isscalar(i), error('More than one membrane'); end

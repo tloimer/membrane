@@ -15,7 +15,7 @@ savedVERBOSE = VERBOSE;
 %if name ~= 'tests', error('Run from directory tests/.'); end
 %clear('name');
 
-if ~exist('substance.m'), addpath('../program'); end
+if ~exist('substance.m','file'), addpath('../program'); end
 
 % A few membranes
 mem1 = membrane(10e-9,0.5,1.2,'porousround',8.1,1,1e-3);
@@ -95,7 +95,7 @@ for dia = [300 600]
 end
 VERBOSE = savedVERBOSE;
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -106,7 +106,7 @@ clear memtmp mstmp msok msirr T1 T2 p1 p2 state2 solvacc p1ok p1irr dia;
 fprintf(['\nNow crude vs. accurate solver shows little difference,\n',...
 'not large differences as before.\n']);
 
-dia = [200:20:600];
+dia = 200:20:600;
 % allocate
 mflow = dia; mcrude = dia; maccurate = dia;
 pflow = dia; pcrude = dia; pacc = dia;
@@ -137,7 +137,7 @@ legend('flow12','crude','accurate');
 legend('Location','Best');
 legend('boxoff');
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -160,7 +160,7 @@ fprintf('\nStill a film, ideally wetting\n');
 % also tested to revert last change (heatfluxcriterion) - both are necessary
 flow12vsasym(290.5,1.9e5,1e5,0,but,mem1,f)
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -176,7 +176,7 @@ flow12vsasym(290.5,1.9e5,1.7e5,0,but,mem1,f)
 fprintf('\nLarger pores, no film, liquid in the entire membrane.\n');
 flow12vsasym(290.5,1.9e5,1.82e5,0,but,mem2,f)
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -196,7 +196,7 @@ flow12vsasym(290.5,1.9e5,1.886e5,0,but,mem3,f)
 fprintf('\nLiquid in the entire membrane\n');
 flow12vsasym(290.5,1.9e5,1.887e5,0,but,mem3,f)
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -220,7 +220,7 @@ flow12vsasym(290.5,1.9e5,0.5e5,95,but,mem3,f);
 fprintf('\nStill 95 degree contact angle, a liquid film and two-phase flow\n');
 flow12vsasym(290.5,1.9e5,1.0e5,95,but,mem4,f);
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else
@@ -240,7 +240,7 @@ flow12vsasym(290.5,psat1,1e5,90,but,mem3,f);
 fprintf('\nTwo-phase flow, runs after commit 80513d8\n');
 flow12vsasym(290.5,psat1,1.0e5,90,but,mem4,f);
 
-if exist('INTERACTIVE') && INTERACTIVE
+if exist('INTERACTIVE','var') && INTERACTIVE
   fprintf('To remove figures, type "close all". To resume, type "return".\n');
   keyboard;
 else

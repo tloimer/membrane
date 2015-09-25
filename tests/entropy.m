@@ -1,6 +1,6 @@
 %ENTROPY Compare entropy calculated in substance.m with tabulated values from
 %  NIST, http://webbook.nist.gov/chemistry/fluid .
-if ~exist('substance.m')
+if ~exist('substance.m','file')
   addpath('../program');
 end
 % Test entropy

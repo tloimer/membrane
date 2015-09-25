@@ -42,7 +42,7 @@ end
 ms = mstackstruct(theta,mem,f);
 for i = 1:2
   %disp(s(i).name);
-  m = mnumadiabat(T1,psat(i),psat(i)-p12,s(i),ms);
+  mnumadiabat(T1,psat(i),psat(i)-p12,s(i),ms);
 end
 
 pred = [0.6:0.05:0.85 0.9:0.02:1];
@@ -70,7 +70,7 @@ for j = 1:lenpred
   ms = mstackstruct(theta,mem,f);
   for i = 1:2
     p1 = pred(j)*psat(i);
-    [m(i,j) ms] = mnumadiabat(T1,p1,p1-p12,s(i),ms);
+    [m(i,j),ms] = mnumadiabat(T1,p1,p1-p12,s(i),ms);
     m(i,j) = m(i,j)/ms.mfluxviscous(T1,p1,p1-p12,s(i),ms);
   end
 end

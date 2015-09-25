@@ -26,6 +26,7 @@ for i = 1:size(cn,2)
   f = fmodel(cn{i});
   pmr = mstackstruct(0,prmems,f);
   [m,pmr] = mnumadiabat(T1,psat1,psat1-deltap,s,pmr);
-  fprintf('  %-9s m = %.5g kg/m2s.\n', [cn{i} ':'], m);
+  fprintf('  %-9s m = %.5g kg/m2s, p_residual = %.3f Pa\n',...
+    [cn{i} ':'], m, pmr.p1sol-pmr.p1in);
 end
 fprintf([upper(mfilename) ' finished.\n']);

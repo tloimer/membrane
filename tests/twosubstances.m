@@ -20,7 +20,7 @@ function twosubstances()
 % 25 Therm. Cond. (v, W/m*K)
 
 
-Tc = 369.82;
+%Tc = 369.82;
 
 % Saturation properties - temperature increments.
 % Data retrieved 2014-09-30
@@ -199,6 +199,7 @@ function nonarrayplot(prop,qroq,description,first,last,X,xname,datanist) %------
 global VERBOSE;
 len = last - first + 1;
 datam = zeros(len,1);
+datan = datam;
 for i = 1:len
   datam(i,1) = prop(X(first-1+i,1));
   datan(i,1) = qroq(X(first-1+i,1));
@@ -259,7 +260,7 @@ end
 end %---------------------------------------------------------------------------
 
 
-function pscalarplot(prop,qroq,description,first,last,X,P,xname,datanist) %-----
+function pscalarplot(prop,~,description,first,last,X,P,xname,datanist) %-----
 
 global VERBOSE;
 len = last - first + 1;
@@ -289,7 +290,6 @@ function printtable(description,X,datanist,datam,P) %---------------------------
 fprintf(['\n' description ' \n']);
 if nargin == 4
   fprintf('T [K]\tnist\tmatlab\t100*(matlab-nist)/nist\n');
-  fstring = '%3.0f\t%.4g\t%.4g\t%.3f\n';
   fprintf('%3.0f\t%.4g\t%.4g\t%.3f\n', ...
     [X'; datanist'; datam'; 100*(datam./datanist-1)']);
 elseif nargin == 5

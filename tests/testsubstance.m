@@ -21,7 +21,7 @@ function testsubstance(name)
 % 22 Sound Spd. (v, m/s),  23 Joule-Thomson (v, K/MPa),  24 Viscosity (v, Pa*s),
 % 25 Therm. Cond. (v, W/m*K)
 
-global VERBOSE;
+%global VERBOSE;
 
 switch(name)
 case {'propane', 'propaneperry'}
@@ -486,7 +486,6 @@ function printtable(description,X,datanist,datam,P) %---------------------------
 fprintf(['\n' description ' \n']);
 if nargin == 4
   fprintf('T [K]\tnist\tmatlab\t100*(matlab-nist)/nist\n');
-  fstring = '%3.0f\t%.4g\t%.4g\t%.3f\n';
   fprintf('%3.0f\t%.4g\t%.4g\t%.3f\n', ...
     [X'; datanist'; datam'; 100*(datam./datanist-1)']);
 elseif nargin == 5

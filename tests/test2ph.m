@@ -49,7 +49,7 @@ end
 msbug.T1 = T1; msbug.p1in = psat1; msbug.T2 = T2bug; msbug.p2 = p2bug;
 msbug.a = 1; msbug.q2 = 0;
 msbug = msbug.writeflowsetups(T1,T2bug,s,msbug);
-[p1asym msbug] = asym(m,s2,msbug,solverstruct('accurate'));
+[p1asym,msbug] = asym(m,s2,msbug,solverstruct('accurate'));
 if isempty(p1asym)
   fprintf('p1asym is empty!\n');
 else

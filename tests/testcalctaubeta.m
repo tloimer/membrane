@@ -1,6 +1,6 @@
 %TESTCALCTAUBETA Compare data from membranes11.tsv with current calculation.
 
-if ~exist('substance.m'), addpath('../program'); end
+if ~exist('substance.m','file'), addpath('../program'); end
 
 % read1103 only works within a script, not in a function body
 read1103;
