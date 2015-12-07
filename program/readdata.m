@@ -43,12 +43,12 @@ end
 
 % Get the variable names.
 %		textscan cares for \r\n, ignores the \r, if present
-[line, pos] = textscan(fid,'%s',1,'Delimiter','\n');
+[line, pos] = textscan(fid,'%s',1,'Delimiter','\n','CommentStyle','#');
 name = strsplit(line{1}{1},del);
 len = size(name,2);
 
 % Read the second line for testing whether a column is numeric or string.
-line = textscan(fid,'%s',len,'Delimiter',del);
+line = textscan(fid,'%s',len,'Delimiter',del,'CommentStyle','#');
 
 % Loop over columns.
 %   1. Set read format, numeric or string.
