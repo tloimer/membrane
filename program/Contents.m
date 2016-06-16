@@ -33,6 +33,9 @@
 %   flowsetup       - Setup flow properties.
 %   solverstruct    - Construct a solver struct.
 %
+% Data.
+%   mem_data - Properties of the Hermsdorf membranes.
+%
 % See also mstackstruct>mfluxliquid, mstackstruct>mfluxviscous,
 %          mstackstruct>mfluxknudsen, mstackstruct>printsetup,
 %          mstackstruct>plotsolution, mstackstruct>printsolution.
