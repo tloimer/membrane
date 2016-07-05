@@ -1,5 +1,5 @@
 % Flow through porous membranes
-% Version asym 02-Apr-2015
+% Version asym 04-Jul-2016
 %
 % Setup.
 %   substance     - Material properties of a substance.
@@ -15,6 +15,7 @@
 %   misotherm     - Isothermal mass flux through a homogeneous membrane.
 %   mlinear       - Mass flux from linear theory through a homogeneous membrane.
 %   calctaubeta   - Calculate tau and beta.
+%   dustygas      - Compute membrane properties from mass flux data.
 %   See also functions in MSTACKSTRUCT, see below.
 %
 % Plot.
