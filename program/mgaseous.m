@@ -58,6 +58,14 @@ presiduum = @(m) gasflow(m,T,p2,ms,solver) - p1;
 [minterval,pinterval] = findinterval(presiduum, mguess, p2-p1);
 
 m = findzero(presiduum,[minterval; pinterval],(p1-p2)/10000);
+
+% Write the solution
+if nargout > 1
+    solver.writesolution = true;
+    solver.fullsolution = true;
+    [~,ms] = gasflow(m,T,p2,ms,solver);
+    ms.m = m;
+end
 %fprintf('Mass flux guessed mguess = %g, calculated m = %g, mguess - m = %g%%\n',...
 %  mguess, m, 100*(mguess-m));
 
