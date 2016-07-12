@@ -14,6 +14,10 @@ function mems = dustygas(mem,data,Tin,sname)
 %  BETA are really computed from the dusty gas parameters K0 and B0, which
 %  are found from linear regression on the mass flow data.
 %
+%  With MEMBRANES = {MEM1 MEM2 MEM3}, the data through one membrane
+%  corresponds to the experiment  p1 - MEM1 - p2, through two membranes to
+%  p1 - MEM1 MEM2 - p2, and finally to p1 - MEM1 MEM2 MEM3 - p2.
+%
 %  If the global variable VERBOSE is greater than 0, the data and the best
 %  fit for TAU and BETA is printed.
 %
@@ -95,6 +99,8 @@ end
 %
 %   mflow L1 = a1 K01 p1 - a1 K01 p2 + b1 B01 p1^2/2 - b1 B01 p2^2/2,
 %
+%   0.5 b1 B01 p2^2 + a1 K01 p2 + mflow L1 - a1 K01 p1 - 0.5 b1 B01 p1^2 = 0,
+%
 % hence p2 is given by
 %
 %          a1 K01          a1 K01      2   2 mflow L1
@@ -118,14 +124,26 @@ end
 K0 = zeros(1,n);
 B0 = zeros(1,n);
 for j = 1:n
-    pu = p1{j}; pu'
+fprintf('Layer %d_________\n', j);
+    pu = p1{j};
+    pus = pu;
     for i = 1:j-1
-	c1 = a{j}*K0(i)./b{j}/B0(i);
-	pu = c1 + sqrt((c1 + pu).^2 - 2*m{j}*mem{i}.L./(b{j}*B0(i))); pu'
+	c1 = a{j}.*K0(i)./b{j}/B0(i);
+% DEBUG	(-c1 -  sqrt((c1 + pus).^2 - 2*m{j}.*mem{i}.L./(b{j}.*B0(i))) )'
+	pus = -c1 + sqrt((c1 + pus).^2 - 2*m{j}.*mem{i}.L./(b{j}.*B0(i)));
+% DEBUG	pus'
+	for k = 1:size(a{j},1)
+	    c1 = b{j}(k)*B0(i)*0.5;
+	    c2 = a{j}(k)*K0(i);
+	    [x1 x2] = qdrtc(c1, -c2*0.5,...
+			m{j}(k)*mem{i}.L - c2*pu(k) - c1*pu(k)^2);
+	    pu(k) = x1;		% x1 >= x2
+	    fprintf('pus = %.9g, x1 = %.9g, x2 = %.9g\n', pus(k), x1, x2);
+	end
+fprintf(' pu = %.9g; pus = %.9g\n', [pu'; pus']);
     end
 
-    pmean = 0.5*(pu + p2{j}); pmean'
-    (pu - p2{j})'
+    pmean = 0.5*(pu + p2{j}); % DEBUG	pmean'
     [hat,~,mse] = lscov([a{j} b{j}.*pmean], m{j}*mem{j}.L./(pu-p2{j}));
     K0(j) = hat(1)
     B0(j) = hat(2)

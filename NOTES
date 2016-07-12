@@ -1,0 +1,4 @@
+Für Regression an Masssenstrom-Daten eventuell ideale Gasgleichung
+durch Näherung (a) ρ = ρ₀ + ρ'(p - p₀), ρ' = M/(RT),
+(b) Virialgleichung ersetzen. Die Virialgleichung ergibt eine
+Abhängigkeit proportional p^(3/2).
