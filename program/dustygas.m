@@ -14,7 +14,14 @@ function mems = dustygas(mem,data,Tin,sname)
 %  BETA are really computed from the dusty gas parameters K0 and B0, which
 %  are found from linear regression on the mass flow data.
 %
-%  With MEMBRANES = {MEM1 MEM2 MEM3}, the data through one membrane
+%  MEMBRANES must be given in reverse, if lines with % Forward are
+%  un-commented in the source. With MEMBRANES = {MEM1 MEM2 MEM3}, the data
+%  through one membrane corresponds to the experiment p1 - MEM1 - p2,
+%  through two membranes to p1 - MEM2 MEM1 - p2, and through three membranes
+%  to p1 - MEM3 MEM2 MEM1 - p2.
+%
+%  If lines with % Backflow are un-commented, then
+%  with MEMBRANES = {MEM1 MEM2 MEM3}, the data through one membrane
 %  corresponds to the experiment  p1 - MEM1 - p2, through two membranes to
 %  p1 - MEM1 MEM2 - p2, and finally to p1 - MEM1 MEM2 MEM3 - p2.
 %
@@ -113,40 +120,44 @@ end
 %   mflow L2                   p2 + p3
 %   -------- = a2 K02 + b2 B02 -------.
 %   p2 - p3                       2
+%
+% For forward flow, if the downstream-most layer is the support layer,
+%
+%          a1 K01          a1 K01      2     2 mflow L1
+%   p1 = - ------ + sqrt( (------ + p2)   +  ---------- ).		(3)
+%          b1 B01          b1 B01              b1 B01
 
 
 % p1 ... upstream pressure,
 % pu ... pressure upstream of the layer to be determined
 % p2 ... downstream pressure
-%   p1  ...properties known ... pu              p2
-%      | layer 1 | layer 2 | ... |  last layer 4 |
+%   p1  ...properties known ... pu               p2
+%      | layer 1 | layer 2 | ... |  last layer |
+%
+% Forward flow
+% pu ... pressure _downstream_ of the layer to be determined
+%    p1            pu  ...properties known ...   p2
+%      | last layer | ... | layer 2 |  layer 1 |
 
 K0 = zeros(1,n);
 B0 = zeros(1,n);
 for j = 1:n
-fprintf('Layer %d_________\n', j);
-    pu = p1{j};
-    pus = pu;
+%fprintf('\n\n #### Membrane %d ####\n\n', j);		% DEBUG
+%    pu = p1{j};		% Backward
+    pu = p2{j};			% Forward
     for i = 1:j-1
 	c1 = a{j}.*K0(i)./b{j}/B0(i);
-% DEBUG	(-c1 -  sqrt((c1 + pus).^2 - 2*m{j}.*mem{i}.L./(b{j}.*B0(i))) )'
-	pus = -c1 + sqrt((c1 + pus).^2 - 2*m{j}.*mem{i}.L./(b{j}.*B0(i)));
-% DEBUG	pus'
-	for k = 1:size(a{j},1)
-	    c1 = b{j}(k)*B0(i)*0.5;
-	    c2 = a{j}(k)*K0(i);
-	    [x1 x2] = qdrtc(c1, -c2*0.5,...
-			m{j}(k)*mem{i}.L - c2*pu(k) - c1*pu(k)^2);
-	    pu(k) = x1;		% x1 >= x2
-	    fprintf('pus = %.9g, x1 = %.9g, x2 = %.9g\n', pus(k), x1, x2);
-	end
-fprintf(' pu = %.9g; pus = %.9g\n', [pu'; pus']);
+%	pu = -c1 + sqrt((c1 + pu).^2 - 2*m{j}.*mem{i}.L./(b{j}.*B0(i))); % Back
+	pu = -c1 + sqrt((c1 + pu).^2 + 2*m{j}.*mem{i}.L./(b{j}.*B0(i))); % Forw
     end
 
-    pmean = 0.5*(pu + p2{j}); % DEBUG	pmean'
-    [hat,~,mse] = lscov([a{j} b{j}.*pmean], m{j}*mem{j}.L./(pu-p2{j}));
-    K0(j) = hat(1)
-    B0(j) = hat(2)
+%    pmean = 0.5*(pu + p2{j});				% Backward
+%    [hat,~,mse] = lscov([a{j} b{j}.*pmean], m{j}*mem{j}.L./(pu-p2{j}));
+    pmean = 0.5*(pu + p1{j});				% Forward
+    [hat,~,mse] = lscov([a{j} b{j}.*pmean], m{j}*mem{j}.L./(p1{j}-pu));
+    K0(j) = hat(1);
+    B0(j) = hat(2);
+%fprintf(' K0(%d) = %.6g, B0(%d) = %.6g\n', j, K0(j), j, B0(j));	% DEBUG
     if VERBOSE > 0
 	pdelta = 0.05*(max(pmean) - min(pmean));
 	pm = (min(pmean)-pdelta:pdelta:max(pmean)+1.1*pdelta)';
@@ -160,7 +171,10 @@ fprintf(' pu = %.9g; pus = %.9g\n', [pu'; pus']);
 	conf_mean = @(xp) sqrt(mse*(1/N + (xp-meanp).^2/(N-1)/varp));
 	conf_ind = @(xp) sqrt(mse*(1 + 1/N + (xp-meanp).^2/(N-1)/varp));
 	figure('Name',sprintf('Layer %d',j));
-	plot(pmean*1e-5, m{j}*mem{j}.L./(pu-p2{j}), 'ok', pm*1e-5, mhat,'-', ...
+% Backward
+%	plot(pmean*1e-5, m{j}*mem{j}.L./(pu-p2{j}), 'ok', pm*1e-5, mhat,'-', ...
+% Forward
+	plot(pmean*1e-5, m{j}*mem{j}.L./(p1{j}-pu), 'ok', pm*1e-5, mhat,'-', ...
 	    [pm;NaN;pm]*1e-5, [mhat;NaN;mhat] + tinv(0.975,N-2)...
 		* [conf_mean(pm); NaN; -conf_mean(pm)], '--', ...
 	    [pm;NaN;pm]*1e-5, [mhat;NaN;mhat] + tinv(0.975,N-2)...

@@ -1,0 +1,15 @@
+2ptsqdrtc.log	Tested zwei exakte Punkte, quadratische Gleichung mit 
+	Algorithmus von Kahan (2004) gelöst - max 0.7% Abweichung in beta.
+	Noch reverse flow - p1 - mem1 (support) mem2 mem3 ..etc - p2.
+	Membranen werden downstream zugefügt.
+
+Test mit 6 Punkten, exakt: Abweichung in beta < 0.5%, kappa < 0.14%.
+
+testdustygas.log	Test membrane in forward direction,
+	p1 - interm. layer - support - p2,
+	p1 - sep. layer ... interm. layer - support - p2
+	First with two exact points, then with 6 exact points, finally with
+	6 randomized points.
+	Mit 2 Punkten: beta max 0.7%, kappa 0.13% Abweichung.
+	Mit 6 Punkten: beta max 0.5%, kappa 0.13% Abweichung.
+	6 randomized : Ouh, terribly, immediately completely wrong.

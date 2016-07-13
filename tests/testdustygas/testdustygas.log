@@ -1,0 +1,284 @@
+% Logged on 2017-07-13
+>> testdustygas
+Fluid: nitrogen, mass flux 182.1 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 225 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -0.082 Pa (-3.6e-07 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 225 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 175 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 175 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 262.1 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 325 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -0.063 Pa (-1.9e-07 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 325 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 275 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 275 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 160 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 225 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -2 Pa (-8.8e-06 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 225 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 219 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 219 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 175 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 175 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 228.2 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 325 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -1.1 Pa (-3.3e-06 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 325 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 319 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 319 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 275 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 275 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 121.4 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 225 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = 0.00011 Pa (5e-10 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 225 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 214 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 214 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 210 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 210 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 175 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 175 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 167.6 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 325 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = 4e-05 Pa (1.2e-10 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 325 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 312 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 312 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 308 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 308 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 275 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 275 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 54.89 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 225 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -0.002 Pa (-9e-09 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 225 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 100 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 199 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 199 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 193 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 193 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 191 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 191 kPa, pred = 0.00, gaseous
+    Layer 4: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 175 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 175 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 66.97 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 325 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = 0.0015 Pa (4.7e-09 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 325 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 100 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 296 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 296 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 290 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 290 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 289 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 289 kPa, pred = 0.00, gaseous
+    Layer 4: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 275 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 275 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 26.52 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 225 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = -0.0014 Pa (-6.1e-09 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 225 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 30 nm, L = 0.005 mm, km = 11.8 W/mK, theta = 0°.
+                    T = +0.00 K, p = 200 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 200 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 100 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 187 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 187 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 184 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 184 kPa, pred = 0.00, gaseous
+    Layer 4: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 183 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 183 kPa, pred = 0.00, gaseous
+    Layer 5: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 175 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 175 kPa (psat = Inf kPa, pred = 0.00).
+Fluid: nitrogen, mass flux 29.72 g/m2s, p1 - p2 = 50 kPa.
+Upstream state: T1 = 293.15 K, p1 = 325 kPa (psat = Inf kPa, pred = 0.00).
+
+Iteration accuracy: p1 - p1calc = 2.1e-05 Pa (6.4e-11 p1),
+                    T1 - T1calc = 0 K (NaN(T1-T2)).
+
+______ Membrane 1_______________________________________________________
+                    T = +0.00 K, p = 325 kPa, pred = 0.00, gaseous
+    Layer 1: dia = 30 nm, L = 0.005 mm, km = 11.8 W/mK, theta = 0°.
+                    T = +0.00 K, p = 298 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 298 kPa, pred = 0.00, gaseous
+    Layer 2: dia = 100 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 284 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 284 kPa, pred = 0.00, gaseous
+    Layer 3: dia = 400 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 282 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 282 kPa, pred = 0.00, gaseous
+    Layer 4: dia = 800 nm, L = 0.025 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 281 kPa, pred = 0.00, gaseous
+    --------------------------------------------------------------------
+                    T = +0.00 K, p = 281 kPa, pred = 0.00, gaseous
+    Layer 5: dia = 2500 nm, L = 1 mm, km = 30 W/mK, theta = 0°.
+                    T = +0.00 K, p = 275 kPa, pred = 0.00, gaseous
+________________________________________________________________________
+
+Downstream state: T2 = 293.15 K, p2 = 275 kPa (psat = Inf kPa, pred = 0.00).
+Membrane 1, L =1000 mum, dia =2500 nm, tau = 4.80, beta = 7.1.
+  Given: kappa = B0 = 2.4414e-14, K0 = 6.1263e-08
+  Calc.: kappa = B0 = 2.4444e-14, K0 = 6.0938e-08,  tau = 4.794, beta = 7.054
+Changes: kappa = 0.123%, K0 = -0.531%, tau = -0.123%, beta = -0.654%.
+Membrane 2, L =  25 mum, dia = 800 nm, tau = 3.05, beta = 9.5.
+  Given: kappa = B0 = 3.2787e-15, K0 = 3.4401e-08
+  Calc.: kappa = B0 = 3.2812e-15, K0 = 3.4424e-08,  tau = 3.048, beta = 9.499
+Changes: kappa = 0.0759%, K0 = 0.0661%, tau = -0.0759%, beta = -0.00979%.
+Membrane 3, L =  25 mum, dia = 400 nm, tau = 2.66, beta = 9.1.
+  Given: kappa = B0 = 9.3985e-16, K0 = 1.8892e-08
+  Calc.: kappa = B0 = 9.4121e-16, K0 = 1.887e-08,  tau = 2.656, beta = 9.076
+Changes: kappa = 0.145%, K0 = -0.116%, tau = -0.144%, beta = -0.26%.
+Membrane 4, L =  25 mum, dia = 100 nm, tau = 1.60, beta = 8.3.
+  Given: kappa = B0 = 7.8125e-17, K0 = 5.7294e-09
+  Calc.: kappa = B0 = 7.8212e-17, K0 = 5.7286e-09,  tau = 1.598, beta = 8.290
+Changes: kappa = 0.111%, K0 = -0.0142%, tau = -0.111%, beta = -0.125%.
+Membrane 5, L =   5 mum, dia =  30 nm, tau = 3.00, beta = 8.1.
+  Given: kappa = B0 = 2.8125e-18, K0 = 6.7096e-10
+  Calc.: kappa = B0 = 2.8155e-18, K0 = 6.7094e-10,  tau = 2.997, beta = 8.091
+Changes: kappa = 0.105%, K0 = -0.0038%, tau = -0.105%, beta = -0.109%.
+>> %
+>> % 6 points
+>> %
+>> clear all
+>> testdustygas
+Membrane 1, L =1000 mum, dia =2500 nm, tau = 4.80, beta = 7.1.
+  Given: kappa = B0 = 2.4414e-14, K0 = 6.1263e-08
+  Calc.: kappa = B0 = 2.4438e-14, K0 = 6.1073e-08,  tau = 4.795, beta = 7.071
+Changes: kappa = 0.0983%, K0 = -0.31%, tau = -0.0982%, beta = -0.408%.
+Membrane 2, L =  25 mum, dia = 800 nm, tau = 3.05, beta = 9.5.
+  Given: kappa = B0 = 3.2787e-15, K0 = 3.4401e-08
+  Calc.: kappa = B0 = 3.279e-15, K0 = 3.4473e-08,  tau = 3.050, beta = 9.519
+Changes: kappa = 0.00891%, K0 = 0.209%, tau = -0.00891%, beta = 0.201%.
+Membrane 3, L =  25 mum, dia = 400 nm, tau = 2.66, beta = 9.1.
+  Given: kappa = B0 = 9.3985e-16, K0 = 1.8892e-08
+  Calc.: kappa = B0 = 9.4099e-16, K0 = 1.8875e-08,  tau = 2.657, beta = 9.081
+Changes: kappa = 0.121%, K0 = -0.0934%, tau = -0.121%, beta = -0.214%.
+Membrane 4, L =  25 mum, dia = 100 nm, tau = 1.60, beta = 8.3.
+  Given: kappa = B0 = 7.8125e-17, K0 = 5.7294e-09
+  Calc.: kappa = B0 = 7.8178e-17, K0 = 5.7293e-09,  tau = 1.599, beta = 8.294
+Changes: kappa = 0.0678%, K0 = -0.00204%, tau = -0.0678%, beta = -0.0698%.
+Membrane 5, L =   5 mum, dia =  30 nm, tau = 3.00, beta = 8.1.
+  Given: kappa = B0 = 2.8125e-18, K0 = 6.7096e-10
+  Calc.: kappa = B0 = 2.8141e-18, K0 = 6.7096e-10,  tau = 2.998, beta = 8.095
+Changes: kappa = 0.0562%, K0 = 0.000155%, tau = -0.0562%, beta = -0.0561%.
+>> close all 
+>> clear all
+>> %
+>> % 6 points with random noise
+>> %
+>> testdustygas 
+Membrane 1, L =1000 mum, dia =2500 nm, tau = 4.80, beta = 7.1.
+  Given: kappa = B0 = 2.4414e-14, K0 = 6.1263e-08
+  Calc.: kappa = B0 = 2.6045e-14, K0 = 3.5789e-08,  tau = 4.499, beta = 3.888
+Changes: kappa = 6.68%, K0 = -41.6%, tau = -6.26%, beta = -45.2%.
+Membrane 2, L =  25 mum, dia = 800 nm, tau = 3.05, beta = 9.5.
+  Given: kappa = B0 = 3.2787e-15, K0 = 3.4401e-08
+  Calc.: kappa = B0 = 1.7446e-15, K0 = 7.0989e-08,  tau = 5.732, beta = 36.842
+Changes: kappa = -46.8%, K0 = 106%, tau = 87.9%, beta = 288%.
+Membrane 3, L =  25 mum, dia = 400 nm, tau = 2.66, beta = 9.1.
+  Given: kappa = B0 = 9.3985e-16, K0 = 1.8892e-08
+  Calc.: kappa = B0 = -2.8806e-17, K0 = 3.9319e-08,  tau = -86.787, beta = -617.928
+Changes: kappa = -103%, K0 = 108%, tau = -3.36e+03%, beta = -6.89e+03%.
+Membrane 4, L =  25 mum, dia = 100 nm, tau = 1.60, beta = 8.3.
+  Given: kappa = B0 = 7.8125e-17, K0 = 5.7294e-09
+  Calc.: kappa = B0 = -6.3238e-18, K0 = 8.6329e-09,  tau = -19.766, beta = -154.502
+Changes: kappa = -108%, K0 = 50.7%, tau = -1.34e+03%, beta = -1.96e+03%.
+Membrane 5, L =   5 mum, dia =  30 nm, tau = 3.00, beta = 8.1.
+  Given: kappa = B0 = 2.8125e-18, K0 = 6.7096e-10
+  Calc.: kappa = B0 = -2.9134e-19, K0 = 3.9743e-10,  tau = -28.961, beta = -46.317
+Changes: kappa = -110%, K0 = -40.8%, tau = -1.07e+03%, beta = -672%.
+>> 

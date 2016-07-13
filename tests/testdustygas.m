@@ -13,8 +13,7 @@ l3 = membrane(0.4e-6,	0.5,	30,	'tube',	2.66,	9.1,	25e-6);
 l4 = membrane(0.1e-6,	0.4,	30,	'tube',	1.6,	8.3,	25e-6);
 l5 = membrane(30e-9,	0.3,	11.8,	'tube',	3,	8.1,	5e-6);
 
-mems = {l1 l2 l3 l4 l5}; % Forward
-%mems = {l5 l4 l3 l2 l1}; % backward
+mems = {l1 l2 l3 l4 l5};
 n = length(mems);
 
 f = fmodel('emt');
@@ -32,8 +31,8 @@ mb{2} = mstackstruct(theta, {{l1 l2}}, f);
 mb{3} = mstackstruct(theta, {{l1 l2 l3}}, f);
 mb{4} = mstackstruct(theta, {{l1 l2 l3 l4}}, f);
 
-%pm = [1:0.4:3]*1e5;
-pm = [2 3]*1e5;
+pm = [1:0.4:3]*1e5;
+%pm = [2 3]*1e5;
 dp = 0.5e5;
 N = size(pm,2);
 mnum = zeros(n,N);
@@ -41,15 +40,15 @@ mr = zeros(n,N);
 
 for j = 1:n % or parfor?
     for i = 1:N
-	[mnum(j,i) mb{j}] = mgaseous(T1, pm(i)+0.5*dp, pm(i)-0.5*dp, s, mb{j});
-	mb{1}.printsolution(mb{j});
+	[mnum(j,i) mf{j}] = mgaseous(T1, pm(i)+0.5*dp, pm(i)-0.5*dp, s, mf{j});
+	%mf{1}.printsolution(mf{j});
     end
 end
 
 % Now, randomize the data.
 u = -1 + 2*rand(n,N);
 % Or, for debugging, rather not
-u = zeros(size(u));
+%u = zeros(size(u));
 
 for j = 1:n
     mstd = mnum(j,1)*0.1;
