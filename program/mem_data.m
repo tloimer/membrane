@@ -5,7 +5,7 @@ function [mf,mb] = mem_data(name)
 %
 %  [MF,MB] = MEM_DATA(NAME) returns the memstackstructs MF and MB for
 %  forward and backward flow.
-% 
+%
 %  If the global variable VERBOSE is greater than zero, the membrane
 %  properties are displayed.
 %

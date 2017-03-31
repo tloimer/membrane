@@ -65,8 +65,8 @@ a = A(k) ;  b = B(k) ;  c = C(k) ;
 p = b.*b ;  q = a.*c ;  n = length(a) ;
 dp = p ;  dq = q ;  %... allocate memory.
 if  (AS > 2)  %...  Use the hardware's Fused Multiply-Add
-    if rl,  for  j = 1:n 
-       dp(j) = [b(j), p(j)]*[b(j); -1] ;  
+    if rl,  for  j = 1:n
+       dp(j) = [b(j), p(j)]*[b(j); -1] ;
    dq(j) = [a(j), q(j)]*[c(j); -1] ; end
       d = (p-q) + (dp-dq) ;  end
   else  %...  Break operands into half-width fragments

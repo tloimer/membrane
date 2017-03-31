@@ -57,7 +57,7 @@ function ms = mstackstruct(theta,mem,f)
 %           MSTACKSTRUCT>WRITEFLOWSETUPS, MSTACKSTRUCT>MFLUXVISCOUS,
 %           MSTACKSTRUCT>MFLUXLIQUID, MSTACKSTRUCT>MFLUXKNUDSEN,
 %           MSTACKSTRUCT>PRINTSETUP, MSTACKSTRUCT>PRINTSOLUTION,
-%           MSTACKSTRUCT>PLOTSOLUTION, MSTACKSTRUCT>PLOTT, 
+%           MSTACKSTRUCT>PLOTSOLUTION, MSTACKSTRUCT>PLOTT,
 
 %  To plot the upstream boundary layer, for the z-coordinate use the
 %  transformation (from FLOW12.m)
