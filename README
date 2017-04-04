@@ -7,14 +7,13 @@ matlab &
 
 Go up hacking:
 
-$ mkdir /tmp/aa; cd ~/asym/matlab
-$ cp -a * /tmp/aa
+$ cp -a ~/asym/matlab /tmp/aa
 $ cd /tmp/aa
-$ rm -r tests/12*
+$ rm tests/*.eps
+with /tmp/aa/.git containing: "gitdir: /home/tloimer/matlab.git",
+git should be fine; otherwise, do
 $ git init --separate-git-dir ~/matlab.git
-$ .
-$ .
-$ .
+
 $ git status; git log; git show; git diff; git diff --cached;
 $ git log --oneline --graph --decorate --all -40
 
