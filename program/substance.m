@@ -11,6 +11,7 @@ function s = substance(name)
 %  Variables:
 %    S.name         Name of the substance
 %    S.R            Specific gas constant [J/kgK]
+%    S.M            Molar mass  [kg/kmol]
 %  Functions, material properties:
 %    S.ps(T)        Saturation pressure [Pa], or array [ps dps/dT]
 %    S.Ts(p)        Saturation temperature [K]
@@ -67,9 +68,9 @@ function s = substance(name)
 
 % Struct constructor. No need to be pedantic here. If not present, struct fields
 % are added by assignment anyway.
-s = struct('name',name,'R',[],'ps',[],'Ts',[],'rho',[],'v',[],'hvap',[], ...
-  'cpg',[],'mul',[],'mug',[],'kg',[],'kl',[],'cpl',[],'sigma',[],'jt',[], ...
-  'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],'intcpl',[], ...
+s = struct('name',name,'R',[],'M',[],'ps',[],'Ts',[],'rho',[],'v',[],...
+  'hvap',[],'cpg',[],'mul',[],'mug',[],'kg',[],'kl',[],'cpl',[],'sigma',[],...
+  'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],'intcpl',[], ...
   'nul',[],'nug',[]);
 
 % universal gas constant
@@ -808,6 +809,7 @@ end
 
 % thermic equations of state
 s.R = R/M;
+s.M = M;
 s.ps = @(T) ps(Acoeffs,T);
 s.Ts = @(p) Ts(Acoeffs,p);
 s.rho = @(T) genericfunc(rhocoeffs,rhofun,T);
