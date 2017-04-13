@@ -25,6 +25,7 @@ function s = substance(name)
 %    S.kl(T)        Thermal conductivity of the liquid [W/mK]
 %    S.cpl(T)       Specific heat capacity at const. pressure of liquid [J/kgK]
 %    S.sigma(T)     Surface tension [N/m]
+%    S.kelveq(T,sig,rho,curv)  Equilibrium pressure at curved interface / psat
 %  Functions depending (internally) on functions above:
 %    S.jt(T,p)      Joule-Thomson coefficient [K/Pa]
 %    S.dhdp(T,p)    Derivative of the specific enthalpy of the gas [m^3/kg]
@@ -70,8 +71,8 @@ function s = substance(name)
 % are added by assignment anyway.
 s = struct('name',name,'R',[],'M',[],'ps',[],'Ts',[],'rho',[],'v',[],...
   'hvap',[],'cpg',[],'mul',[],'mug',[],'kg',[],'kl',[],'cpl',[],'sigma',[],...
-  'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],'intcpl',[], ...
-  'nul',[],'nug',[]);
+  'kelveq',[],'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],...
+  'intcpl',[],'nul',[],'nug',[]);
 
 % universal gas constant
 R = 8314.4; % J/kmolK
@@ -827,6 +828,7 @@ s.kg = @(T) kgfun(kgcoeffs,T);
 s.kl = @(T) klfun(klcoeffs,T);
 s.cpl = @(T) cplfun(cplcoeffs,T);
 s.sigma = @(T) sigfun(sigcoeffs,T);
+s.kelveq = @(T,sig,rho,curv) exp(-curv.*sig./(s.R.*rho.*T));
 % Derivatives of the thermic equation of state which are equal to
 % derivatives of caloric properties are computed in the function virial.
 % These helper functions extract the information from the function virial.
