@@ -20,6 +20,7 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
 %    FS.hgK(T)            Specific enthalpy of the vapor, h(T,pk(T))
 %    FS.hvapK(T)          Enthalpy of vaporization [J/kg]
 %    FS.hvapKraw(T,...)   Enthalpy of vaporization [J/kg]
+%    FS.kappal(T)         Critical pores size [kappal diameter kappac]
 %    FS.q2ph(m,T,a)       Heat flux, and two-phase pressure in two-phase flow
 %    FS.qminqmax(m,T)     Minimum and maximum heat flux for vapor and liquid
 %    FS.intdhdpdpsatdT(T) Int_T2^Tmax dh/dp dpsat/dT dT
@@ -35,8 +36,8 @@ function flsetup = flowsetup(T2,Tmax,theta,s,mem,f)
 %  See also SUBSTANCE, MEMBRANE, MSTACKSTRUCT, FMODEL.
 
 flsetup = struct('curv',[],'kelv',[],'pkps',[],'pkelv',[],'pkpcap',[],...
-  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'q2ph',[],'qminqmax',[],...
-  'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],'nu2ph',[],...
+  'dpkdT',[],'hgK',[],'hvapK',[],'hvapKraw',[],'kappal',[],'q2ph',[],...
+  'qminqmax',[],'intdhdpdpsatdT',[],'nuapp',[],'knudsen',[],'nu2ph',[],...
   'kmgas',[],'kmliq',[],'k2ph',[],'xdot',[],'odemaxstep',[]);
 
 % set for free space
@@ -126,6 +127,7 @@ flsetup.pkpcap = @pkpcap;
 flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
 flsetup.hvapKraw = @hvapKraw;
+flsetup.kappal = @kappal;
 flsetup.q2ph = @q2ph; % Also works in free space or for theta = 90.
 flsetup.qminqmax = @qminqmax;
 % solhhK needs to exist, to be 'deval'uated
@@ -171,7 +173,7 @@ function dh = intdhdpdpsdT(T,h)
   % calculate the term
   %   T2_int^T dh/dp dpsat/dT' dT'
   % in the liquid phase, hence dh/dp = v - Tdv/dT = 1/rho + (T/rho^2) drho/dT.
-  [drho rho] = s.drho(T); [ps dps] = s.ps(T);
+  [drho, rho] = s.drho(T); [~, dps] = s.ps(T);
   dh = dps*(1+T*drho)/rho;
 end
 
@@ -199,14 +201,14 @@ infinity = Inf;
 nix = 0;
 end %--------------------------------------------------------------- end Infzero
 
-function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
+function [dpk, pk] = dpkdT(T) %------------------------------------------- dpkdT
 %DPKDT      Derivative of the equilibrium pressure at a curved meniscus, dpk/dT.
 % [DPK PK] = DPKDT(T) returns pk and dpk/dT. A copy from HVAPK, for convenience.
 
 % See below.
-[psat dps] = s.ps(T);
-[dsig sigma] = s.dsig(T);
-[drho rho] = s.drho(T);
+[psat, dps] = s.ps(T);
+[dsig, sigma] = s.dsig(T);
+[drho, rho] = s.drho(T);
 pk_ps = s.kelveq(T,sigma,rho,flsetup.curv);
 pk = pk_ps*psat;
 dpk = pk_ps * (dps + psat*flsetup.curv*sigma*(1/T-dsig+drho)/(s.R*rho*T));
@@ -216,7 +218,7 @@ function [dps, psat] = dpsatdT(T) %------------------------------------- dpsatdT
 [psat, dps] = s.ps(T);
 end %--------------------------------------------------------------- end dpsatdT
 
-function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
+function [pk, dpk, hvapK, dpcap, pcap] = hvapK(T) %----------------------- hvapK
 %HVAPK      Enthalpy of vaporization at a curved interface.
 % [PK DPK HVK DPCAP PCAP] = HVAPK(T) returns the enthalpy of vaporization,
 % the vapor pressure, the derivatives of the vapor pressure and the capillary
@@ -229,9 +231,9 @@ function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 % HVK: See Eq. (14) in [Loimer, Proc. STAMM 2004; Wang, Hutter (eds.), Trends in
 % Applications of Mathematics to Mechanics, 247-256, Shaker (2005)].
 % With dh/dp = v - T dv/dT.
-[psat dps] = s.ps(T);
-[dsig sigma] = s.dsig(T);
-[drho rho] = s.drho(T);
+[psat, dps] = s.ps(T);
+[dsig, sigma] = s.dsig(T);
+[drho, rho] = s.drho(T);
 pk_ps = s.kelveq(T,sigma,rho,flsetup.curv);
 pk = pk_ps*psat;
 pcap = flsetup.curv*sigma;
@@ -241,8 +243,8 @@ dpk = pk_ps * (dps + psat*pcap*(1/T-dsig+drho)/(s.R*rho*T));
 hvapK = flsetup.hvapKraw(T,pk,psat,pcap,rho,drho);
 end %----------------------------------------------------------------- end hvapK
 
-function [psat dps hvapK dpcap pcap] = hvapsat(T) %--------------------- hvapsat
-[psat dps] = s.ps(T);
+function [psat, dps, hvapK, dpcap, pcap] = hvapsat(T) %----------------- hvapsat
+[psat, dps] = s.ps(T);
 pcap = 0;
 dpcap = 0;
 hvapK = s.hvap(T);
@@ -253,14 +255,29 @@ function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
 end %-------------------------------------------------------------- end hvapKraw
 
-function [kappal dial] = kappal(T) %------------------------------------- kappal
-	nulxkml = s.nul(T) * flsetup.kmliq(T);
+function [kappal, dial, kappac] = kappal(T) %---------------------------- kappal
+	nulxkml = s.nul(T) .* flsetup.kmliq(T);
 	savecurv = flsetup.curv;
 	% get the inverse proportionality between flsetup.curv and dia
 	% See M.fcurv in membrane.m.
-	% flsetup.curv = curv_dia/dia;
-	curv_dia = flsetup.curv * mem.dia;
-
+	% flsetup.curv = curv_dia / dia;
+	curv_dia = flsetup.curv .* mem.dia;
+	% kappa is proportional to diameter^2
+	% kappa = fk * dia^2
+	fk = mem.kappa ./ mem.dia.^2;
+	function res = reskappa(dia)
+	% res = kappal(dia)/(fk*dia^2) - 1;
+		flsetup.curv = curv_dia ./ dia;
+		[~,dpk,hvapK,dpcap,~] = flsetup.hvapK(T);
+		kappal = nulxkml./(hvapK.*(dpk - dpcap));
+		res = kappal ./ (fk .* dia.^2) - 1;
+	end
+	[~,dps] = s.ps(T);
+	kappac = nulxkml./(s.hvap(T)*dps);
+	dial = fzero(@reskappa, mem.fdia(kappac,mem.epsilon));
+	kappal = fk .* dial.^2;
+	% Reset curvature
+	flsetup.curv = savecurv;
 end %---------------------------------------------------------------- end kappal
 
 function [q,p2ph,pk,pcap] = q2ph(m,T,a) %---------------------------------- q2ph
