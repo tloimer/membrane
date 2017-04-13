@@ -117,11 +117,11 @@ if theta == 90 || isfreespace || issupercritical
   % do not return for theta = 90
 else
   flsetup.curv = mem.fcurv(cos(theta*pi/180));
-  flsetup.kelv = @(T,sigma,rho) exp(-flsetup.curv.*sigma./(s.R.*rho.*T));
+  flsetup.kelv = @(T,sigma,rho) s.kelveq(T,sigma,rho,flsetup.curv);
 end
 
-flsetup.pkps = @(T) flsetup.kelv(T,s.sigma(T),s.rho(T));
-flsetup.pkelv = @(T) s.ps(T)*flsetup.kelv(T,s.sigma(T),s.rho(T));
+flsetup.pkps = @(T)	s.kelveq(T,s.sigma(T),s.rho(T),flsetup.curv);
+flsetup.pkelv = @(T)	s.ps(T)*s.kelveq(T,s.sigma(T),s.rho(T),flsetup.curv);
 flsetup.pkpcap = @pkpcap;
 flsetup.dpkdT = @dpkdT;
 flsetup.hvapK = @hvapK;
@@ -185,7 +185,7 @@ function [pk, pcap] = pkpcap(T) %---------------------------------------- pkpcap
 % [PK, PCAP] = PKPCAP(T) returns the equilibrium pressure at a curved meniscus,
 % PK, and the capillary pressure due to Young's-Laplace equation.
 sigma = s.sigma(T);
-pk = s.ps(T)*flsetup.kelv(T,sigma,s.rho(T));
+pk = s.ps(T)*s.kelveq(T,sigma,s.rho(T),flsetup.curv);
 pcap = flsetup.curv*sigma;
 end %---------------------------------------------------------------- end pkpcap
 
@@ -207,7 +207,7 @@ function [dpk pk] = dpkdT(T) %-------------------------------------------- dpkdT
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
 [drho rho] = s.drho(T);
-pk_ps = flsetup.kelv(T,sigma,rho);
+pk_ps = s.kelveq(T,sigma,rho,flsetup.curv);
 pk = pk_ps*psat;
 dpk = pk_ps * (dps + psat*flsetup.curv*sigma*(1/T-dsig+drho)/(s.R*rho*T));
 end %----------------------------------------------------------------- end dpkdT
@@ -232,7 +232,7 @@ function [pk dpk hvapK dpcap pcap] = hvapK(T) %--------------------------- hvapK
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
 [drho rho] = s.drho(T);
-pk_ps = flsetup.kelv(T,sigma,rho);
+pk_ps = s.kelveq(T,sigma,rho,flsetup.curv);
 pk = pk_ps*psat;
 pcap = flsetup.curv*sigma;
 dpcap = pcap*dsig;
@@ -253,6 +253,16 @@ function hvK = hvapKraw(T,prad,psat,pcap,rho,drho) %------------------- hvapKraw
   hvK = s.hvap(T) + (prad-psat)*(s.dhdp(T,prad)-dhldp) + dhldp*pcap;
 end %-------------------------------------------------------------- end hvapKraw
 
+function [kappal dial] = kappal(T) %------------------------------------- kappal
+	nulxkml = s.nul(T) * flsetup.kmliq(T);
+	savecurv = flsetup.curv;
+	% get the inverse proportionality between flsetup.curv and dia
+	% See M.fcurv in membrane.m.
+	% flsetup.curv = curv_dia/dia;
+	curv_dia = flsetup.curv * mem.dia;
+
+end %---------------------------------------------------------------- end kappal
+
 function [q,p2ph,pk,pcap] = q2ph(m,T,a) %---------------------------------- q2ph
 %Q2PH       Heat flux in two-phase flow.
 %  [Q,P2PH,PK,PCAP] = Q2PH(M,T,A) Return heat flux Q [W/m2], two-phase pressure
@@ -263,7 +273,7 @@ function [q,p2ph,pk,pcap] = q2ph(m,T,a) %---------------------------------- q2ph
 [psat dps] = s.ps(T);
 [dsig sigma] = s.dsig(T);
 [drho rho] = s.drho(T);
-pk_ps = flsetup.kelv(T,sigma,rho);
+pk_ps = s.kelveq(T,sigma,rho,flsetup.curv);
 pk = pk_ps*psat;
 pcap = flsetup.curv*sigma;
 dpcap = pcap*dsig;
