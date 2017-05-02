@@ -84,6 +84,13 @@ switch cond
         % Boundary between external and internal porous media
         keff = @(eps,km,kf) 0.25*((3*eps-1).*kf + (3*(1-eps)-1).*km...
             + sqrt(((3*eps-1).*kf + (3*(1-eps)-1).*km).^2 + 8*km.*kf));
+	% To test for equality between eq. (7) and (8), ibid,
+	% it is really (1/4)(...), not 1/(4*(...)), try mathematica:
+	% Solve[(1 - n2) (k1 - ke)/(k1 + 2*ke) + n2 (k2 - ke)/(k2 + 2*ke) == 0
+	%	&& k1 > 0 && k2 > 0 && n2 > 0 && n2 < 1, ke, Reals]
+	% (1/4) ((3 n2 - 1) k2 + (3 (1 - n2) - 1) k1 +
+	%	sqrt[((3 n2 - 1) k2 + (3 (1 - n2) - 1) k1)^2 + 8 k1 k2]) == %
+	% Test the expression under the sqrt() separately.
     otherwise
         error('Effective thermal conductivity model %s not supported',...
             cond);
