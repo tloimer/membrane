@@ -505,12 +505,16 @@ function [T9,p9,q9,z9,flow,vapliqequilibrium] = integratevapor(m,T2,p2,q2,...
 %pdarcy = m*s.nug(T2,p2)*mem.L/mem.kappa;
 pdarcy = m*fs.nuapp(T2,p2)*mem.L/mem.kappa;
 pscale = min(s.ps(T2) - p2,pdarcy);
-%[dhdp2 cpg2] = s.dhcpg(T2,p2); % s.dhdp
-dhdp2 = s.dhdp(T2,p2);
+[dhdp2 cpg2] = s.dhcpg(T2,p2);
+%dhdp2 = s.dhdp(T2,p2);
 qscale = -m*dhdp2*pscale;
 deltazw = pscale/pdarcy; % = 1 if pscale = pdarcy
 Tscale = qscale*mem.L*deltazw/mem.km;
 step92 = -min(solver.odemaxstep(pscale,solver.maxpperstep),solver.maxpperstep/pdarcy);
+% The length scale on which the temperature varies is k/(m cp),
+% This was necessary for large mass fluxes, e.g., the solution for the flow of
+% nitrogen through the cotton plug used by Thomson (1853).
+init92 = -min(-step92, fs.kmgas(T2)/(mem.L*m*cpg2));
 % functions to re-calculate dimensional values
 mkTdim = @(Tw) Tscale.*Tw + T2;
 mkpdim = @(pw) pscale.*pw + p2;
@@ -528,7 +532,7 @@ coeff3 = m*mem.L/coeff2;
 %T2w = 0; p2w = 0; z2w = 1;
 q2w = q2/qscale; % q2w = 0;
 options=odeset('Events',@term92w,...%'AbsTol',atol*[1 1 -coeff1*cpg2],...
-  'RelTol',solver.rtol,'Refine',1,'InitialStep',step92,'MaxStep',step92);
+  'RelTol',solver.rtol,'Refine',1,'InitialStep',init92,'MaxStep',step92);
 %sol92 = ode45(@int92w,[z2w 0],[T2w p2w q2w],options);
 sol92 = ode45(@int92w,[1 0],[0 0 q2w],options);
 
