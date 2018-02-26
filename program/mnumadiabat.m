@@ -45,6 +45,8 @@ presiduum = @(m) asym(m,state2,ms,solver) - p1;
 % flows - but then, the achieved temperatures might be too high, out of range
 if isfield(ms,'mguess') && isscalar(ms.mguess) && ~isempty(ms.mguess)
   mguess = ms.mguess;
+elseif isinf(s.ps(T1)) % above the critical temperature
+  mguess = ms.mfluxknudsen(T1,p1,p2,s,ms) + ms.mfluxviscous(T1,p1,p2,s,ms);
 else
   mguess = ms.mfluxliquid(T1,p1,p2,s,ms);
 end

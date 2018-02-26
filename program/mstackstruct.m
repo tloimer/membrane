@@ -186,16 +186,11 @@ for i = 1:length(ms.membrane)
 		 /ms.membrane(i).layer(j).matrix.kappa;
   end
 end
-try
-  m = (p1-p2)/s.nul(T1)/sumL_kappa; % = (p1-p2)/(s.nul(T1)*sumL_kappa)
-catch err
-  if strcmp(err.identifier,'MATLAB:badCellRef') % probably caused by T > T_crit
-  % a very rough estimate for the gas flux
-    m = (p1-p2)/s.v(T1,(p1+p2)/2)/sumL_kappa;
-  else
-    rethrow(err)
-  end
-end
+m = (p1-p2)/s.nul(T1)/sumL_kappa; % = (p1-p2)/(s.nul(T1)*sumL_kappa)
+% No valid range checking...
+% if isinf(s.ps(T1))
+% a very rough estimate for the gas flux
+% m = (p1-p2)/s.v(T1,(p1+p2)/2)/sumL_kappa;
 end %----------------------------------------------------------- end mfluxliquid
 
 function m = mfluxknudsen(T1,p1,p2,s,ms) %------------------------- mfluxknudsen
