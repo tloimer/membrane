@@ -12,10 +12,18 @@ function [m,ms] = mnumadiabat(T1,p1,p2,s,ms,accuracy)
 %
 %  See also ASYM, MSTACKSTRUCT, SUBSTANCE.
 
-% Check the upstream state
+% Some input sanitizing.
 if s.ps(T1) < p1
-  error('The upstream state is a liquid. This is not implemented.');
+  error([upper(mfilename)...
+	': The upstream state is a liquid. This is not implemented.']);
+elseif p2 < 0.
+  error([upper(mfilename)...
+	': The downstream pressure is negative. That is not possible.']);
+elseif T1 < 0.
+  error([upper(mfilename)...
+	': The upstream temperature is below absolute zero. Impossible.']);
 end
+
 if nargin < 6
   accuracy = 'accurate';
 end

@@ -14,8 +14,16 @@ function [m,ms] = mgaseous(T,p1,p2,s,ms,type,accuracy)
 %
 %  See also MGASEOUS>GASFLOW, MSTACKSTRUCT, SUBSTANCE.
 
-if s.ps(T) < p1
-  error('The usptream state is a liquid. Not implemented.');
+% Some input sanitizing.
+if s.ps(T1) < p1
+  error([upper(mfilename)...
+	': The upstream state is a liquid. This is not implemented.']);
+elseif p2 < 0.
+  error([upper(mfilename)...
+	': The downstream pressure is negative. That is not possible.']);
+elseif T1 < 0.
+  error([upper(mfilename)...
+	': The upstream temperature is below absolute zero. Impossible.']);
 end
 
 if nargin < 7

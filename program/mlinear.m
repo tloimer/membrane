@@ -14,6 +14,18 @@ function m = mlinear(p1,p2,T1,theta,s,mem,f)
 %
 %  See also SUBSTANCE, MEMBRANE, FMODEL, MLINEAR>MLINPSAT.
 
+% Some input sanitizing.
+if s.ps(T1) < p1
+  error([upper(mfilename)...
+	': The upstream state is a liquid. This is not implemented.']);
+elseif p2 < 0.
+  error([upper(mfilename)...
+	': The downstream pressure is negative. That is not possible.']);
+elseif T1 < 0.
+  error([upper(mfilename)...
+	': The upstream temperature is below absolute zero. Impossible.']);
+end
+
 % THETA is in degree - calculate costheta.
 costheta = cos(theta*pi/180);
 p12 = p1 - p2;

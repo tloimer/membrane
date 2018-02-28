@@ -34,6 +34,18 @@ function [m pK ps] = misotherm(T1,p1,p2,theta,s,mem,ps,pK)
 % (4,5): pliq = p1-p2 - (2sig/r)(ps-p1)/(ps-pK) + (2sig/r)(ps-p2)/(ps-pK)
 %             = (p1-p2) * ( 1 + (2sig/r)/(ps-pK) )
 
+% Some input sanitizing.
+if s.ps(T1) < p1
+  error([upper(mfilename)...
+	': The upstream state is a liquid. This is not implemented.']);
+elseif p2 < 0.
+  error([upper(mfilename)...
+	': The downstream pressure is negative. That is not possible.']);
+elseif T1 < 0.
+  error([upper(mfilename)...
+	': The upstream temperature is below absolute zero. Impossible.']);
+end
+
 if nargin == 6
   ps = s.ps(T1);
 end
