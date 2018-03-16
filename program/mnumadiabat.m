@@ -10,7 +10,7 @@ function [m,ms] = mnumadiabat(T1,p1,p2,s,ms,accuracy)
 %
 %  Calls ASYM.
 %
-%  See also ASYM, MSTACKSTRUCT, SUBSTANCE.
+%  See also ASYM, MSTACKSTRUCT, MTCONST, SUBSTANCE.
 
 % Some input sanitizing.
 if s.ps(T1) < p1

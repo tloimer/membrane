@@ -313,8 +313,15 @@ fprintf(['Fluid: %s, mass flux %.4g g/m2s, p1 - p2 = %.3g kPa.\n'...
 % Get the calculated solution, not the provided values.
 [~,Tup,pup] = upstreamflow(ms.membrane(1));
 fprintf(['Iteration accuracy: p1 - p1calc = %.2g Pa (%.2g p1),\n%20s'...
-	 'T1 - T1calc = %.2g K (%.2g(T1-T2)).\n\n'],...
-	ms.p1in-pup, 1-pup/ms.p1in, ' ', ms.T1-Tup, (ms.T1-Tup)/(ms.T1-ms.T2));
+	 'T1 - T1calc = %.2g K'], ms.p1in-pup, 1-pup/ms.p1in, ' ', ms.T1-Tup);
+if ms.T1 ~= ms.T2
+	fprintf(' (%.2g(T1-T2)).\n\n', (ms.T1-Tup)/(ms.T1-ms.T2));
+elseif ms.q2 ~= 0.
+	fprintf(' (%.2g q/(m cp)).\n\n',...
+		(ms.T1-Tup)*ms.m*ms.substance.cpg(ms.T2,ms.p2)/ms.q2);
+else
+	fprintf('.\n\n');
+end
 
 % Now loop over membranes and layers
 nmembranes = length(ms.membrane);

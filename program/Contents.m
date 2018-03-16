@@ -10,6 +10,7 @@
 %
 % Compute.
 %   mnumadiabat   - Mass flux for adiabatic flow through layered membranes.
+%   mTconst       - Mass flux for equal upstream and downstream temperatures
 %   asym          - Upstream pressure for adiabatic flow through a MSTACKSTRUCT.
 %   mgaseous      - Mass flux for isothermal gaseous flow.
 %   misotherm     - Isothermal mass flux through a homogeneous membrane.
