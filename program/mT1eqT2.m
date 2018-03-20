@@ -1,12 +1,12 @@
-function [m,ms] = mTconst(T1,p1,p2,s,ms,accuracy)
-%MTCONST     Mass flux for adiabatic flow but q2 such that T1 equal to T2.
-%  MCONST(T1,P1,P2,SUBSTANCE,MS) returns the mass flux [kg/m2s] for
+function [m,ms] = mT1eqT2(T1,p1,p2,s,ms,accuracy)
+%MT1EQT2     Mass flux for adiabatic flow but q2 such that T1 equal to T2.
+%  MT1EQT2(T1,P1,P2,SUBSTANCE,MS) returns the mass flux [kg/m2s] for
 %  adiabatic flow of SUBSTANCE through a stack of layered membranes MS. The
 %  membrane struct MS is constructed with MSTACKSTRUCT.
 %
-%  MCONST(T1,P1,P2,SUBSTANCE,MS,'crude') sets crude solver tolerances.
+%  MT1EQT2(T1,P1,P2,SUBSTANCE,MS,'crude') sets crude solver tolerances.
 %
-%  [M,MS] = MCONST(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
+%  [M,MS] = MT1EQT2(T1,P1,P2,SUBSTANCE,MS) writes the solution to MS.
 %
 %  Calls ASYM.
 %
@@ -46,6 +46,8 @@ T2 = s.intjt(T1,p1,p2);
 ms = ms.writeflowsetups(T1,T2,s,ms);
 
 % Compute h1 - h2; For positive Joule-Thomson coefficient, h2 > h1.
+% mu_JT = -(dh/dp)_T/cp, cp > 0, for mu_JT > 0 yields (dh/dp)_T < 0;
+% With p2 < p1 results h2 > h1.
 if p1 == p2
     h12 = 0;
 else
@@ -85,4 +87,4 @@ function pres = presiduum(m) %---------------------------------------- presiduum
 	pres = asym(m, state2, ms, solver) - p1;
 end %------------------------------------------------------------- end presiduum
 
-end %%% END MTCONST %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MTCONST %%%
+end %%% END MT1EQT2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MT1EQT2 %%%
