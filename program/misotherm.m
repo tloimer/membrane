@@ -34,8 +34,12 @@ function [m pK ps] = misotherm(T1,p1,p2,theta,s,mem,ps,pK)
 % (4,5): pliq = p1-p2 - (2sig/r)(ps-p1)/(ps-pK) + (2sig/r)(ps-p2)/(ps-pK)
 %             = (p1-p2) * ( 1 + (2sig/r)/(ps-pK) )
 
+if nargin == 6
+  ps = s.ps(T1);
+end
+
 % Some input sanitizing.
-if s.ps(T1) < p1
+if ps < p1
   error([upper(mfilename)...
 	': The upstream state is a liquid. This is not implemented.']);
 elseif p2 < 0.
@@ -46,9 +50,6 @@ elseif T1 < 0.
 	': The upstream temperature is below absolute zero. Impossible.']);
 end
 
-if nargin == 6
-  ps = s.ps(T1);
-end
 costheta = cos(theta);
 pcap = mem.fcurv(costheta)*s.sigma(T1);
 if nargin ~=8
