@@ -590,6 +590,7 @@ function plotT(ms,i) %---------------------------------------------------- plotT
 %PLOTT      Plot temperature.
 %  PLOTT(MS,I) Plot temperature distribution in the I-th membrane.
 
+global INFO
 if nargin == 1
   i = 1;
 end
@@ -634,28 +635,50 @@ if nflow > 0
 end
 
 mkTdim = @(T) (T - ms.T2)/(ms.T1 - ms.T2);
-fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
+if INFO == 1
+	fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
+	fmt = '%5.3f %g\n';
+end
 
   % Plot the first layer, probably with the front boundary layer(s)
   ht = figure('Name','Global Temperature');
   jl = ms.membrane(i).layer(1);
   if isup
     plot(zup/sumL, mkTdim(Tup),...
-	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+	'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+    if INFO == 1
+      fprintf('z/L    T/°C\n');
+      fprintf(fmt, [zup/sumL; Tup]);
+      fprintf('\n');
+    end
+
     xlim([zup(end)/sumL 1]);
     for k = nflow-1:-1:1
       line(ms.membrane(i).flow(k).z/sumL, mkTdim(ms.membrane(i).flow(k).T),...
 	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
+      if INFO == 1
+        fprintf(fmt, ...
+	    [ms.membrane(i).flow(k).z/sumL; ms.membrane(i).flow(k).T]);
+	fprintf('\n');
+      end
     end
     % The first line in the layer.
     nflow = length(jl.flow);
     line(jl.flow(nflow).z/sumL, mkTdim(jl.flow(nflow).T),...
 	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
+    if INFO == 1
+      fprintf(fmt, [jl.flow(nflow).z/sumL; jl.flow(nflow).T]);
+      fprintf('\n');
+    end
   else
     nflow = length(jl.flow);
     plot(jl.flow(nflow).z/sumL, mkTdim(jl.flow(nflow).T),...
 	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
     xlim([0 1]);
+    if INFO == 1
+      fprintf(fmt, [jl.flow(nflow).z/sumL; jl.flow(nflow).T]);
+      fprintf('\n');
+    end
   end
   ylim([-0.1 1.1]);
   xlabel('z/(sum L)');
@@ -665,6 +688,10 @@ fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
   for k = nflow-1:-1:1
     line(jl.flow(k).z/sumL, mkTdim(jl.flow(k).T),'Color',jl.flow(k).color,...
 	 'LineStyle','-','Marker',mark);
+    if INFO == 1
+      fprintf(fmt, [jl.flow(k).z/sumL; jl.flow(k).T]);
+      fprintf('\n');
+    end
   end
 
   % At last, the remaining layers
@@ -677,6 +704,10 @@ fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
     for k = nflow:-1:1
       line((offz(j-1) + jl.flow(k).z)/sumL,mkTdim(jl.flow(k).T),...
 	   'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
+    end
+    if INFO == 1
+      fprintf(fmt, [(offz(j-1) + jl.flow(k).z)/sumL; jl.flow(k).T]);
+      fprintf('\n');
     end
   end
 
