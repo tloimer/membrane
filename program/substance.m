@@ -1,9 +1,11 @@
-function s = substance(name)
+function s = substance(name, gaseq)
 %SUBSTANCE  Material properties of a substance.
 %  SUBSTANCE(NAME) returns a struct that represents the substance NAME. The
 %  returned struct S contains functions to calculate various material
 %  properties. The functions do not check their range of validity. Look for
 %  lines % Range: ... in the source code.
+%
+%  SUBSTANCE(NAME, 'ideal') uses the thermic equation of state for an ideal gas.
 %
 %  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane'.
 %
@@ -66,6 +68,12 @@ function s = substance(name)
 %  not implemented yet (if ever).
 %  S = SUBSTANCE(NAME,T) returns a struct s that contains material properties
 %  at the saturation pressure for the substance NAME at the temperature T.
+
+if nargin == 2 && strcmp(gaseq, 'ideal')
+    thermic = @ideal;
+else
+    thermic = @virial;
+end
 
 % Struct constructor. No need to be pedantic here. If not present, struct fields
 % are added by assignment anyway.
@@ -814,13 +822,13 @@ s.M = M;
 s.ps = @(T) ps(Acoeffs,T);
 s.Ts = @(p) Ts(Acoeffs,p);
 s.rho = @(T) genericfunc(rhocoeffs,rhofun,T);
-s.v = @(T,p) virial('v',vcoeffs,virialfun,T,p);
+s.v = @(T,p) thermic('v',vcoeffs,virialfun,T,p);
 s.hvap = @(T) hvap(s.ps,s.rho,s.v,T);
 % caloric equation of state
 % cpid, cpg_cpid - def'd for better readability
 cpid = @(T) cpfun(cpcoeffs,T);
 % cpg_cpid = cpg(T,p) - cpid; cpid = cp(T,p=0)
-cpg_cpid = @(T,p) virial('cp',vcoeffs,virialfun,T,p);
+cpg_cpid = @(T,p) thermic('cp',vcoeffs,virialfun,T,p);
 s.cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p));
 s.mul = @(T) mulfun(mulcoeffs,T);
 s.mug = @(T) mugfun(mugcoeffs,T);
@@ -832,9 +840,9 @@ s.kelveq = @(T,sig,rho,curv) exp(-curv.*sig./(s.R.*rho.*T));
 % Derivatives of the thermic equation of state which are equal to
 % derivatives of caloric properties are computed in the function virial.
 % These helper functions extract the information from the function virial.
-s.jt = @(T,p) jt(virial('jt',vcoeffs,virialfun,T,p),cpid(T));
-s.dhdp = @(T,p) virial('dhdp',vcoeffs,virialfun,T,p);
-s.dhcpg = @(T,p) dhcpg(virial('jt',vcoeffs,virialfun,T,p),cpid(T));
+s.jt = @(T,p) jt(thermic('jt',vcoeffs,virialfun,T,p),cpid(T));
+s.dhdp = @(T,p) thermic('dhdp',vcoeffs,virialfun,T,p);
+s.dhcpg = @(T,p) dhcpg(thermic('jt',vcoeffs,virialfun,T,p),cpid(T));
 % The functions that return derivatives have a 'd' prepended.
 i = length(rhofun);
 drhofun = cell(1,i);
@@ -964,6 +972,26 @@ function hvap = hvap(ps,rho,v,T)
 
 [psat, dpsat] = ps(T);
 hvap = dpsat.*T.*(v(T,psat)-1./rho(T));
+
+function v = ideal(out, vcoeffs, ~, T, p);
+%IDEAL      Specific volume of the vapor for an ideal gas [m3/kg].
+%  IDEAL('V',VCOEFFS,~,T,P) calculates the specific volume of the
+%  vapor using the ideal gas equation.
+%
+%  See VIRIAL.
+R = vcoeffs(end-1);
+M = vcoeffs(end);
+if strcmp(out, 'v')
+    v = R*T./p/M;
+elseif strcmp(out, 'cp') || strcmp(out, 'dhdp')
+    v = 0;
+elseif strcmp(out, 'jt')
+    v = [0 0];
+else
+    error([upper(mfilename)...
+'->IDEAL: First argument must be ''v'', ''cp'', ''dhdp'' or ''jt'', not ''%s''.'...
+        ], out);
+end
 
 function v = virial(out,vcoeffs,virialfun,T,p)
 %VIRIAL     Specific volume of the vapor [m3/kg].
