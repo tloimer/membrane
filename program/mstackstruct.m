@@ -106,10 +106,11 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'printsolution',@printsolution,'plotsolution',@plotsolution,'plotT',@plotT,...
-  'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
-  'mfluxliquid',@mfluxliquid,'mfluxknudsen',@mfluxknudsen,'mfluxviscous',...
-  @mfluxviscous,'freesetup',[],'substance',[],'membrane',membranes);
+  'printsolution',@printsolution,'plotsolution',@plotsolution,...
+  'plotT',@plotT,'plotp',@plotp,'singlemstofl',@singlemstofl,...
+  'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
+  'mfluxknudsen',@mfluxknudsen,'mfluxviscous',@mfluxviscous,'freesetup',[],...
+  'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -712,3 +713,116 @@ end
   end
 
 end %----------------------------------------------------------------- end plotT
+
+function plotp(ms,i) %---------------------------------------------------- plotp
+%PLOTP      Plot pressure distribution.
+%  PLOTP(MS,I) Plot pressure distribution in the I-th membrane.
+
+global INFO
+if nargin == 1
+  i = 1;
+end
+
+mark = 'none';
+scalep = 1e-3;		% Plot kPa, not Pa.
+
+nl = length(ms.membrane(i).layer);
+% the total thickness of the membrane
+sumL = ms.membrane(i).layer(1).matrix.L;
+if nl > 1
+  offz(nl-1) = 0;
+end
+for j = 2:nl
+  offz(j-1) = sumL;
+  sumL = sumL + ms.membrane(i).layer(j).matrix.L;
+end
+
+isup = false; %false(1,nmembranes);
+% Here, at difference to the code in upstreamflow, the emptyness of .flow is
+% not checked; The plot-command then exits with error anyway.
+% Add the number of possible upstream layers
+nflow = length(ms.membrane(i).flow);
+% %{
+if nflow > 0
+  isup = true;
+  % add one point far upstream
+  j = length(ms.membrane(i).flow(nflow).z);
+  zup = ms.membrane(i).flow(nflow).z;
+  pup = ms.membrane(i).flow(nflow).p;
+  % remove values that would yield the log of a negative number below
+  % note: the zup's are negative numbers
+  for k = 1:j
+    if zup(1) - ms.membrane(i).zscale > zup(k)
+      zup(k:j) = [];
+      break;
+    end
+  end
+% %}
+  % scale back the front boundary layer
+  %   z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
+  %   z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
+  zup = zup(1) + ms.membrane(i).zscale * ...
+	log( (zup-zup(1))/ms.membrane(i).zscale + 1);
+  % add one point far upstream
+  zup = [zup -sumL];
+  pup = [pup ms.membrane(i).p1];
+end
+
+ht = figure('Name','Pressure distribution');
+axes(ht, 'Box', 'on');
+jl = ms.membrane(i).layer(1);
+if isup
+  line(zup/sumL, pup*scalep,...
+	'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
+  if INFO == 1
+    fmt = '%5.3f %g\n';
+    fprintf('z/L    p/Pa\n');
+    fprintf(fmt, [zup/sumL; pup]);
+    fprintf('\n');
+  end
+
+  xlim([zup(end-1)/sumL 1]);
+  for k = nflow-1:-1:1
+    line(ms.membrane(i).flow(k).z/sumL, ms.membrane(i).flow(k).p*scalep,...
+	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
+    if INFO == 1
+      fprintf(fmt, ...
+	    [ms.membrane(i).flow(k).z/sumL; ms.membrane(i).flow(k).p]);
+	fprintf('\n');
+    end
+  end
+else
+  xlim([0 1]);
+end
+nflow = length(jl.flow);
+%ylim([-0.1 1.1]);
+xlabel('z/L');
+ylabel('p [kPa]');
+
+% The distribution in  the first layer.
+for k = nflow:-1:1
+  line(jl.flow(k).z/sumL, jl.flow(k).p*scalep, 'Color',jl.flow(k).color,...
+	 'LineStyle','-','Marker',mark);
+  if INFO == 1
+    fprintf(fmt, [jl.flow(k).z/sumL; jl.flow(k).p]);
+    fprintf('\n');
+  end
+end
+
+% At last, the remaining layers
+if nl == 1, return; end
+
+for j = 2:nl
+  jl = ms.membrane(i).layer(j);
+  nflow = length(jl.flow);
+  for k = nflow:-1:1
+    line((offz(j-1) + jl.flow(k).z)/sumL, jl.flow(k).p*scalep,...
+	   'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
+  end
+  if INFO == 1
+    fprintf(fmt, [(offz(j-1) + jl.flow(k).z)/sumL; jl.flow(k).p]);
+    fprintf('\n');
+  end
+end
+
+end %----------------------------------------------------------------- end plotp
