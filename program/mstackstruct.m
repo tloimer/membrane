@@ -682,7 +682,7 @@ end
   end
   ylim([-0.1 1.1]);
   xlabel('z/(sum L)');
-  ylabel('(T-T1)/(T2-T1)');
+  ylabel('(T-T_2)/(T_1-T_2)');
 
   % Put the remaining flow elements in the first layer into the existing plot.
   for k = nflow-1:-1:1
