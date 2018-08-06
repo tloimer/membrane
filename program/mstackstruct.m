@@ -206,7 +206,7 @@ function m = mfluxknudsen(T1,p1,p2,s,ms) %------------------------- mfluxknudsen
 %   m = (p1 -p2) /( L_1/(beta*kappa*kn_nu)_1 + (L/beta*kappa*kn_nu)_2 + ...);
 sumL_all = 0;
 % kn_nu = @(T) 3*sqrt(pi/(8*s.R)) / (sqrt(T)*mem.dia);
-facb_dia =  3*sqrt(pi/(8*s.R)) / sqrt(T1);
+facb_dia =  3*sqrt(pi/(8*s.R*T1));
 for i = 1:length(ms.membrane)
   for j = 1:length(ms.membrane(i).layer)
     % The sum must be done manually.
