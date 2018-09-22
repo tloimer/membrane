@@ -24,6 +24,7 @@ function ms = mstackstruct(theta,mem,f)
 %    MS.colors          Colors to plot liquid, gaseous and two-phase flow.
 %    MS.printsetup      Print the membrane and layer structure
 %    MS.printsolution   Print the solution, e.g., after mnumadiabat is called
+%    MS.getsolution     Output the flattened solution values
 %    MS.plotsolution    Plot temperature and pressure distributions
 %    MS.plotT           Plot temperature distribution
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct
@@ -106,11 +107,12 @@ end
 % Initialize the struct with what we know already.
 ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'p2',[],'a2',[],'q2',[],'colors',{{'b','r','g'}},'printsetup',@printsetup,...
-  'printsolution',@printsolution,'plotsolution',@plotsolution,...
-  'plotT',@plotT,'plotp',@plotp,'singlemstofl',@singlemstofl,...
-  'writeflowsetups',@writeflowsetups,'mfluxliquid',@mfluxliquid,...
-  'mfluxknudsen',@mfluxknudsen,'mfluxviscous',@mfluxviscous,'freesetup',[],...
-  'substance',[],'membrane',membranes);
+  'printsolution',@printsolution,'getsolution',@getsolution,...
+  'plotsolution',@plotsolution,'plotT',@plotT,'plotp',@plotp,...
+  'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
+  'mfluxliquid',@mfluxliquid,'mfluxknudsen',@mfluxknudsen,...
+  'mfluxviscous',@mfluxviscous,'freesetup',[],'substance',[],...
+  'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -425,6 +427,61 @@ function [isup,Tup,pup,aup,upcolor,isfilm] = upstreamflow(amembrane)
     upcolor = amembrane.layer(1).flow(end).color;
   end
 end % --------------------------------------------------------- end upstreamflow
+
+
+function sol = getsolution(ms) %------------------------------------ getsolution
+%GETSOLUTION Get solution values at fronts.
+%  SOL = MSANY.GETSOLUTION(MS) gets the solution values from specific
+%  locations and writes these to the struct SOL. The struct SOL contains
+%  the cell arrays L, z, T, p, a, q, and Kn. Each cell in the cell arrays
+%  corresponds to one membrane of an membrane stack. SOL.L refers to the
+%  length of the membrane, in meters, and SOL.a is the vapor mass fraction.
+%  Each cell contains a vector of property values. In essence, the FLOW
+%  field in the MSTACKSTRUCT MS is flattened out and purged to only contain
+%  the values at fronts of phase change and boundaries.
+
+nmembranes = length(ms.membrane);
+property = {'z', 'T', 'p', 'a', 'q', 'Kn'};
+n = length(property);
+% create a struct containing all empty cell arrays, equivalent to
+% sol = struct('L', cell(nmembranes,1), 'z', cell(nmembranes,1),...)
+sol(1).L = cell(nmembranes,1);
+for l = 1:n
+    sol(1).(property{l}) = cell(nmembranes,1); % initializes to empty matrices
+end
+
+% loop over all membranes
+for i = 1:nmembranes
+    % write the front boundary layer
+    j = length(ms.membrane(i).flow);
+    if j > 0 && ~isempty(ms.membrane(i).flow(end).T)
+        for k = j:-1:1      % loop over the elements of the front boundary layer
+            for l = 1:n     % loop over the property names
+                sol.(property{l}){i} = [sol.(property{l}){i}...
+                            ms.membrane(i).flow(k).(property{l})(end)...
+                            ms.membrane(i).flow(k).(property{l})(1)];
+            end
+        end
+    end
+
+    % loop over layers
+    L = 0;      % sum of layer lengths
+    for j = length(ms.membrane(i).layer):-1:1
+        for k = length(ms.membrane(i).layer(j).flow):-1:1
+            for l = 1:n     % loop over the property names
+                sol.(property{l}){i} = [sol.(property{l}){i}...
+                        ms.membrane(i).layer(j).flow(k).(property{l})(end)...
+                        ms.membrane(i).layer(j).flow(k).(property{l})(1)];
+            end
+            sol.z{i}(end-1:end) = sol.z{i}(end-1:end) + L;
+        end
+        l = ms.membrane(i).layer(j).matrix.L;
+        sol.L{i} = [sol.L{i} l];
+        L = L + l;          % sum of L - to correct the z coordinate above
+    end
+end
+
+end %----------------------------------------------------------- end getsolution
 
 function plotsolution(ms) %---------------------------------------- plotsolution
 %PLOTSOLUTION Plot temperature and pressure distributions.
