@@ -707,6 +707,7 @@ end
 if solver.writesolution
   % allocate space for all points; assign last point
   T56(last) = T5; p56(last) = p5; q56(last) = q5; z56(last) = z5;
+  Kn56 = zeros(1,last);
   % and write remaining solution
   last = last - 1;
   T56(1:last) = mkTdim(sol56.y(1,1:last));
@@ -715,8 +716,8 @@ if solver.writesolution
     q56(i) = calcq(T56(i),p56(i));
   end
   z56(1:last) = z6*sol56.x(1:last);
-  flow = writeflow(flow,{'z','T','p','a','q','color'},...
-			{z56,T56,p56,zeros(1,last+1),q56,'b'});
+  flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
+			{z56,T56,p56,zeros(1,last+1),q56,Kn56,'b'});
 end
 
 end %------------------------------------------------------- end integrateliquid
@@ -804,6 +805,7 @@ pliq7 = pk7 - pcap7;
 if solver.writesolution
   % allocate space for all points; assign last point
   T78(last) = T7; a78(last) = a7; z78(last) = z7; q78(last) = q7;
+  Kn78(last) = fs.knudsen(T7,pk7);
   % here the 2ph-pressure, p2ph = pK - (1-a)*pcap, not p2ph = pK
   p78(last) = pk7 - (1-a7)*pcap7;
   last = last - 1;
@@ -811,7 +813,8 @@ if solver.writesolution
   z78(1:last) = z8*sol78.x(1:last);
   % pk, q2ph, is not vektorizable; Gives a result, but probably wrong numbers.
   for i = 1:last
-    [q78(i), p78(i)] = fs.q2ph(m,T78(i),a78(i));
+    [q78(i), p78(i), pk] = fs.q2ph(m,T78(i),a78(i));
+    Kn78(i) = fs.knudsen(T78(i),pk);
   end
   flow = writeflow(flow,{'z','T','p','a','q','color'},{z78,T78,p78,a78,q78,'g'});
 end
@@ -905,8 +908,8 @@ if solver.writesolution
   % Because zw runs from 0 to 1 in flow direction, zw = sol13.y(2,:)),
   % z = ln(zw)*zscale+z3 (see above), zw = exp((z-z3)/zscale), hence we plot
   % z13 = (exp((z-z3)/zscale)-1)*zscale+z3. To recover z, use eq. (1) above.
-  flow = writeflow(flow,{'z','T','p','a','q','color'},...
-			{z13,T13,p13,ones(1,last+1),q13,'r'});
+  flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
+			{z13,T13,p13,ones(1,last+1),q13,zeros(1,last+1),'r'});
 end
 
 end %------------------------------------------------------------ end ifreevapor
@@ -981,8 +984,8 @@ if solver.writesolution
   last = last - 1;
   T45(1:last) = mkTdim(sol45.x(1:last)); q45(1:last) = q5*sol45.y(1,1:last);
   z45(1:last) = zscale*sol45.y(2,1:last);
-  flow = writeflow(flow,{'z','T','p','a','q','color'},...
-			{z45,T45,p45,zeros(1,last+1),q45,'b'});
+  flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
+			{z45,T45,p45,zeros(1,last+1),q45,zeros(1,last+1),'b'});
 end
 
 end %----------------------------------------------------------- end ifreeliquid

@@ -485,8 +485,8 @@ if solver.writesolution
   last = last - 1;
   p56(1:last) = mkpdim(sol56.y(1:last));
   z56(1:last) = z6*sol56.x(1:last);
-  flow = writeflow(flow,{'z','T','p','a','q','color'},...
-			{z56,T56,p56,zeros(1,last+1),q56,'b'});
+  flow = writeflow(flow,{'z','T','p','a','q','Kn','color'},...
+			{z56,T56,p56,zeros(1,last+1),q56,zeros(1,last+1),'b'});
 end
 
 end %------------------------------------------------------- end integrateliquid
