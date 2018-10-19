@@ -1,4 +1,4 @@
-function m = mlinear(p1,p2,T1,theta,s,mem,f)
+function [m,fl] = mlinear(p1,p2,T1,theta,s,mem,f)
 %MLINEAR    Mass flux from linear theory through a homogeneous membrane.
 %  MLINEAR(P1,P2,T1,THETA,S,M,F) calculates the mass flux [kg/m2s] of
 %  substance S through membrane M according to a linear theory. The contact
@@ -12,7 +12,12 @@ function m = mlinear(p1,p2,T1,theta,s,mem,f)
 %  The substance S, membrane M and two-phase flow model F are provided via
 %  structs, see SUBSTANCE, MEMBRANE and FMODEL.
 %
-%  See also SUBSTANCE, MEMBRANE, FMODEL, MLINEAR>MLINPSAT.
+%  [M,FL] = MLINEAR(P1,P2,T1,THETA,S,M,F) writes the solution for P1 =
+%  PSAT(T1), ignoring P1, to the FLOWSTRUCT FL. Use PTPLOT, PTZPLOTS and
+%  TSPLOT to plot the solution stored in FL.
+%
+%  See also FMODEL, MEMBRANE, SUBSTANCE, PTPLOT, PTZPLOTS, TSPLOT and
+%  MLINEAR>MLINPSAT.
 
 % Some input sanitizing.
 if s.ps(T1) < p1
@@ -205,10 +210,11 @@ nuvap=1/(1/nubar + beta*facKn/dia);
 % Construct the output struct, see also FLOWSTRUCT.
 
 % lin.Te is the temperature at the evaporation front
-fl = struct('info',struct('kap',kap,'m',[],'C',Cc,'kapc',kapc,...
-    'kapf',[],'L',L,'T0',T1,'p0',p1,'dp',p12,'ph',f.name),...
-  'sol',struct('len',[],'a3',[],'q3',[],'T0',T1,'Te',T2,'p0',p1,...
-    'pe',p2,'de',[],'df',[]),...
+fl = struct('info',struct('kap',kap,'m',[],'C',Cc,'kapc',kapc,'kapf',[],...
+  'L',L,'T0',T1,'T1',T1,'p0',p1,'p1',p1,'dp',p12,'p2',p2,'ph',f.name,...
+  'flsetup',flowsetup(T2,T2+1.2*T12,theta,s,mem,f)),...
+  'sol',struct('len',[],'a3',[],'q3',[],'T0',T1,'Te',T2,'T2',T2,'p0',p1,...
+    'pe',p2,'de',[],'df',[],'states','--'),...
   'flow',struct('z',{},'T',{},'p',{},'q',{},'a',{},'x',{},'color',{}),...
   'lin',struct('m',[],'Te',T2,'T4',[],'deL',[],'dfL',[],'a3',[],'x3',[]));
 
@@ -319,7 +325,7 @@ switch id
     pe = p1 - m*nu2ph*ded*L/kap;
 
     % write this solution;
-    fl.sol.len = 2;
+    fl.sol.len = -2;
     fl.sol.a3 = a;
     fl.sol.q3 = (1-xdot)*rk*m;
     fl.sol.de = ded*L;
@@ -352,17 +358,17 @@ switch id
 
     % write this, unique, solution; return
     %  fl.info.kapf = kapc; however, it stays empty
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.a3 = 0;
     fl.sol.q3 = rk*m;
-      % still a calculation
-      T4 = T1+fl.sol.q3*fl.sol.df/kliq;
     fl.sol.de = ded*L;
     fl.sol.df = dfd*L;
     fl.lin.deL = ded;
     fl.lin.dfL = dfd;
     fl.lin.a3 = 0;
     fl.lin.x3 = 0;
+    % still a calculation
+    T4 = T1+fl.sol.q3*fl.sol.df/kliq;
     [fl.flow(1:3).z]...
       = deal([fl.sol.df 0],[0 fl.sol.de],[fl.sol.de L]);
     [fl.flow(1:3).T] = deal([T1 T4],[T4 T2],[T2 T2]);
@@ -392,7 +398,7 @@ switch id
     zup = [2.3*z1 z1 0];
 
     % write solution; return
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.p0 = p1;
     fl.sol.a3 = a;
 %    fl.sol.q3 = rk*m*(1-xdot);
@@ -429,7 +435,7 @@ switch id
     zup = [z1 0];
 
     % write solution; return
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.a3 = 0;
     fl.sol.q3 = rk*m;
     fl.sol.de = mde/m;
@@ -460,7 +466,7 @@ switch id
     T4 = T42+T2;
 
     % write solution; return
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.a3 = 0;
     fl.sol.q3 = rk*m;
     fl.sol.de = mde/m;
@@ -491,7 +497,7 @@ switch id
     df = kliq*T12/(m*rk);
 
     % write the solution
-    fl.sol.len = 2;
+    fl.sol.len = -2;
     fl.sol.a3 = 0;
     fl.sol.q3 = rk*m;
     fl.sol.de = 0;
@@ -522,7 +528,7 @@ switch id
     T4 = T1-T14;
 
     % write solution; return
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.a3 = a;
     fl.sol.q3 = rk*m;
     fl.sol.de = mde/m;
@@ -564,7 +570,7 @@ switch id
     T5 = TkT1-T35+T1;
 
     % write solution; return
-    fl.sol.len = 3;
+    fl.sol.len = -3;
     fl.sol.p0 = p1;
     fl.sol.a3 = a;
     fl.sol.q3 = rk*m*(1-xdot);
@@ -603,7 +609,7 @@ switch id
     zup = [2.3*z1 z1 0];
 
     % write solution; return
-    fl.sol.len = 2;
+    fl.sol.len = -2;
     fl.sol.p0 = p1;
     fl.sol.a3 = 0;
     fl.sol.q3 = rk*m;
@@ -627,7 +633,7 @@ switch id
     mlin = (kap*p12)/(nuliq*L) * ( 1+pcap*(pk-n*p1)/(p1pk*(pk-n*p12)) );
     m = mlin;
     disp([upper(mfilename) ': rudimentary flow struct written, m = mlin.'])
-    fl.sol.len = 2; fl.sol.p0 = p1;
+    fl.sol.len = -2; fl.sol.p0 = p1;
     [fl.flow(1:2).color] = deal('c','c');
   otherwise
     error([upper(mfilename) ': The program should never come here.']);
