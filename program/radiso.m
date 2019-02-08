@@ -57,12 +57,13 @@ solver.writesolution = true;
 	ms.membrane(1).layer(1).matrix, ms.membrane(1).layer(1).flsetup, s,...
 	solver);
 
-% check for vapor flow all through - if yes, finished
-if z9 < L/1000.
+if z9 < L/1000. && p9 <= p1
+    % vapor flow all through, and the upstream pressure is not reached - no
+    % possibility for the flow of condensate, the flow remains gaseous
     ms.membrane(1).layer(1).flow = flow;
     r3 = 0;
     r9 = 0;
-    fprintf('gaseous flow: m = %.1f kg/m²s,\n', m*1000);
+    fprintf('gaseous flow only: m = %.1f kg/m²s\n', m*1000);
     return
 end
 
@@ -88,7 +89,10 @@ function p96 = pres(z)
     p96 = p9 - log(psat/p9)*rhol*s.R.*T1 - pliqliq(z);
 end
 
-z69 = fzero(@pres, [z9 L]);
+% +/- one thousandth - once, an error occured whereupon sol92 was evaluated
+% outside the interval where it is defined; Therefore, reduce the interval
+% by just a tiny margin.
+z69 = fzero(@pres, [z9+L/1000 L-L/1000]);
 
 r9 = 2*sigma/(mkp9dim(deval(sol92,z69/L)) - pliqliq(z69));
 
