@@ -97,8 +97,6 @@ z69 = fzero(@pres, [z9+L/1000 L-L/1000]);
 r9 = 2*sigma/(mkp9dim(deval(sol92,z69/L)) - pliqliq(z69));
 
 % TODO: would now have to write the vapor flow solution to the flowstruct
-fprintf('radiso: z/L = %.2f, r3 = %.3f nm, r9 = %.3f nm.\n',...
-		z69/L, r3*1e9, r9*1e9);
 
 % write the solution for the liquid flow to the flowstruct
 % gaseous and liquid flow now overlap
