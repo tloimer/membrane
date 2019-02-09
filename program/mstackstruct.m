@@ -8,7 +8,9 @@ function ms = mstackstruct(theta,mem,f)
 %  corresponds to the layers in each membrane. The membrane stack structure
 %  MS is constructed in a way to also accomodate the solution.
 %
-%  Invoke MS = MS.WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) after creating a MS.
+%  Invoke MS = MS.WRITEFLOWSETUPS(T1,T2,SUBSTANCE,MS) or MS =
+%  MS.WRITECURVSETUPS(CURV,T1,T2,SUBSTANCE,MS) after creating a MS. In the
+%  latter case, THETA given above is meaningless.
 %
 %  The membrane stack struct MS contains the fields
 %    MS.m               Mass flux [kg/m2s]
@@ -29,6 +31,7 @@ function ms = mstackstruct(theta,mem,f)
 %    MS.plotT           Plot temperature distribution
 %    MS.singlemstofl    Convert a MS-struct to an (obsolete) flowstruct
 %    MS.writeflowsetups See MSTACKSTRUCT>WRITEFLOWSETUPS
+%    MS.writecurvsetups See MSTACKSTRUCT>WRITECURVSETUPS
 %    MS.mfluxliquid     Mass flux of the liquid through the membrane stack
 %    MS.mfluxknudsen    Purely free molecular flux of the gas phas.
 %    MS.mfluxviscous    Purely viscous mass flux of the gas phase
@@ -55,10 +58,11 @@ function ms = mstackstruct(theta,mem,f)
 %  the individual flow regimes in a layer.
 %
 %  See also ASYM, FMODEL, MEMBRANE, SUBSTANCE, FLOWSETUP,
-%           MSTACKSTRUCT>WRITEFLOWSETUPS, MSTACKSTRUCT>MFLUXVISCOUS,
-%           MSTACKSTRUCT>MFLUXLIQUID, MSTACKSTRUCT>MFLUXKNUDSEN,
-%           MSTACKSTRUCT>PRINTSETUP, MSTACKSTRUCT>PRINTSOLUTION,
-%           MSTACKSTRUCT>PLOTSOLUTION, MSTACKSTRUCT>PLOTT,
+%           MSTACKSTRUCT>WRITEFLOWSETUPS, MSTACKSTRUCT>WRITEFLOWSETUPS,
+%           MSTACKSTRUCT>MFLUXVISCOUS, MSTACKSTRUCT>MFLUXLIQUID,
+%           MSTACKSTRUCT>MFLUXKNUDSEN, MSTACKSTRUCT>PRINTSETUP,
+%           MSTACKSTRUCT>PRINTSOLUTION, MSTACKSTRUCT>PLOTSOLUTION,
+%           MSTACKSTRUCT>PLOTT.
 
 %  To plot the upstream boundary layer, for the z-coordinate use the
 %  transformation (from FLOW12.m)
@@ -110,9 +114,9 @@ ms = struct('m',[],'T1',[],'p1in',[],'p1sol',[],'a1',[],'q1',[],'T2',[],...
   'printsolution',@printsolution,'getsolution',@getsolution,...
   'plotsolution',@plotsolution,'plotT',@plotT,'plotp',@plotp,...
   'singlemstofl',@singlemstofl,'writeflowsetups',@writeflowsetups,...
-  'mfluxliquid',@mfluxliquid,'mfluxknudsen',@mfluxknudsen,...
-  'mfluxviscous',@mfluxviscous,'freesetup',[],'substance',[],...
-  'membrane',membranes);
+  'writecurvsetups',@writecurvsetups,'mfluxliquid',@mfluxliquid,...
+  'mfluxknudsen',@mfluxknudsen,'mfluxviscous',@mfluxviscous,...
+  'freesetup',[],'substance',[],'membrane',membranes);
 
 end %%% END MSTACKSTRUCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MSTACKSTRUCT %%%
 
@@ -168,6 +172,28 @@ end
 ms.substance = s;
 ms.freesetup = flowsetup(s);
 end %------------------------------------------------------- end writeflowsetups
+
+
+function ms = writecurvsetups(curv,T1,T2,s,ms) %---------------- writecurvsetups
+%WRITECURVSETUPS Add flow setup structs to a membrane stack struct.
+%  MS = WRITECURVSETUPS(CURV,T1,T2,SUBSTANCE,MS) writes flow setup structures
+%  given a radius of curvature to each layer in the membrane struct MS.
+%  The substance is written to MS.substance.
+
+% cycle through all membranes
+nmembranes = length(ms.membrane);
+for i = 1:nmembranes
+    % and through all layers
+    nlayers = length(ms.membrane(i).layer);
+    for j = 1:nlayers
+        % Could optimize flowsetup a bit here, by computing some stuff only once
+        ms.membrane(i).layer(j).flsetup = curvsetup(T2, T1, curv, s, ...
+                ms.membrane(i).layer(j).matrix, ms.membrane(i).layer(j).fmodel);
+    end
+end
+ms.substance = s;
+ms.freesetup = curvsetup(s);
+end %------------------------------------------------------- end writecurvsetups
 
 function m = mfluxliquid(T1,p1,p2,s,ms) %--------------------------- mfluxliquid
 %MFLUXLIQUID Mass flux for the flow of the liquid phase.
