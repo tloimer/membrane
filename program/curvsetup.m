@@ -144,9 +144,9 @@ stepT = 0.4;
 intTrange = ceil((Tmax-T2)/stepT)*stepT;
 % the large interval is probably needed for the shooting-iteration
 if intTrange > 4
-  intTrange = [T2 T2+2*intTrange]; %DEBUG use 2 for normal use
+  intTrange = [T2-1 T2+2*intTrange]; %DEBUG use 2 for normal use
 else
-  intTrange = [T2 T2+10];
+  intTrange = [T2-1 T2+10];
 end
 %intTrange = [295 305];
 
