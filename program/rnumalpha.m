@@ -121,7 +121,9 @@ curv = fzero(@presiduum, 4./ms.membrane(1).layer(1).matrix.dia);
 % Now write the solution
 solver.writesolution = true;
 solver.fullsolution = true;
-[p1,ms] = asym(m,state2,ms,solver);
+[p1sol,ms] = asym(m,state2,ms,solver);
 
+% Do not use [ms.p1sol,ms] = asym(...) above, ms would overwrite ms.p1sol.
+ms.p1sol = p1sol;
 r9 = 2./curv;	% for cylindrical pores
 end
