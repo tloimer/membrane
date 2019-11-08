@@ -674,7 +674,7 @@ function plotT(ms,i) %---------------------------------------------------- plotT
 %PLOTT      Plot temperature.
 %  PLOTT(MS,I) Plot temperature distribution in the I-th membrane.
 
-global INFO
+global INFO CELSIUS
 if nargin == 1
   i = 1;
 end
@@ -718,7 +718,14 @@ if nflow > 0
   zup = zup(1) + ms.membrane(i).zscale * log( (zup-zup(1))/ms.membrane(i).zscale + 1);
 end
 
-mkTdim = @(T) (T - ms.T2)/(ms.T1 - ms.T2);
+if ms.T1 == ms.T2 || (isscalar(CELSIUS) && CELSIUS == 1)
+	mkTdim = @(T) T - 273.15;
+	dimensional = 1;
+else
+	mkTdim = @(T) (T - ms.T2)/(ms.T1 - ms.T2);
+	dimensional = 0;
+end
+
 if INFO == 1
 	fprintf('T1 = %.2f K, T2 = %.2f K.\n', ms.T1, ms.T2);
 	fmt = '%5.3f %g\n';
@@ -731,7 +738,7 @@ end
     plot(zup/sumL, mkTdim(Tup),...
 	'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
     if INFO == 1
-      fprintf('z/L    T/°C\n');
+      fprintf('z/L    T/K\n');
       fprintf(fmt, [zup/sumL; Tup]);
       fprintf('\n');
     end
@@ -764,9 +771,14 @@ end
       fprintf('\n');
     end
   end
-  ylim([-0.1 1.1]);
+
   xlabel('z/(sum L)');
-  ylabel('(T-T_2)/(T_1-T_2)');
+  if dimensional == 0
+    ylim([-0.1 1.1]);
+    ylabel('(T-T_2)/(T_1-T_2)');
+  else
+    ylabel('T [°C]');
+  end
 
   % Put the remaining flow elements in the first layer into the existing plot.
   for k = nflow-1:-1:1
@@ -793,6 +805,12 @@ end
       fprintf(fmt, [(offz(j-1) + jl.flow(k).z)/sumL; jl.flow(k).T]);
       fprintf('\n');
     end
+  end
+
+  % Boundaries between layers
+  k = ylim;
+  for j = 2:nl
+    line([1 1]*offz(j-1)/sumL, k(1) + [0.2 0.8]*(k(2) - k(1)));
   end
 
 end %----------------------------------------------------------------- end plotT
