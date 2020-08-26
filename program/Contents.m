@@ -1,5 +1,4 @@
 % Flow through porous membranes
-% Version asym 04-Jul-2016
 %
 % Setup.
 %   substance     - Material properties of a substance.
