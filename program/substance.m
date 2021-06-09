@@ -7,7 +7,7 @@ function s = substance(name, gaseq)
 %
 %  SUBSTANCE(NAME, 'ideal') uses the thermic equation of state for an ideal gas.
 %
-%  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane'.
+%  NAME can be 'butane', 'ethanol', 'isobutane', 'nitrogen', 'propane', 'R142b'.
 %
 %  The struct S has the following fields:
 %  Variables:
@@ -71,8 +71,12 @@ function s = substance(name, gaseq)
 
 if nargin == 2 && strcmp(gaseq, 'ideal')
     thermic = @ideal;
+    thermic2 = @ideal_2;
+    thermic3 = @ideal_3;
 else
     thermic = @virial;
+    thermic2 = @virial_2;
+    thermic3 = @virial_3;
 end
 
 % Struct constructor. No need to be pedantic here. If not present, struct fields
@@ -80,7 +84,7 @@ end
 s = struct('name',name,'R',[],'M',[],'ps',[],'Ts',[],'rho',[],'v',[],...
   'hvap',[],'cpg',[],'mul',[],'mug',[],'kg',[],'kl',[],'cpl',[],'sigma',[],...
   'kelveq',[],'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],...
-  'intcpl',[],'nul',[],'nug',[]);
+  'intcpl',[],'nul',[],'nug',[], 'v_use',[], 'dv_use',[], 'cpg_use',[], 'jtc',[]);
 
 % universal gas constant
 R = 8314.4; % J/kmolK
@@ -170,7 +174,7 @@ case 'isobutane'
 %                                (n)  (E) (F)
 % Dmin/Dmax: Range of data points; Tmin/Tmax: recommended temperature range
 Acoeffs =  zeros(3,10);
-Acoeffs(1,1:5) = [188 1641.9542 8.32368 739.94 -43.15];
+Acoeffs(1,1:4) = [188 8.32368 739.94 -43.15];
 Acoeffs(2,1:5) = [268 130286.05 9.00272 947.54 -24.28];
 Acoeffs(3,:) = [408 3649825.9 Acoeffs(2,3:5) 268 407.1 2.6705 -19.64 2792];
 
@@ -196,6 +200,8 @@ rhofun = {@poly3, @rholandolt};
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [[116.25 -1.0293e5 -1.2475e7 -7.0490e9]/1e3 R M];
 virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -225,7 +231,7 @@ mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See p. 498 in Reid, Prausnitz and Poling, 4th ed. (1987).
-kgcoeffs = [M Tc pc 9.55];
+kgcoeffs = [M Tc pc -0.152 1.191 -0.039 9.55];
 kgfun = @kgroy;
 
 % KL, thermal conductivity of the liquid [W/mK]
@@ -250,6 +256,9 @@ cplfun = @poly4;
 % sigcoeffs = [a1 a2 Tc]
 sigcoeffs = [0.0505731 1.24412 408.15];
 sigfun = @sigstephan22;
+
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
 
 case 'butane'
 % Butane. n-butane. CAS 106-97-8.
@@ -290,6 +299,8 @@ rhofun = {@poly3, @rholandolt};
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [[227.20 -2.2797e5 2.9855e7 -1.3706e10]/1e3 R M];
 virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -318,7 +329,7 @@ mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See p. 498 in Reid, Prausnitz and Poling, 4th ed. (1987).
-kgcoeffs = [M Tc pc 9.59];
+kgcoeffs = [M Tc pc -0.152 1.191 -0.039 9.59];
 kgfun = @kgroy;
 
 % KL, thermal conductivity of the liquid [W/mK]
@@ -343,6 +354,9 @@ cplfun = @cpleq2;
 % sigcoeffs = [a1 a2 Tc]
 sigcoeffs = [0.0513853 1.20933 425.16];
 sigfun = @sigstephan22;
+
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
 
 case 'ethanol'
 % Ethanol. CAS 64-17-5.
@@ -380,6 +394,8 @@ rhofun = {@poly3, @rholandolt};
 % Mixtures (2002)
 vcoeffs = [[9.6838e3 -1.3575e7 6.3248e9 -1.0114e12]/1e3 R M];
 virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -435,6 +451,9 @@ cplfun = @poly3;
 sigcoeffs = [0.0726009 1.08415 -0.524168 513.92];
 sigfun = @sigstephan23;
 
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
+
 case 'nitrogen'
 % Nitrogen. CAS 7727-37-9.
 
@@ -469,6 +488,8 @@ rhofun{1} = @rhoperry;
 % Mixtures (2002)
 vcoeffs = [[40.286 -9.3378e3 -1.4164e6 6.1253e7 -2.7198e9]/1e3 R M];
 virialfun = @pdiv4;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -532,6 +553,9 @@ cplfun = @poly3;
 sigcoeffs = [2.4954e-07 Tc pc];
 sigfun = @sigvdi;
 
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
+
 case 'propane'
 % Propane. CAS 74-98-6. C_3 H_8
 
@@ -591,6 +615,8 @@ rhofun = {@poly4, @rholandolt};
 % Vectorizes, but only for column vectors!
 vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % Range: 130 K < T < 350 K, error < 0.8%
@@ -682,6 +708,9 @@ sigfun = @sigstephan22;
 % Kinematic viscosity of the vapor
 % Range: 100 K < T < 290, error < 2%; increases to 15% error for T = 330 K
 
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
+
 case 'propaneperry'
 % Propane. CAS 74-98-6. C_3 H_8
 
@@ -727,6 +756,8 @@ rhofun{1} = @rhoperry;
 % See propane above.
 vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-156 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
@@ -801,6 +832,185 @@ cplfun = @cpleq2;
 sigcoeffs = [0.05094 1.22051 369.82];
 sigfun = @sigstephan22;
 
+% Ergänzung aufgrund Programmänderung:
+jtcfun = @jtcelsevier;
+
+case {'R142b', 'r142b'}
+% R142b. 1-Chloro-1,1-Difluoroethane. CAS 75-68-3.
+
+% PS, saturation pressure, coefficients for the Antoine eq.
+% Landolt-Boernstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20A. J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M. Frenkel, K.R. Hall (1999).
+% 4 Halogen containing organic compounds, C2
+% Range:  205 K < T < 410 K
+% Tmax, pmax are the values up to which the coeffs. in this line are valid.
+% classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
+% line in Landolt-Boernstein:     A-3  B  C  Dmin/Dmax  Tmin/Tmax
+% A-3 to get Pa (/1000)
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ] % Tmax = Tc
+% line in Landolt-Boernstein:     A-3  B   C   Dmin/Dmax  T0/Tc
+%                                (n)  (E) (F)
+% Dmin/Dmax: Range of data points; Tmin/Tmax: recommended temperature range
+% 7246.465757 ... pmax calculated with extended antoine equation
+Tc = 410.3;
+Acoeffs =  zeros(2,10);
+Acoeffs(1,1:5) = [273 143712.053 9.05053 928.645 -34.46];
+%Acoeffs(2,:) = [410.3 7246465.757 Acoeffs(1,3:5) 273 410.3 0.434294 115.85 -3920.5];
+Acoeffs(2,:) = [410.3 4055000 Acoeffs(1,3:5) 273 410.3 2.91673 115.85 -3920.5];
+% classical Antoine eq. for the whole temperature range:
+%Acoeffs =  zeros(1,6);
+%Acoeffs(1,1:5) = [410.3 143712.053 9.05053 928.645 -34.46];
+
+
+% Ps, saturation pressure
+% Physical proberties of alternatives to the fully halogenated chlorofluorocarbons
+% M.O. McLinden, Thermophysics division, National institute of standards
+% and technology, Boulder, Colorado, 80303, page 12
+%pcoeffs = [-3382.422 17.01384 -0.001012149 3.224924 Tc];
+%pfun = @psat;
+
+% RHO, liquid density at saturation
+% Range: 210.22 K < T < 410.30 K
+% See Landolt-Boernstein, 2.5.3.2. C2 - Densities of Halohydrocarbones
+% Chlorofluoroalkanes, Page 353 1-Chloro-1,1-difluoroethane
+% M. Frenkel, X. Hong, Q. Dong, X. Yan and R. D. Chirico (2003).
+% rhocoeffs:   [Tmax A B C D 0 0]
+%  or          [Tmax A B C D Tc rhoc]
+M = 100.495; % https://webbook.nist.gov - Freon 142b
+rhocoeffs = zeros(2,7);
+rhocoeffs(1,1:4) = [315 1.60808e3 -9.15076e-1 -2.55106e-3];
+rhocoeffs(2,:) = [410.3 1.55329 -3.81347e-2 4.23379e-4 -1.69762e-6 410.3 446.0]; %rhoc from https://webbook.nist.gov
+rhofun = {@poly3, @rholandolt};
+
+% V, specific volume of the vapor
+% See Landolt-Boernstein, New Series, Group IV: Physical Chemistry.
+% Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
+% Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
+% Mixtures (2002) - CClF3 - CCl3F (Chlorotrifluoromethane - Trichlorofluoromethane)
+% Landolt-Boernstein gives M = 100.49
+% C2 Organic Compounds, Second Virial Coefficients, page 125:
+vcoeffs = [[-132.26 5.4763e4 -1.8750e7 -1.2520e10]/1e3 R M];
+virialfun = @pdiv3;
+virial_2fun = @pdiv3;
+virial_3fun = @pdiv3;
+
+% CPID, specific heat capacity in the ideal gas state at constant pressure
+% See M.E. Mondejar et al / Fluid Phase Equilibria 433 (2017) page 81
+% Data from DDBST GmbH, Oldenburg, Germany, www.ddbst.com
+% cpcoeffs = [A(1), A(2), A(3), A(4), A(5), M]
+% Range: 264 K < T < 600 K
+cpcoeffs = [62.0124 86.4561 661.782 899.826 3375.65, M];
+cpfun = @cpalylee;
+
+% MUL, dynamic viscosity of the liquid
+% See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
+% Report correlations by Daubert and Danner, Physical and Thermodynamic Proper-
+% ties of Pure Chemicals -- Data Compilation, Design Institute for Physical
+% Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
+% 1-Chloro-1,1-Difluoroethane
+% Range: 200 K < T < 360 K
+ mulcoeffs = [15.574 -450.8 -3.8833];
+ mulfun = @mudaubertshort;
+
+% MUL, dynamic viscosity of the liquid
+% See G. Latini et. al / Fluid Phase Equilibria 125 (1996) 205-217
+% equation (3) on page 207 for refrigerants belonging on the ethane series
+% C = [A C Tc] ...coefficiants on page 210 (R142b)
+% for a range of: 0.47 < Tr < 0.92
+% correlation checked with webbook.nist for a range of: 200 K < T < 360 K
+Tc = 410.3;
+%mulcoeffs = [7.2115 1.35 Tc];
+%mulfun = @mullatini;
+
+% MUG, dynamic viscosity of the vapor
+% See VDI Waermeatlas, 11th ed. (2013) D1 pages 164-166.
+% A correlation by Lucas.
+% Critical constants are taken from VDI Waermeatlas, D4.1. table 2a and
+% Landolt-Boernstein, 2.5.3.2. C2 - Densities of Halohydrocarbones
+% Chlorofluoroalkanes, Page 353 1-Chloro-1,1-difluoroethane
+% dipole-moment: 2,14 +/-0,04 debye (page 9-47 (1427))
+% Lide, D.R. CRC Handbook of Chemistry and Physics 88TH Edition 2007-2008.
+% CRC Press, Taylor & Francis, Boca Raton, FL 2007, p. 9-47
+%  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
+Tc = 410.3; pc = 4.055e6;
+mugcoeffs = [0.267842 2.14 R M Tc pc];
+mugfun = @mulucas;
+
+% KG, thermal conductivity of the vapor [W/mK]
+% See page 10.9 in Poling, Prausnitz and O'Connel 5th ed. (2001).
+% M < 120 Hydrocarbones (R142b is a Halohydrocarbone)
+% Calculation of Roy-coefficient:
+% C_ethane = 0.73 + 2 = 2.73 (page 10.15 - example)
+% C_Fl = 0.58 and C_Cl = 2.93 (page 10.10)
+% C = C_ethane + C_Cl + 2 * C_Fl = 6.82
+% kgcoeffs = [M Tc pc -0.107 1.330 -0.223 6.82];
+% kgfun = @kgroy;
+
+% KG, thermal conductivity of the vapor [W/mK]
+% See International Journal of Thermophysics, Vol. 1, 1980
+% Transport Properties of Freon-142b in the Temperautre Range of 280-510K
+% R. Afshar and S. C. Saxena
+% page 4 (54) equation (2)
+% kgcoeffs = [0.1414 -1.144e-3 4.989e-6 -4.358e-9];
+% kgfun = @kgafsax;
+
+% KG, thermal conductivity of the vapor [W/mK]
+% See International Journal of Thermophysics, Vol. 13, 1992
+% The Thermal Conductivity of 1-Chloro-1,1-Difluoroethane (HCFC-142b)
+% A. T. Sousa, P. S. Fialho, C. A. Nieto de Castro, R. Tufeu and B. Le
+% Neindre
+% page 12 (394) equation (7)
+% best correlation to webbook.nist
+kgcoeffs = [-5.5597 3.9562e-2 5.475e-5];
+kgfun = @kgsousa;
+
+% klcoeffs = [410.3 M];
+% klfun = @klbaroncini;
+
+%klscoeffs = [-0.23363 9.3271 -1.4978 1.09726];
+%klsfun = @klsousa;
+
+% KL, thermal conductivity of the liquid [W/mK]
+% See Journal of Thermal Analysis and Calorimetry
+% https://doi.org/10.1007/s10973-019-09238-w
+% published online: 16.01.2020
+% Zhixiong Chen, Mohammadreza Akbari, Forouzan Forouharmanesh,
+% Mojtaba Keshani, Mohammed Akbari, Masoud Afrand, Arash Karimipour
+% Page 3, equation (8)
+% C = [Tc a b c exp]
+klcoeffs = [410.3 0.1656 -0.1201 -0.2532 0.0618];
+klfun = @kl2020;
+
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% See J. Chem. Eng. Data 1993, 38, page 70-74
+% Range: 273.15 K < T < 350 K
+% cplcoeffs = [M R Tc Pc a1 a2 a3 a4 b1 b2 b3 c1 c2]
+cplcoeffs = [M R Tc pc 4.9634 7.9208 -1.2226 3.9879e-3 -1.3332 1.1047 -9.7184e-2 7.6852e-2 -6.1316e-2];
+cplfun = @cpljchem;
+
+% SIGMA, surface tension [N/m].
+% calculation of surface tension sigma(T) according to J. Phys. Chem. 1990, 94, pages 8840-8845
+% Range: 250.15 K < T < 409.15 K
+% sigcoeffs = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+% rhoc in kg/m^3
+% a0 in m
+% g in m/s^2
+a0 = sqrt(7.5)*10^-3;
+sigcoeffs = [Tc 449 a0 -0.09 0.351 -0.493 1.774 9.807];
+sigfun = @sigmacapillary;
+
+% Joule-Thomson-coefficient [K/Pa]
+% jtc = (V*(1-betha*T) / Cp) page 41 in *
+% betha = 1/V * (dV/dT)_p -> page 5 in *
+% * Nonequilibrium Thermodynamics - Transport and Rate Process in ...
+% Physical, Chemical and Biological Systems, Fourth Edition (1019)
+% Yasar Demirel and Vincent Gerbaud
+% Chapter-1---Fundamentals-of-Equilibrium-Thermo_2019_Nonequilibrium-Thermodyn.pdf
+% s.jtc = @(T,p) jtc(jtccoeffs,cpg(T,p),v(T,p));
+jtcfun = @jtcelsevier;
+
+
 otherwise
 error('No substance of this name.')
 % water
@@ -813,16 +1023,21 @@ error('No substance of this name.')
 %mulcoeffs = [-51.964 3670.6 5.7331 -5.349e-29 10];
 end
 %end case name
-
 % These functions are the same for all substances.
 
 % thermic equations of state
 s.R = R/M;
 s.M = M;
 s.ps = @(T) ps(Acoeffs,T);
+s.ifind = @(T) ifind(Acoeffs,Tc,T);     %Überprüfung ob Antoine 1 od. 2
+s.psj = @(T) psj(Acoeffs,s.ifind,T);    %Berichtigung s.ps
+%s.psat = @(T) psat(pcoeffs,T);   %Other calculation model (See case R142b)
 s.Ts = @(p) Ts(Acoeffs,p);
 s.rho = @(T) genericfunc(rhocoeffs,rhofun,T);
 s.v = @(T,p) thermic('v',vcoeffs,virialfun,T,p);
+dT_use = 1.0; % temperature-difference for calculations
+v_use = @(T,p) thermic2('v_use',vcoeffs,virial_2fun,T,p);
+dv_use = @(T,p) thermic3('dv_use',vcoeffs,virial_3fun,T,p,dT_use);
 s.hvap = @(T) hvap(s.ps,s.rho,s.v,T);
 % caloric equation of state
 % cpid, cpg_cpid - def'd for better readability
@@ -830,11 +1045,18 @@ cpid = @(T) cpfun(cpcoeffs,T);
 % cpg_cpid = cpg(T,p) - cpid; cpid = cp(T,p=0)
 cpg_cpid = @(T,p) thermic('cp',vcoeffs,virialfun,T,p);
 s.cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p));
+cpg_use = @(T,p) cpgas_2(cpid(T),cpg_cpid(T,p));
+%cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p)); % for Joule-Thomson-Coefficient
+%v = @(T,p) thermic('v',vcoeffs,virialfun,T,p); % for Joule-Thomson-Coeff.
+%s.jtc = @(T,p,v,cpg) jtcfun(T,p,v,cpg); % Joule-Thomson-Coefficient
+s.jtc = @(T,p) jtcfun(T,p,v_use(T,p),cpg_use(T,p),dv_use(T,p)); % Joule-Thomson-Coefficient
 s.mul = @(T) mulfun(mulcoeffs,T);
 s.mug = @(T) mugfun(mugcoeffs,T);
 s.kg = @(T) kgfun(kgcoeffs,T);
+%s.kl = @(T,P) klfun(klcoeffs,T,P);
 s.kl = @(T) klfun(klcoeffs,T);
-s.cpl = @(T) cplfun(cplcoeffs,T);
+%s.kls = @(T) klsfun(klscoeffs,s.rho,s.kg,T); %kl-Sousa
+s.cpl = @(T,p) cplfun(cplcoeffs,T,p);
 s.sigma = @(T) sigfun(sigcoeffs,T);
 s.kelveq = @(T,sig,rho,curv) exp(-curv.*sig./(s.R.*rho.*T));
 % Derivatives of the thermic equation of state which are equal to
@@ -853,13 +1075,15 @@ s.drho = @(T) genericafun(rhocoeffs,drhofun,T);
 s.dsig = @(T) feval(str2func(['d' func2str(sigfun)]),sigcoeffs,T);
 s.intjt = @(T0,p0,p1) intjt(T0,p0,p1,@(p,T) s.jt(T,p));
 % Integrals of a function have a 'i' prepended.
-s.intcpl = @(T0,T1) feval(str2func(['i' func2str(cplfun)]),cplcoeffs,T0,T1);
+s.intcpl = @(P,T0,T1) feval(str2func(['i' func2str(cplfun)]),cplcoeffs,P,T0,T1);
 intcpl_T = @(T1,T2)feval(str2func(['i' func2str(cplfun) '_x']),cplcoeffs,T1,T2);
 s.s = @(T,p,x,Tr) ...
   entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,s.ps,s.Ts,s.hvap,s.drho);
 % Auxiliary functions, for convenience.
 s.nul = @(T) s.mul(T)./s.rho(T);
 s.nug = @(T,p) s.mug(T).*s.v(T,p);
+end
+
 
 function y = genericfunc(coeffs,functions,T)
 %GENERICFUNC Apply a correlation function at temperature T.
@@ -876,7 +1100,7 @@ i = find(T <= coeffs(:,1), 1);
 %  y = NaN;
 %else
   y = functions{i}(coeffs(i,2:end),T);
-%end
+end
 
 function [y1,y2] = genericafun(coeffs,functions,T)
 %GENERICAFUN Apply a correlation function at temperature T, returns an array.
@@ -894,7 +1118,7 @@ i = find(T <= coeffs(:,1), 1);
 %  y1 = NaN; y2 = NaN;
 %else
   [y1,y2] = functions{i}(coeffs(i,2:end),T);
-%end
+end
 
 function cpid = cpperry(C,T)
 %CPID       Specific heat capacity at constant pressure in the ideal gas state.
@@ -907,6 +1131,7 @@ c3t=C(3)./T;
 c5t=C(5)./T;
 
 cpid = C(1) + C(2)*(c3t./sinh(c3t)).^2 + C(4)*(c5t./cosh(c5t)).^2;
+end
 
 function cpid = vdi10(C,T)
 %VDI10      Specific heat capacity at constant pressure in the ideal gas state.
@@ -921,7 +1146,8 @@ at = T./(C(1) + T);
 at2 =at.^2;
 cpid = C(8).*( C(2) + (C(3)-C(2)).*at2.*(1.0-(C(1)./(C(1)+T)).*...
        (C(4) + C(5).*at + C(6).*at2 + C(7).*at2.*at)));
-
+end
+   
 function cpg = cpgas(cpid,cpg_cpid)
 %CPGAS      Specific heat capacity at constant pressure of the vapor  [J/kgK].
 %  CPGAS(CPID,CPG_CPID) calculates the specific heat capacity at constant
@@ -959,6 +1185,7 @@ function cpg = cpgas(cpid,cpg_cpid)
 %  nitrogen  (77.244,1e5)        1124.3     1121.3
 
 cpg = cpid + cpg_cpid;
+end
 
 function hvap = hvap(ps,rho,v,T)
 %HVAP       Specific enthalpy of vaporization [J/kg].
@@ -972,6 +1199,7 @@ function hvap = hvap(ps,rho,v,T)
 
 [psat, dpsat] = ps(T);
 hvap = dpsat.*T.*(v(T,psat)-1./rho(T));
+end
 
 function v = ideal(out, vcoeffs, ~, T, p);
 %IDEAL      Specific volume of the vapor for an ideal gas [m3/kg].
@@ -991,6 +1219,7 @@ else
     error([upper(mfilename)...
 '->IDEAL: First argument must be ''v'', ''cp'', ''dhdp'' or ''jt'', not ''%s''.'...
         ], out);
+end
 end
 
 function v = virial(out,vcoeffs,virialfun,T,p)
@@ -1140,6 +1369,7 @@ else % case 'cp' 'dhdp' 'jt'
   end
 
 end
+end
 
 function s12 = entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,ps,Ts,hvap,drho)
 %ENTROPY    Difference of specific entropy [J/kgK].
@@ -1196,6 +1426,7 @@ for j = 1:i
 	%	+ sl(intcpl_T,Ts,ps,drho,Tr,ps(Tr),T(j),p(j));
       end
   end
+end
 end
 
 function s12 = sg(virialfun,vcoeffs,cpid,T1,p1,T2,p2)
@@ -1262,6 +1493,7 @@ if T1 ~= T2
 %  fprintf('SG: Int (cpg-cpid)/T dT = %.4g\n',(B1-B2).*p1./M);
   s12 = s12 + (B1-B2).*p1./M;
 end
+end
 
 %if nargin == 7 && p1 ~= p2
 %  if T1 == T2
@@ -1321,6 +1553,7 @@ else % Tb between T1 and T2
   else
     s12 = s12 + dv1.*(p1-p0) - dv2.*(p2-ps2);
   end
+end
 end
 %fprintf('SL: s2 - s1  = %.4g\n',s12);
 
@@ -1387,6 +1620,7 @@ if nargout==2
     dps = dps+ln10*ps.*(8*chi.^7.*E+12*chi.^11.*F+0.43429.*n.*chi.^(n-1))./Tc;
   end
 end
+end
 
 function Ts = Ts(Acoeffs,p)
 %TS(P)      Saturation temperature [K].
@@ -1404,10 +1638,10 @@ function Ts = Ts(Acoeffs,p)
 % with the start interval [T0, Ta].
 %
 % Ps |  ext. Ant.    Ant.
-%    |         /   ´
-%    | -------/--´
-%    |       /:´:
-%    |      /´: :
+%    |         /  ,'
+%    | -------/-,'
+%    |       /,':
+%    |      /': :
 %    |  __-´  : :
 %    |________________
 %         T0 Ts Ta    Ts
@@ -1427,6 +1661,7 @@ if T0 ~= 0
   Ts = min(Ts,Acoeffs(i,1));
   Ts = newtony(@(T) ps(Acoeffs,T),Ts,p,1e-5);
 end
+end
 % RES in NEWTON: With ps ~ 1e5, ps is solved to 7 digits accuracy. Since Ts is
 % accurate to RES/dps, and dps > 1e3, for RES = 1e-2 Ts is accurate to 1e-5.
 
@@ -1440,6 +1675,7 @@ function rho = rholandolt(coeffs,T)
   = deal(coeffs(1),coeffs(2),coeffs(3),coeffs(4),coeffs(5),coeffs(6));
 chi = 1 - T/Tc;  phi = Tc - T;
 rho=(1+1.75.*chi.^(1/3)+0.75.*chi).*(rhoc+A.*phi+B.*phi.^2+C.*phi.^3+D.*phi.^4);
+end
 
 function [drho, rho] = drholandolt(coeffs,T)
 %DRHOLANDOLT Derivative of liquid density, (1/rho) drho/dT [1/K].
@@ -1452,6 +1688,7 @@ rho = rholandolt(coeffs,T);
 drho = (1+1.75.*chi.^(1/3)+0.75.*chi).*(-A -2*B.*phi-3*C.*phi.^2-4*D.*phi.^3)...
 -(7./(12*Tc.*chi.^(2/3))+0.75./Tc).*(rhoc+A.*phi+B.*phi.^2+C.*phi.^3+D.*phi.^4);
 drho = drho./rho;
+end
 
 function rho = rhoperry(C,T)
 %RHOPERRY   Liquid density [kg/m3].
@@ -1460,6 +1697,7 @@ function rho = rhoperry(C,T)
 %  ed. (1997). See also Table 2-32 idem, 8th. ed (2008).
 
 rho = C(1)./C(2).^(1 + (1 - T./C(3)).^C(4));
+end
 
 function [drho, rho] = drhoperry(C,T)
 %DRHOPERRY  Derivative of liquid density, (1/rho) drho/dT [1/K].
@@ -1472,6 +1710,7 @@ function [drho, rho] = drhoperry(C,T)
 
 rho = rhoperry(C,T);
 drho = C(4).*(1-T./C(3)).^(-1+C(4)).*log(C(2))./C(3);
+end
 
 function mul = mudaubert(C,T)
 %MUDAUBERT  Dynamic viscosity of the liquid [Pa s].
@@ -1484,6 +1723,7 @@ function mul = mudaubert(C,T)
 %  Engineer's Handbook, 8th ed. (2008).
 
 mul = exp( C(1) + C(2)./T + C(3).*log(T) + C(4).*(T.^C(5)) );
+end
 
 function mul = mudaubertshort(C,T)
 %MUDAUBERTSHORT  Dynamic viscosity of the liquid [Pa s].
@@ -1493,6 +1733,7 @@ function mul = mudaubertshort(C,T)
 %  See also SUBSTANCE>MUDAUBERT.
 
 mul = exp( C(1) + C(2)./T + C(3).*log(T) );
+end
 
 function mul = vdi02(C,T)
 %VDI02      Specific heat capacity at constant pressure in the ideal gas state.
@@ -1502,6 +1743,7 @@ function mul = vdi02(C,T)
 %  caption of Tabelle 7 refers to mPas. The latter is wrong.
 cdt = (C(3) - T)./(T - C(4));
 mul = C(5).*exp(nthroot(cdt,3).*(C(1) + C(2).*cdt));
+end
 
 function mug = mulucas(mugcoeffs,T)
 %MULUCAS    Dynamic viscosity of the vapor [Pa s].
@@ -1535,29 +1777,32 @@ else
 end
 
 mug = etaxi*fp/xi;
+end
 
 function kmu = kmuperry(C,T)
 %KMUPERRY   Equation to Table 2-312, 2-314 in Perry, 8th ed. (2008).
 % k = C1*T^C2/(1 + C3/T + C4/T^2)
 kmu = C(1)*T.^C(2)./(1 + C(3)./T + C(4)./T./T);
+end
 
 function kmu = kmuperryshort(C,T)
 %KMUPERRYSHORT Abridged SUBSTANCE>KMUPERRY.
 kmu = C(1)*T.^C(2);
+end
 
-function kg = kgroy(kgcoeffs,T)
+%function kg = kgroy(kgcoeffs,T)
 %KGROY      Thermal conductivity of the vapor [W/mK].
 %  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p.
 %  498 in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
 %    gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..),
 %  Pc in Pa is used.
 
-M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(4);
+%M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(4);
 
-gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
-Tr = T./Tc;
-CfTr = C*(-0.152.*Tr + 1.191.*Tr.^2 - 0.039.*Tr.^3);
-kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
+%gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
+%Tr = T./Tc;
+%CfTr = C*(-0.152.*Tr + 1.191.*Tr.^2 - 0.039.*Tr.^3);
+%kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
 
 function kl = klatini(klcoeffs,T)
 %KLATINI    Thermal conductivity of the liquid [W/mK].
@@ -1571,6 +1816,7 @@ function kl = klatini(klcoeffs,T)
 % klcoeffs = [Tc A]
 Tr = T./klcoeffs(1);
 kl = klcoeffs(2).*(1-Tr).^0.38./Tr.^(1/6);
+end
 
 function cpl = cpleq2(C,T)
 %CPLEQ2     Evaluate Equation 2 to Table 2-153 in Green & Perry, 8th ed. (2007).
@@ -1591,6 +1837,7 @@ Tc = C(5); M = C(6);
 x = (1-T./Tc);
 cpl = (C(1).^2./x + C(2) - 2.*C(1).*C(3).*x - C(1).*C(4).*x.^2 - ...
   C(3).^2*x.^3./3 - C(3).*C(4).*x.^4./2 - C(4).^2.*x.^5./5 )./M;
+end
 
 function icpl = icpleq2(C,T0,T1)
 %ICPLEQ2    Integrate CPLEQ2.
@@ -1611,6 +1858,7 @@ icpl = C(1).^2.*log(x0./x1) - C(2).*(x1-x0) + C(1).*C(3).*(x1.^2-x0.^2) ...
   + C(1).*C(4).*(x1.^3-x0.^3)/3 + C(3).^2.*(x1.^4-x0.^4)/12 ...
   + C(3).*C(4).*(x1.^5-x0.^5)/10 + C(4).^2.*(x1.^6-x0.^6)/30;
 icpl = Tc.*icpl./M;
+end
 
 function y = icpleq2_x(C,T1,T2)
 %ICPLEQ2_X  Integrate CPL/T dT, CPL given by CPLEQ2 [J/kg K].
@@ -1654,6 +1902,7 @@ y = (  (-12*C(4).^2.*(T1.^5-T2.^5))/5 ...
   -2*Tc.^5.*(( 10*(3.*(C(2)+C(1).^2)-6*C(1).*C(3)+C(3).^2) ...
   -15*(2*C(1)+C(3)).*C(4)- 6*C(4).^2 ).*(log(T1./T2)) ...
   +30*C(1).^2.*log((Tc-T2)./(Tc-T1)))   )./(M.*60.*Tc.^5);
+end
 
 function cpl = vdi08(C,T)
 %VDI08      Specific isobaric heat capacity of the liquid [J/kgK].
@@ -1666,6 +1915,7 @@ function cpl = vdi08(C,T)
 % Tc = C(7);
 xi = (1-T./C(7));
 cpl = C(1)./xi  + C(2) + C(3).*xi + C(4).*xi.^2 + C(5).*xi.^3 + C(6).*xi.^4;
+end
 
 function icpl = ivdi08(C,T0,T1)
 %IVDI08     Integrate VDI08.
@@ -1686,6 +1936,7 @@ x0 = (1-T0./Tc); x1 = (1-T1./Tc);
 
 icpl = Tc.*( C(1)*log(x0./x1) - C(2)*(x1-x0) - C(3)*(x1.^2-x0.^2)/2 ...
        - C(4)*(x1.^3-x0.^3)/3 - C(5)*(x1.^4-x0.^4)/4 - C(6)*(x1.^5-x0.^5)/5 );
+end
 
 function y = ivdi08_x(C,T1,T2)
 %IVDI08_X   Integrate cpl/T from T1 to T2, cpl given by VDI08 [J/kgK].
@@ -1706,7 +1957,7 @@ y = C(6)*(T2.^4 -T1.^4)/(4*Tc^4) + (C(5) + 4*C(6))*(T1.^3 - T2.^3)/(3*Tc^3) ...
     + (C(3) + 2*C(4) + 3*C(5) + 4*C(6))*(T1 - T2)/Tc ...
     + (C(2) + C(3) + C(4) + C(5) + C(6))*log(T2./T1) ...
     + C(1)*log((T2.*(Tc-T1))./(T1.*(Tc-T2)));
-
+end
 
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
@@ -1714,6 +1965,7 @@ function sig = sigvdi(sigcoeffs,T)
 %  VDI-Wärmeatlas, eq.(91), p. Da 37.
 b = sigcoeffs(1); Tc = sigcoeffs(2); pc = sigcoeffs(3);
 sig = b.*(pc.^2.*Tc).^(1/3).*(1-T./Tc).^(11/9);
+end
 
 function [dsig, sig] = dsigvdi(sigcoeffs,T)
 %DSIGVDI    Derivative of surface tension, (1/SIG) DSIG/DT [1/K].
@@ -1726,6 +1978,7 @@ function [dsig, sig] = dsigvdi(sigcoeffs,T)
 Tc = sigcoeffs(2);
 dsig = 11./(9*(T-Tc));
 sig = sigvdi(sigcoeffs,T);
+end
 
 function sig = sigstephan22(sigcoeffs,T)
 %SIGSTEPHAN22 Surface tension [N/m].
@@ -1738,6 +1991,7 @@ function sig = sigstephan22(sigcoeffs,T)
 %else
 %  sig = 0;
 %end
+end
 
 function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 %DSIGSTEPHAN22 Surface tension [N/m].
@@ -1754,6 +2008,7 @@ function [dsig, sig] = dsigstephan22(sigcoeffs,T)
 %else
 %  sig = 0; dsig = 0;
 %end
+end
 
 function sig = sigstephan23(sigcoeffs,T)
 %SIGSTEPHAN23 Surface tension [N/m].
@@ -1763,6 +2018,7 @@ function sig = sigstephan23(sigcoeffs,T)
 % sigcoeffs = [a1 a2 a3 Tc];
 th = 1-T./sigcoeffs(4);
 sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
+end
 
 function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 %DSIGSTEPHAN23 Surface tension [N/m].
@@ -1774,6 +2030,7 @@ function [dsig, sig] = dsigstephan23(sigcoeffs,T)
 th = 1-T./sigcoeffs(4);
 sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 dsig = (-sigcoeffs(2) - 1./(1+1./(sigcoeffs(3).*th)))./(th.*sigcoeffs(4));
+end
 
 %function sig = vdi06(C,T)
 %VDI06     Surface tension [N/m].
@@ -1788,12 +2045,14 @@ function jt = jt(V,cpid)
 
 % jt = -dhdp(T)./cpg(T,p); V = [dhdp cpg_cpid], see VIRIAL.
 jt = -V(:,1)./(cpid+V(:,2));
+end
 
 function [dhdp, cpg]= dhcpg(V,cpid)
 %DHCPG      Derivative of enthalpy by pressure at constant temperature,  dh/dp.
 %  DHCPG([DHDP CPG_CPID],CPID) returns the array [DHDP CPG].
 dhdp = V(:,1);
 cpg = V(:,2)+cpid;
+end
 
 function T1 = intjt(T0,p0,p1,jtloc)
 %INTJT      Integral Joule-Thomson coefficient [K].
@@ -1815,11 +2074,13 @@ else
     T1 = ti(2:end)';
   end
 end
+end
 
 function y = poly2(C,x)
 %POLY2      Evaluate a polynomial of second order, three coefficients.
 %  POLY2(C,x) returns C(1) + C(2)*x + C(3)*x^2.
 y = C(1) + C(2)*x + C(3)*x.^2;
+end
 
 function [dy, y] = dpoly2(C,x)
 %DPOLY2     Evaluate the derivative of a polynomial of third order.
@@ -1829,11 +2090,13 @@ function [dy, y] = dpoly2(C,x)
 %  See also POLY2.
 y = poly2(C,x);
 dy = (C(2) + 2*C(3)*x)./y;
+end
 
 function y = poly3(C,x)
 %POLY3      Evaluate a polynomial of third order, four coefficients.
 %  POLY3(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3;
+end
 
 function [dy, y] = dpoly3(C,x)
 %DPOLY3     Evaluate the derivative of a polynomial of third order.
@@ -1843,6 +2106,7 @@ function [dy, y] = dpoly3(C,x)
 %  See also POLY3.
 y = poly3(C,x);
 dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 )./y;
+end
 
 function iy = ipoly3(C,x0,x1)
 %IPOLY3     Integrate a polynomial of third order.
@@ -1851,16 +2115,19 @@ function iy = ipoly3(C,x0,x1)
 %  See also POLY3.
 iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
   + C(4)*(x1.^4-x0.^4)/4;
+end
 
 function y = ipoly3_x(C,x0,x1)
 %IPOLY3_X   Integrate a polynomial of third order, divided by x.
 y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
     + C(4).*(x1.^3-x0.^3)/3;
+end
 
 function y = poly4(C,x)
 %POLY4      Evaluate a polynomial of fourth order, five coefficients.
 %  POLY4(C,x) returns C(1) + C(2)*x + C(3)*x^2 + C(4)*x^3 + C(5)*x^4.
 y = C(1) + C(2)*x + C(3)*x.^2 + C(4)*x.^3 + C(5)*x.^4;
+end
 
 function [dy, y] = dpoly4(C,x)
 %DPOLY3     Evaluate the derivative of a polynomial of fourth order.
@@ -1870,6 +2137,7 @@ function [dy, y] = dpoly4(C,x)
 %  See also POLY4.
 y = poly4(C,x);
 dy = (C(2) + 2*C(3)*x + 3*C(4)*x.^2 + 4*C(5)*x.^3)./y;
+end
 
 function iy = ipoly4(C,x0,x1)
 %IPOLY4     Integrate a polynomial of fourth order.
@@ -1878,11 +2146,13 @@ function iy = ipoly4(C,x0,x1)
 %  See also POLY4.
 iy = C(1)*(x1-x0) + C(2)*(x1.^2-x0.^2)/2 + C(3)*(x1.^3-x0.^3)/3 ...
   + C(4)*(x1.^4-x0.^4)/4 + C(5)*(x1.^5-x0.^5)/5;
+end
 
 function y = ipoly4_x(C,x0,x1)
 %IPOLY4     Integrate a polynomial of fourth order, divided by x.
 y = C(1).*log(x1./x0) + C(2).*(x1-x0) + C(3).*(x1.^2-x0.^2)/2 ...
     + C(4).*(x1.^3-x0.^3)/3 + C(5).*(x1.^4-x0.^4)/4;
+end
 
 function [y, y1, y2] = pdiv3(C,x)
 %PDIV3      Evaluate a polynomial in X^-1 of third order, four coefficients.
@@ -1896,6 +2166,7 @@ if nargout > 1
   y1 =  -C(2)./x - 2*C(3)./x.^2 - 3*C(4)./x.^3;
   y2 =  2*C(2)./x + 6*C(3)./x.^2 + 12*C(4)./x.^3;
 end
+end
 
 function [y, y1, y2] = pdiv4(C,x)
 %PDIV4      Evaluate a polynomial in X^-1 of fourth order, five coefficients.
@@ -1908,6 +2179,7 @@ y = C(1) + C(2)./x + C(3)./x.^2 + C(4)./x.^3 + C(5)./x.^4;
 if nargout > 1
   y1 =  -C(2)./x - 2*C(3)./x.^2 - 3*C(4)./x.^3 - 4*C(5)./x.^4;
   y2 =  2*C(2)./x + 6*C(3)./x.^2 + 12*C(4)./x.^3 + 20*C(5)./x.^4;
+end
 end
 
 function x = newtony(fun,x0,y,res,iter)
@@ -1951,3 +2223,242 @@ error(['NEWTONY not succesful. Increase RES or ITER. Type help newtony.\n' ...
   '  Function %s, initial guess x0: %g, last found value x: %g,\n' ...
   '  function value %s(x) = %g. Allowed residual: %g, Iterations: %u.'], ...
   funname,x0,x,funname,y0,res,iter)
+end
+
+function cpid = cpalylee(A, T)
+% Aly-Lee calculation model to calculate the ideal gas heat capacity
+% 
+
+a3t = A(3)./T;
+a5t = A(5)./T;
+cpid = 1000*(A(1) + A(2).*(a3t./(sinh(a3t))).^2 + A(4).*(a5t./(cosh(a5t))).^2)./A(6);
+end
+
+function cpl = cpljchem(C, T, p)
+% calculation of cpl(p, T) according to J. Chem. Eng. Data 1993, 38, page
+% 70-74
+% P in Pa
+% T in K
+
+Pr = p./C(4);
+Tr = T./C(3);
+a = C(5) + C(6)./(1-Tr).^0.5 + C(7)./(1-Tr) + C(8)./(1-Tr).^3;
+b = C(9) + C(10)./(1-Tr).^0.5 + C(11)./(1-Tr).^1.5;
+c = C(12) + C(13)./(1-Tr).^1.5;
+
+cpl = (C(2)./C(1)).*(a + b.*Pr.^0.5 + c.*Pr);
+end
+
+function icpl = icpljchem(C, P, T0, T1)
+% calculation of the integral over T of cpl(p, T)
+% (according to J. Chem. Eng. Data 1993, 38, page 70-74)
+% P in Pa
+% T in K
+
+Pr = P./C(4);
+A0 = (1 - T0./C(3));
+A1 = (1 - T1./C(3));
+Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0)^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0)^(-2) / (-2)));
+Ib0 = C(9).*(T0) - C(3).*(C(10).*((A0)^0.5 / 0.5) + C(11).*((A0)^(-0.5) / (-0.5)));
+Ic0 = C(12).*(T0) - C(3).*(C(13).*((A0)^(-0.5) / (-0.5)));
+Ia1 = C(5)*(T1) - C(3).*(C(6).*((A1)^0.5 / 0.5) + C(7).*(log(abs(A1))) + C(8).*((A1)^(-2) / (-2)));
+Ib1 = C(9).*(T1) - C(3).*(C(10).*((A1)^0.5 / 0.5) + C(11).*((A1)^(-0.5) / (-0.5)));
+Ic1 = C(12).*(T1) - C(3).*(C(13).*((A1)^(-0.5) / (-0.5)));
+
+icpl = (C(2)./C(1)).*((Ia1 + Ib1.*Pr.^0.5 + Ic1.*Pr)-(Ia0 + Ib0.*Pr.^0.5 + Ic0.*Pr));
+end
+
+function sigma = sigmacapillary(C, T)
+% calculation of surface tension sigma(T) according to J. Phys. Chem. 1990, 94, pages 8840-8845
+% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+
+Tr = (C(1) - T)./C(1);
+a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
+drho0 = C(2).*C(7);
+rhol_rhov = 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
+sigma = a.^2 .* (rhol_rhov) .* C(8)./2;
+end
+
+function [dsigma, sigma] = dsigmacapillary(C, T)
+% calculation of the derivative of the surface tension sigma(T)
+% according to J. Phys. Chem. 1990, 94, pages 8840-8845
+% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+
+Tr = (C(1) - T)./C(1);
+a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
+drho0 = C(2).*C(7);
+rhov = C(5) - 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
+sigma = a.^2 .* (C(5) - rhov) .* C(8)./2;
+
+K11 = C(8).* C(3).^2 .* drho0;
+K21 = K11.* C(5);
+K31 = K11.* C(6);
+K12 = K11.* C(4);
+K22 = K11.* C(5).* C(4);
+K32 = K11.* C(6).* C(4);
+
+e1 = 1.26;
+e2 = 1.76;
+e3 = 2.26;
+e4 = 2.26;
+e5 = 2.76;
+e6 = 3.26;
+
+dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
+    K21 .* e2 ./ C(1) .* Tr.^(e2 - 1) + ...
+    K31 .* e3 ./ C(1) .* Tr.^(e3 - 1) - ...
+    K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
+    K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
+    K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
+end
+
+function kg = kgroy(kgcoeffs,T)
+%KGROY      Thermal conductivity of the vapor [W/mK].
+%  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p.
+%  498 in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
+%    gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..),
+%  Pc in Pa is used.
+
+M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(7);
+b = kgcoeffs(4); c = kgcoeffs(5); d = kgcoeffs(6);
+
+gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
+Tr = T./Tc;
+CfTr = C*(b.*Tr + c.*Tr.^2 + d.*Tr.^3);
+kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
+end
+
+function kg = kgafsax(C, T)
+% kg in mW/cmK => *100/1000 = /10 => W/mK
+kg = (C(1) + C(2) .* T + C(3) .* T.^2 + C(4) .* T.^3) ./ 10;
+end
+
+function kg = kgsousa(C, T)
+% kg in mW/mK => /1000
+kg = (C(1) + C(2) .* T + C(3) .* T.^2) ./ 1000;
+end
+
+function mul = mullatini(C,T)
+% dynamic viscosity of the liquid in Pas
+% C = [A, C, Tc]
+Tr = T / C(3);
+mul = ( C(1) .* ( 1 ./ ( C(2) - Tr ) - 1 ) ).^-1 .* 1e-3;
+end
+
+function kl = klbaroncini(A, T)
+% thermal conductivity of the liquid in W/(m*K)
+% A = [Tc M]
+Tr = T./A(1);
+kl = 0.494*((A(1).^(1/6))./(A(2).^(1/2))).*((1-Tr).^0.38)./(Tr.^(1/6));
+end
+
+function kl = kl2020(C, T)
+% thermal conductivity of the liquid in W/(m*K)
+% C = [Tc a b c exp]
+kl = T;
+Tr = T;
+for i = 1:length(T)
+    Tr(i) = T(i)./C(1);
+    kl(i) = (C(2) + C(3).*Tr(i)) / (C(4) + Tr(i)).^C(5);
+end
+end
+
+function cpg_use = cpgas_2(cpid,cpg_cpid)
+% Copy of function cpg to use it in other functions
+cpg_use = cpid + cpg_cpid;
+end
+
+function v_use = virial_2(out,vcoeffs,virial_2fun,T,p)
+% Copy of function v to use it in other functions
+
+R = vcoeffs(end-1);
+M = vcoeffs(end);
+v_use = nan(length(T),length(p));
+
+if strcmp(out,'v_use')
+    for i = 1:length(T)
+        for j = 1:length(p)
+            % compute the specific volume; call to virialfun with one nargout
+            v1_use = R*T(i)./p(j); % interim use of variable
+            v1_use = (0.5*v1_use + sqrt(0.25*v1_use.^2 + virial_2fun(vcoeffs,T(i)).*v1_use))/M; %( = vsqr)
+            v_use(i,j) = v1_use;
+        end
+    end
+else
+end
+end
+
+
+function dv_use = virial_3(out,vcoeffs,virial_3fun,T,p,dT_use)
+% Copy of function v to use it in other functions
+R = vcoeffs(end-1);
+M = vcoeffs(end);
+dv_use = nan(length(T),length(p));
+
+if strcmp(out,'dv_use') % "copy" of case 'v'
+    for i = 1:length(T)
+        for j = 1:length(p)
+            % compute the specific volume; call to virialfun with one nargout
+            v1_use = R*T(i)./p(j); % interim use of variable
+            v1_use = (0.5*v1_use + sqrt(0.25*v1_use.^2 + virial_3fun(vcoeffs,T(i)).*v1_use))/M; %( = vsqr)
+            T2 = T(i) + dT_use;
+            v2_use = R*T2./p(j); % interim use of variable
+            v2_use = (0.5*v2_use + sqrt(0.25*v2_use.^2 + virial_3fun(vcoeffs,T2).*v2_use))/M; %( = vsqr)
+            dv_use(i,j) = (v2_use - v1_use)./dT_use;
+        end
+    end
+else
+end
+end
+
+function jtc = jtcelsevier(T,p,v_use,cpg_use,dv_use)
+jtc = nan(length(T),length(p));
+betha = nan(length(T),length(p));
+for i = 1:length(T)
+    for j = 1:length(p)
+        betha(i,j) = 1 / v_use(i,j) * dv_use(i,j);
+        jtc(i,j) = - v_use(i,j) * (1 - betha(i,j)*T(i)) / cpg_use(i);
+    end
+end
+end
+
+%function kls = klsousa(C, rho, kg, T)
+% kls in mW / m*K => / 1000 for W / m*K
+%dkl = C(1)+C(2).*(1e-2)*rho(T)+C(3).*(1e-4)*rho(T).^2+C(4).*(1e-7)*rho(T).^3;
+%kls = ( kg(T) + dkl ) .* 1e-3;
+
+function ifi = ifind(Acoeffs,Tc,T)
+ifi(1:length(T)) = 0;
+for i = 1:length(T)
+    if T(i) <= Tc
+        ifi(i) = find(T(i) <= Acoeffs(:,1),1);
+    else
+
+    end
+end
+end
+
+
+function [psj, dpsj] = psj(Acoeffs,ifi,T)
+ifix = ifi(T);
+z = 0;
+for i = 1:length(ifix)
+    z = ifix(i);
+    if z == 0
+        psj(i) = Inf; dpsj = NaN;
+    else
+        [A, B, C, T0] = deal(Acoeffs(z,3),Acoeffs(z,4),Acoeffs(z,5),Acoeffs(z,6));
+        psj(i) = 10.^(A-B./(C+T(i)));
+        if T0 ~= 0
+            [Tc, n, E, F] = deal(Acoeffs(z,7),Acoeffs(z,8),Acoeffs(z,9),Acoeffs(z,10));
+            chi = (T(i)-T0)/Tc;
+            psj(i) = psj(i).*10.^(0.43429.*chi.^n + E.*chi.^8 + F.*chi.^12);
+        else
+        end
+    end
+end
+end
+
+%function psat = psat(pcoeffs, T)
+% pcoeffs = [a1 a2 a3 a4 Tc]
+%psat = 1e3*exp(pcoeffs(1)./T+pcoeffs(2)+pcoeffs(3).*T+pcoeffs(4).*(1-T./pcoeffs(5)).^1.5);
