@@ -60,7 +60,8 @@ end
 
 qtestsubstance;
 
-for sname = {'propane', 'propaneperry', 'isobutane', 'butane', 'nitrogen'}
+for sname = {'propane', 'propaneperry', 'isobutane', 'butane', 'nitrogen',...
+             'R142b'}
   testsubstance(sname{1});
   if exist('INTERACTIVE','var') && INTERACTIVE
     fprintf('To remove figures, type "close all". To resume, type "return".\n');

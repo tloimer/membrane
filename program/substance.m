@@ -1056,7 +1056,7 @@ s.kg = @(T) kgfun(kgcoeffs,T);
 %s.kl = @(T,P) klfun(klcoeffs,T,P);
 s.kl = @(T) klfun(klcoeffs,T);
 %s.kls = @(T) klsfun(klscoeffs,s.rho,s.kg,T); %kl-Sousa
-s.cpl = @(T,p) cplfun(cplcoeffs,T,p);
+s.cpl = @(T) cplfun(cplcoeffs,T);
 s.sigma = @(T) sigfun(sigcoeffs,T);
 s.kelveq = @(T,sig,rho,curv) exp(-curv.*sig./(s.R.*rho.*T));
 % Derivatives of the thermic equation of state which are equal to
@@ -1075,7 +1075,7 @@ s.drho = @(T) genericafun(rhocoeffs,drhofun,T);
 s.dsig = @(T) feval(str2func(['d' func2str(sigfun)]),sigcoeffs,T);
 s.intjt = @(T0,p0,p1) intjt(T0,p0,p1,@(p,T) s.jt(T,p));
 % Integrals of a function have a 'i' prepended.
-s.intcpl = @(P,T0,T1) feval(str2func(['i' func2str(cplfun)]),cplcoeffs,P,T0,T1);
+s.intcpl = @(T0,T1) feval(str2func(['i' func2str(cplfun)]),cplcoeffs,T0,T1);
 intcpl_T = @(T1,T2)feval(str2func(['i' func2str(cplfun) '_x']),cplcoeffs,T1,T2);
 s.s = @(T,p,x,Tr) ...
   entropy(T,p,x,Tr,virialfun,vcoeffs,cpid,intcpl_T,s.ps,s.Ts,s.hvap,s.drho);
@@ -2234,11 +2234,18 @@ a5t = A(5)./T;
 cpid = 1000*(A(1) + A(2).*(a3t./(sinh(a3t))).^2 + A(4).*(a5t./(cosh(a5t))).^2)./A(6);
 end
 
-function cpl = cpljchem(C, T, p)
-% calculation of cpl(p, T) according to J. Chem. Eng. Data 1993, 38, page
-% 70-74
+function cpl = cpljchem(C, T)
+%CPLJCHEM   Specific isobaric heat capacity of the liquid [J/kgK].
+%  CPLJCHEM(CPLCOEFFS,T) returns the specific isobaric heat capacity of the
+%  liquid [Nakagawa et al., J. Chem. Eng. Data 38, p. 70-74, 1993].
+%  The correlation is based on measurements in the temperature range from 276 to
+%  350 K and for pressures from 1.0 to 3.0 MPa.
+%  Hence, for our purposes, evaluate cpl at 0.1 MPa. Dependence of cpl on
+%  pressure is shown in tests/cpl_R142b.pdf.
+
 % P in Pa
 % T in K
+p = 1e5;
 
 Pr = p./C(4);
 Tr = T./C(3);
@@ -2249,13 +2256,13 @@ c = C(12) + C(13)./(1-Tr).^1.5;
 cpl = (C(2)./C(1)).*(a + b.*Pr.^0.5 + c.*Pr);
 end
 
-function icpl = icpljchem(C, P, T0, T1)
+function icpl = icpljchem(C, T0, T1)
 % calculation of the integral over T of cpl(p, T)
 % (according to J. Chem. Eng. Data 1993, 38, page 70-74)
 % P in Pa
 % T in K
 
-Pr = P./C(4);
+Pr = 1e5/C(4);
 A0 = (1 - T0./C(3));
 A1 = (1 - T1./C(3));
 Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0)^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0)^(-2) / (-2)));
