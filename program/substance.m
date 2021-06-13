@@ -856,19 +856,18 @@ case {'R142b', 'r142b'}
 Tc = 410.3;
 Acoeffs =  zeros(2,10);
 Acoeffs(1,1:5) = [273 143712.053 9.05053 928.645 -34.46];
-%Acoeffs(2,:) = [410.3 7246465.757 Acoeffs(1,3:5) 273 410.3 0.434294 115.85 -3920.5];
 Acoeffs(2,:) = [410.3 4055000 Acoeffs(1,3:5) 273 410.3 2.91673 115.85 -3920.5];
-% classical Antoine eq. for the whole temperature range:
-%Acoeffs =  zeros(1,6);
-%Acoeffs(1,1:5) = [410.3 143712.053 9.05053 928.645 -34.46];
 
-
-% Ps, saturation pressure
-% Physical proberties of alternatives to the fully halogenated chlorofluorocarbons
-% M.O. McLinden, Thermophysics division, National institute of standards
-% and technology, Boulder, Colorado, 80303, page 12
+% PS, saturation pressure
+% Physical proberties of alternatives to the fully halogenated
+% chlorofluorocarbons. M.O. McLinden, Thermophysics division, National institute
+% of standards and technology, Boulder, Colorado, 80303, page 12
 %pcoeffs = [-3382.422 17.01384 -0.001012149 3.224924 Tc];
 %pfun = @psat;
+%function psat = psat(pcoeffs, T)
+%  pcoeffs = [a1 a2 a3 a4 Tc]
+%  psat = 1e3 * exp(pcoeffs(1)./T + pcoeffs(2) + pcoeffs(3).*T +...
+%			pcoeffs(4).*(1-T./pcoeffs(5)).^1.5);
 
 % RHO, liquid density at saturation
 % Range: 210.22 K < T < 410.30 K
@@ -1029,9 +1028,6 @@ end
 s.R = R/M;
 s.M = M;
 s.ps = @(T) ps(Acoeffs,T);
-s.ifind = @(T) ifind(Acoeffs,Tc,T);     %Überprüfung ob Antoine 1 od. 2
-s.psj = @(T) psj(Acoeffs,s.ifind,T);    %Berichtigung s.ps
-%s.psat = @(T) psat(pcoeffs,T);   %Other calculation model (See case R142b)
 s.Ts = @(p) Ts(Acoeffs,p);
 s.rho = @(T) genericfunc(rhocoeffs,rhofun,T);
 s.v = @(T,p) thermic('v',vcoeffs,virialfun,T,p);
@@ -2433,39 +2429,3 @@ end
 % kls in mW / m*K => / 1000 for W / m*K
 %dkl = C(1)+C(2).*(1e-2)*rho(T)+C(3).*(1e-4)*rho(T).^2+C(4).*(1e-7)*rho(T).^3;
 %kls = ( kg(T) + dkl ) .* 1e-3;
-
-function ifi = ifind(Acoeffs,Tc,T)
-ifi(1:length(T)) = 0;
-for i = 1:length(T)
-    if T(i) <= Tc
-        ifi(i) = find(T(i) <= Acoeffs(:,1),1);
-    else
-
-    end
-end
-end
-
-
-function [psj, dpsj] = psj(Acoeffs,ifi,T)
-ifix = ifi(T);
-z = 0;
-for i = 1:length(ifix)
-    z = ifix(i);
-    if z == 0
-        psj(i) = Inf; dpsj = NaN;
-    else
-        [A, B, C, T0] = deal(Acoeffs(z,3),Acoeffs(z,4),Acoeffs(z,5),Acoeffs(z,6));
-        psj(i) = 10.^(A-B./(C+T(i)));
-        if T0 ~= 0
-            [Tc, n, E, F] = deal(Acoeffs(z,7),Acoeffs(z,8),Acoeffs(z,9),Acoeffs(z,10));
-            chi = (T(i)-T0)/Tc;
-            psj(i) = psj(i).*10.^(0.43429.*chi.^n + E.*chi.^8 + F.*chi.^12);
-        else
-        end
-    end
-end
-end
-
-%function psat = psat(pcoeffs, T)
-% pcoeffs = [a1 a2 a3 a4 Tc]
-%psat = 1e3*exp(pcoeffs(1)./T+pcoeffs(2)+pcoeffs(3).*T+pcoeffs(4).*(1-T./pcoeffs(5)).^1.5);
