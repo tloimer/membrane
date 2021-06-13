@@ -71,12 +71,8 @@ function s = substance(name, gaseq)
 
 if nargin == 2 && strcmp(gaseq, 'ideal')
     thermic = @ideal;
-    thermic2 = @ideal_2;
-    thermic3 = @ideal_3;
 else
     thermic = @virial;
-    thermic2 = @virial_2;
-    thermic3 = @virial_3;
 end
 
 % Struct constructor. No need to be pedantic here. If not present, struct fields
@@ -84,7 +80,7 @@ end
 s = struct('name',name,'R',[],'M',[],'ps',[],'Ts',[],'rho',[],'v',[],...
   'hvap',[],'cpg',[],'mul',[],'mug',[],'kg',[],'kl',[],'cpl',[],'sigma',[],...
   'kelveq',[],'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],...
-  'intcpl',[],'nul',[],'nug',[], 'v_use',[], 'dv_use',[], 'cpg_use',[], 'jtc',[]);
+  'intcpl',[],'nul',[],'nug',[]);
 
 % universal gas constant
 R = 8314.4; % J/kmolK
@@ -200,8 +196,6 @@ rhofun = {@poly3, @rholandolt};
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [[116.25 -1.0293e5 -1.2475e7 -7.0490e9]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -257,9 +251,6 @@ cplfun = @poly4;
 sigcoeffs = [0.0505731 1.24412 408.15];
 sigfun = @sigstephan22;
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case 'butane'
 % Butane. n-butane. CAS 106-97-8.
 
@@ -299,8 +290,6 @@ rhofun = {@poly3, @rholandolt};
 % ~/Literatur/pdfs/Landolt/LandoltIV21A169-192.pdf
 vcoeffs = [[227.20 -2.2797e5 2.9855e7 -1.3706e10]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -355,9 +344,6 @@ cplfun = @cpleq2;
 sigcoeffs = [0.0513853 1.20933 425.16];
 sigfun = @sigstephan22;
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case 'ethanol'
 % Ethanol. CAS 64-17-5.
 
@@ -394,8 +380,6 @@ rhofun = {@poly3, @rholandolt};
 % Mixtures (2002)
 vcoeffs = [[9.6838e3 -1.3575e7 6.3248e9 -1.0114e12]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -451,9 +435,6 @@ cplfun = @poly3;
 sigcoeffs = [0.0726009 1.08415 -0.524168 513.92];
 sigfun = @sigstephan23;
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case 'nitrogen'
 % Nitrogen. CAS 7727-37-9.
 
@@ -488,8 +469,6 @@ rhofun{1} = @rhoperry;
 % Mixtures (2002)
 vcoeffs = [[40.286 -9.3378e3 -1.4164e6 6.1253e7 -2.7198e9]/1e3 R M];
 virialfun = @pdiv4;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-198 in Perry's Chemical Engineer's Handbook, 7th ed. (1997).
@@ -553,9 +532,6 @@ cplfun = @poly3;
 sigcoeffs = [2.4954e-07 Tc pc];
 sigfun = @sigvdi;
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case 'propane'
 % Propane. CAS 74-98-6. C_3 H_8
 
@@ -615,8 +591,6 @@ rhofun = {@poly4, @rholandolt};
 % Vectorizes, but only for column vectors!
 vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % Range: 130 K < T < 350 K, error < 0.8%
@@ -708,9 +682,6 @@ sigfun = @sigstephan22;
 % Kinematic viscosity of the vapor
 % Range: 100 K < T < 290, error < 2%; increases to 15% error for T = 330 K
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case 'propaneperry'
 % Propane. CAS 74-98-6. C_3 H_8
 
@@ -756,8 +727,6 @@ rhofun{1} = @rhoperry;
 % See propane above.
 vcoeffs = [[109.71 -8.4673e4 -8.1215e6 -3.4382e9]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See Table 2-156 in Perry's Chemical Engineer's Handbook, 8th ed. (2008).
@@ -832,9 +801,6 @@ cplfun = @cpleq2;
 sigcoeffs = [0.05094 1.22051 369.82];
 sigfun = @sigstephan22;
 
-% Ergänzung aufgrund Programmänderung:
-jtcfun = @jtcelsevier;
-
 case {'R142b', 'r142b'}
 % R142b. 1-Chloro-1,1-Difluoroethane. CAS 75-68-3.
 
@@ -891,8 +857,6 @@ rhofun = {@poly3, @rholandolt};
 % C2 Organic Compounds, Second Virial Coefficients, page 125:
 vcoeffs = [[-132.26 5.4763e4 -1.8750e7 -1.2520e10]/1e3 R M];
 virialfun = @pdiv3;
-virial_2fun = @pdiv3;
-virial_3fun = @pdiv3;
 
 % CPID, specific heat capacity in the ideal gas state at constant pressure
 % See M.E. Mondejar et al / Fluid Phase Equilibria 433 (2017) page 81
@@ -999,17 +963,6 @@ a0 = sqrt(7.5)*10^-3;
 sigcoeffs = [Tc 449 a0 -0.09 0.351 -0.493 1.774 9.807];
 sigfun = @sigmacapillary;
 
-% Joule-Thomson-coefficient [K/Pa]
-% jtc = (V*(1-betha*T) / Cp) page 41 in *
-% betha = 1/V * (dV/dT)_p -> page 5 in *
-% * Nonequilibrium Thermodynamics - Transport and Rate Process in ...
-% Physical, Chemical and Biological Systems, Fourth Edition (1019)
-% Yasar Demirel and Vincent Gerbaud
-% Chapter-1---Fundamentals-of-Equilibrium-Thermo_2019_Nonequilibrium-Thermodyn.pdf
-% s.jtc = @(T,p) jtc(jtccoeffs,cpg(T,p),v(T,p));
-jtcfun = @jtcelsevier;
-
-
 otherwise
 error('No substance of this name.')
 % water
@@ -1031,21 +984,14 @@ s.ps = @(T) ps(Acoeffs,T);
 s.Ts = @(p) Ts(Acoeffs,p);
 s.rho = @(T) genericfunc(rhocoeffs,rhofun,T);
 s.v = @(T,p) thermic('v',vcoeffs,virialfun,T,p);
-dT_use = 1.0; % temperature-difference for calculations
-v_use = @(T,p) thermic2('v_use',vcoeffs,virial_2fun,T,p);
-dv_use = @(T,p) thermic3('dv_use',vcoeffs,virial_3fun,T,p,dT_use);
 s.hvap = @(T) hvap(s.ps,s.rho,s.v,T);
 % caloric equation of state
-% cpid, cpg_cpid - def'd for better readability
+% cpid, cpg_cpid - defined for better readability
+% cpid = cpg(T, p = 0)
 cpid = @(T) cpfun(cpcoeffs,T);
-% cpg_cpid = cpg(T,p) - cpid; cpid = cp(T,p=0)
+% cpg_cpid = cpg(T,p) - cpid
 cpg_cpid = @(T,p) thermic('cp',vcoeffs,virialfun,T,p);
 s.cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p));
-cpg_use = @(T,p) cpgas_2(cpid(T),cpg_cpid(T,p));
-%cpg = @(T,p) cpgas(cpid(T),cpg_cpid(T,p)); % for Joule-Thomson-Coefficient
-%v = @(T,p) thermic('v',vcoeffs,virialfun,T,p); % for Joule-Thomson-Coeff.
-%s.jtc = @(T,p,v,cpg) jtcfun(T,p,v,cpg); % Joule-Thomson-Coefficient
-s.jtc = @(T,p) jtcfun(T,p,v_use(T,p),cpg_use(T,p),dv_use(T,p)); % Joule-Thomson-Coefficient
 s.mul = @(T) mulfun(mulcoeffs,T);
 s.mug = @(T) mugfun(mugcoeffs,T);
 s.kg = @(T) kgfun(kgcoeffs,T);
@@ -2363,65 +2309,6 @@ Tr = T;
 for i = 1:length(T)
     Tr(i) = T(i)./C(1);
     kl(i) = (C(2) + C(3).*Tr(i)) / (C(4) + Tr(i)).^C(5);
-end
-end
-
-function cpg_use = cpgas_2(cpid,cpg_cpid)
-% Copy of function cpg to use it in other functions
-cpg_use = cpid + cpg_cpid;
-end
-
-function v_use = virial_2(out,vcoeffs,virial_2fun,T,p)
-% Copy of function v to use it in other functions
-
-R = vcoeffs(end-1);
-M = vcoeffs(end);
-v_use = nan(length(T),length(p));
-
-if strcmp(out,'v_use')
-    for i = 1:length(T)
-        for j = 1:length(p)
-            % compute the specific volume; call to virialfun with one nargout
-            v1_use = R*T(i)./p(j); % interim use of variable
-            v1_use = (0.5*v1_use + sqrt(0.25*v1_use.^2 + virial_2fun(vcoeffs,T(i)).*v1_use))/M; %( = vsqr)
-            v_use(i,j) = v1_use;
-        end
-    end
-else
-end
-end
-
-
-function dv_use = virial_3(out,vcoeffs,virial_3fun,T,p,dT_use)
-% Copy of function v to use it in other functions
-R = vcoeffs(end-1);
-M = vcoeffs(end);
-dv_use = nan(length(T),length(p));
-
-if strcmp(out,'dv_use') % "copy" of case 'v'
-    for i = 1:length(T)
-        for j = 1:length(p)
-            % compute the specific volume; call to virialfun with one nargout
-            v1_use = R*T(i)./p(j); % interim use of variable
-            v1_use = (0.5*v1_use + sqrt(0.25*v1_use.^2 + virial_3fun(vcoeffs,T(i)).*v1_use))/M; %( = vsqr)
-            T2 = T(i) + dT_use;
-            v2_use = R*T2./p(j); % interim use of variable
-            v2_use = (0.5*v2_use + sqrt(0.25*v2_use.^2 + virial_3fun(vcoeffs,T2).*v2_use))/M; %( = vsqr)
-            dv_use(i,j) = (v2_use - v1_use)./dT_use;
-        end
-    end
-else
-end
-end
-
-function jtc = jtcelsevier(T,p,v_use,cpg_use,dv_use)
-jtc = nan(length(T),length(p));
-betha = nan(length(T),length(p));
-for i = 1:length(T)
-    for j = 1:length(p)
-        betha(i,j) = 1 / v_use(i,j) * dv_use(i,j);
-        jtc(i,j) = - v_use(i,j) * (1 - betha(i,j)*T(i)) / cpg_use(i);
-    end
 end
 end
 
