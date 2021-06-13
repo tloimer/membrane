@@ -819,7 +819,6 @@ case {'R142b', 'r142b'}
 %                                (n)  (E) (F)
 % Dmin/Dmax: Range of data points; Tmin/Tmax: recommended temperature range
 % 7246.465757 ... pmax calculated with extended antoine equation
-Tc = 410.3;
 Acoeffs =  zeros(2,10);
 Acoeffs(1,1:5) = [273 143712.053 9.05053 928.645 -34.46];
 Acoeffs(2,:) = [410.3 4055000 Acoeffs(1,3:5) 273 410.3 2.91673 115.85 -3920.5];
@@ -842,6 +841,7 @@ Acoeffs(2,:) = [410.3 4055000 Acoeffs(1,3:5) 273 410.3 2.91673 115.85 -3920.5];
 % M. Frenkel, X. Hong, Q. Dong, X. Yan and R. D. Chirico (2003).
 % rhocoeffs:   [Tmax A B C D 0 0]
 %  or          [Tmax A B C D Tc rhoc]
+Tc = 410.3;
 M = 100.495; % https://webbook.nist.gov - Freon 142b
 rhocoeffs = zeros(2,7);
 rhocoeffs(1,1:4) = [315 1.60808e3 -9.15076e-1 -2.55106e-3];
@@ -882,7 +882,6 @@ cpfun = @cpalylee;
 % C = [A C Tc] ...coefficiants on page 210 (R142b)
 % for a range of: 0.47 < Tr < 0.92
 % correlation checked with webbook.nist for a range of: 200 K < T < 360 K
-Tc = 410.3;
 %mulcoeffs = [7.2115 1.35 Tc];
 %mulfun = @mullatini;
 
@@ -896,7 +895,7 @@ Tc = 410.3;
 % Lide, D.R. CRC Handbook of Chemistry and Physics 88TH Edition 2007-2008.
 % CRC Press, Taylor & Francis, Boca Raton, FL 2007, p. 9-47
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
-Tc = 410.3; pc = 4.055e6;
+pc = 4.055e6;
 mugcoeffs = [0.267842 2.14 R M Tc pc];
 mugfun = @mulucas;
 
@@ -915,8 +914,8 @@ mugfun = @mulucas;
 % Transport Properties of Freon-142b in the Temperautre Range of 280-510K
 % R. Afshar and S. C. Saxena
 % page 4 (54) equation (2)
-% kgcoeffs = [0.1414 -1.144e-3 4.989e-6 -4.358e-9];
-% kgfun = @kgafsax;
+% kgcoeffs = [0.1414 -1.144e-3 4.989e-6 -4.358e-9] / 10.;
+% kgfun = @poly3;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See International Journal of Thermophysics, Vol. 13, 1992
@@ -925,8 +924,8 @@ mugfun = @mulucas;
 % Neindre
 % page 12 (394) equation (7)
 % best correlation to webbook.nist
-kgcoeffs = [-5.5597 3.9562e-2 5.475e-5];
-kgfun = @kgsousa;
+kgcoeffs = [-5.5597 3.9562e-2 5.475e-5] / 1000.;
+kgfun = @poly2;
 
 % klcoeffs = [410.3 M];
 % klfun = @klbaroncini;
@@ -1732,19 +1731,21 @@ function kmu = kmuperryshort(C,T)
 kmu = C(1)*T.^C(2);
 end
 
-%function kg = kgroy(kgcoeffs,T)
+function kg = kgroy(kgcoeffs,T)
 %KGROY      Thermal conductivity of the vapor [W/mK].
 %  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p.
 %  498 in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
 %    gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..),
 %  Pc in Pa is used.
 
-%M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(4);
+M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(7);
+b = kgcoeffs(4); c = kgcoeffs(5); d = kgcoeffs(6);
 
-%gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
-%Tr = T./Tc;
-%CfTr = C*(-0.152.*Tr + 1.191.*Tr.^2 - 0.039.*Tr.^3);
-%kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
+gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
+Tr = T./Tc;
+CfTr = C*(b.*Tr + c.*Tr.^2 + d.*Tr.^3);
+kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
+end
 
 function kl = klatini(klcoeffs,T)
 %KLATINI    Thermal conductivity of the liquid [W/mK].
@@ -2259,32 +2260,6 @@ dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
     K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
     K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
     K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
-end
-
-function kg = kgroy(kgcoeffs,T)
-%KGROY      Thermal conductivity of the vapor [W/mK].
-%  KGROY(KGCOEFFS,T) returns the thermal conductivity of the vapor. See p.
-%  498 in Reid, Prausnitz and Poling, 4th ed. (1987). Instead of
-%    gamma = 210(Tc M^3 / Pc^4)^(1/6), Pc in bar, gamma = 0.457e6(..),
-%  Pc in Pa is used.
-
-M = kgcoeffs(1); Tc = kgcoeffs(2); pc = kgcoeffs(3); C = kgcoeffs(7);
-b = kgcoeffs(4); c = kgcoeffs(5); d = kgcoeffs(6);
-
-gamma = 0.457e6*(Tc.*M.^3./pc.^4).^(1/6);
-Tr = T./Tc;
-CfTr = C*(b.*Tr + c.*Tr.^2 + d.*Tr.^3);
-kg = ( 8.757.*(exp(.0464*Tr) - exp(-0.2412*Tr)) + CfTr )./gamma;
-end
-
-function kg = kgafsax(C, T)
-% kg in mW/cmK => *100/1000 = /10 => W/mK
-kg = (C(1) + C(2) .* T + C(3) .* T.^2 + C(4) .* T.^3) ./ 10;
-end
-
-function kg = kgsousa(C, T)
-% kg in mW/mK => /1000
-kg = (C(1) + C(2) .* T + C(3) .* T.^2) ./ 1000;
 end
 
 function mul = mullatini(C,T)
