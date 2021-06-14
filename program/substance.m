@@ -952,7 +952,8 @@ cplcoeffs = [M R Tc pc 4.9634 7.9208 -1.2226 3.9879e-3 -1.3332 1.1047 -9.7184e-2
 cplfun = @cpljchem;
 
 % SIGMA, surface tension [N/m].
-% calculation of surface tension sigma(T) according to J. Phys. Chem. 1990, 94, pages 8840-8845
+% calculation of surface tension sigma(T) according to Chae, Schmidt and
+% Moldover, J. Phys. Chem. 1990, 94, pages 8840-8845
 % Range: 250.15 K < T < 409.15 K
 % sigcoeffs = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
 % rhoc in kg/m^3
@@ -2063,6 +2064,56 @@ end
 %  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the surface
 %  tension. For two coefficients, equivalent to SIGSTEPHAN22.
 
+function sigma = sigmacapillary(C, T)
+%SIGMACAPILLARY Surface tension [N/m].
+%  SGIMACAPILLARY(COEFFS, T) returns the surface tension according to Chae,
+%  Schmidt and Moldover, J. Phys. Chem. 1990, 94, pages 8840-8845.
+
+% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+
+Tr = (C(1) - T)./C(1);
+a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
+drho0 = C(2).*C(7);
+rhol_rhov = 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
+sigma = a.^2 .* (rhol_rhov) .* C(8)./2;
+end
+
+function [dsigma, sigma] = dsigmacapillary(C, T)
+%DSIGMACAPILLARY Derivative of the surface tension.
+%  [DSIG SIG] = DSIGMACAPILLARY(COEFFS, T) returns the derivative of the surface
+%  tension and the surface tension.
+%
+%  See also SIGMACAPILLARY.
+% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+
+Tr = (C(1) - T)./C(1);
+a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
+drho0 = C(2).*C(7);
+rhov = C(5) - 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
+sigma = a.^2 .* (C(5) - rhov) .* C(8)./2;
+
+K11 = C(8).* C(3).^2 .* drho0;
+K21 = K11.* C(5);
+K31 = K11.* C(6);
+K12 = K11.* C(4);
+K22 = K11.* C(5).* C(4);
+K32 = K11.* C(6).* C(4);
+
+e1 = 1.26;
+e2 = 1.76;
+e3 = 2.26;
+e4 = 2.26;
+e5 = 2.76;
+e6 = 3.26;
+
+dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
+    K21 .* e2 ./ C(1) .* Tr.^(e2 - 1) + ...
+    K31 .* e3 ./ C(1) .* Tr.^(e3 - 1) - ...
+    K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
+    K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
+    K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
+end
+
 function jt = jt(V,cpid)
 %JT         Joule-Thomson coefficient [K/Pa].
 %  JT([DHDP CPG_CPID],CPID) returns the differential Joule-Thomson
@@ -2248,48 +2299,4 @@ error(['NEWTONY not succesful. Increase RES or ITER. Type help newtony.\n' ...
   '  Function %s, initial guess x0: %g, last found value x: %g,\n' ...
   '  function value %s(x) = %g. Allowed residual: %g, Iterations: %u.'], ...
   funname,x0,x,funname,y0,res,iter)
-end
-
-function sigma = sigmacapillary(C, T)
-% calculation of surface tension sigma(T) according to J. Phys. Chem. 1990, 94, pages 8840-8845
-% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
-
-Tr = (C(1) - T)./C(1);
-a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
-drho0 = C(2).*C(7);
-rhol_rhov = 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
-sigma = a.^2 .* (rhol_rhov) .* C(8)./2;
-end
-
-function [dsigma, sigma] = dsigmacapillary(C, T)
-% calculation of the derivative of the surface tension sigma(T)
-% according to J. Phys. Chem. 1990, 94, pages 8840-8845
-% C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
-
-Tr = (C(1) - T)./C(1);
-a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
-drho0 = C(2).*C(7);
-rhov = C(5) - 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
-sigma = a.^2 .* (C(5) - rhov) .* C(8)./2;
-
-K11 = C(8).* C(3).^2 .* drho0;
-K21 = K11.* C(5);
-K31 = K11.* C(6);
-K12 = K11.* C(4);
-K22 = K11.* C(5).* C(4);
-K32 = K11.* C(6).* C(4);
-
-e1 = 1.26;
-e2 = 1.76;
-e3 = 2.26;
-e4 = 2.26;
-e5 = 2.76;
-e6 = 3.26;
-
-dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
-    K21 .* e2 ./ C(1) .* Tr.^(e2 - 1) + ...
-    K31 .* e3 ./ C(1) .* Tr.^(e3 - 1) - ...
-    K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
-    K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
-    K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
 end
