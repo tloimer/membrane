@@ -911,7 +911,7 @@ mugfun = @mulucas;
 
 % KG, thermal conductivity of the vapor [W/mK]
 % See International Journal of Thermophysics, Vol. 1, 1980
-% Transport Properties of Freon-142b in the Temperautre Range of 280-510K
+% Transport Properties of Freon-142b in the Temperature Range of 280-510K
 % R. Afshar and S. C. Saxena
 % page 4 (54) equation (2)
 % kgcoeffs = [0.1414 -1.144e-3 4.989e-6 -4.358e-9] / 10.;
@@ -942,7 +942,7 @@ kgfun = @poly2;
 % Page 3, equation (8)
 % C = [Tc a b c exp]
 klcoeffs = [410.3 0.1656 -0.1201 -0.2532 0.0618];
-klfun = @kl2020;
+klfun = @klchen;
 
 % CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
 % See J. Chem. Eng. Data 1993, 38, page 70-74
@@ -1757,9 +1757,31 @@ function kl = klatini(klcoeffs,T)
 %  determined from a single data point.
 
 % klcoeffs = [Tc A]
-Tr = T./klcoeffs(1);
-kl = klcoeffs(2).*(1-Tr).^0.38./Tr.^(1/6);
+Tr = T/klcoeffs(1);
+kl = klcoeffs(2)*(1-Tr).^0.38./Tr.^(1/6);
 end
+
+%function kl = klbaroncini(A, T)
+% KLBARONCINI Thermal conductivity of the liquid [W/(m*K)]
+%  C. Baroncini, P. Filippo, G. Latini, and M. Pacetti: Organic liquid thermal
+%  conductivity: A prediction method in the reduced temperature range 0.3 to
+%  0.8, Int. J. Thermophys. 2 (1981). doi: 10.1007/BF00503572.
+%  A = [Tc M]
+%Tr = T./A(1);
+%kl = 0.494*((A(1).^(1/6))./(A(2).^(1/2))).*((1-Tr).^0.38)./(Tr.^(1/6));
+%end
+
+function kl = klchen(C, T)
+%KLCHEN     Thermal conductivity of the liquid [W/(m*K)]
+% C = [Tc a b c exp]
+Tr = T/C(1);
+kl = (C(2) + C(3).*Tr) ./ (C(4) + Tr).^C(5);
+end
+
+%function kls = klsousa(C, rho, kg, T)
+% kls in mW / m*K => / 1000 for W / m*K
+%dkl = C(1)+C(2).*(1e-2)*rho(T)+C(3).*(1e-4)*rho(T).^2+C(4).*(1e-7)*rho(T).^3;
+%kls = ( kg(T) + dkl ) .* 1e-3;
 
 function cpl = cpleq2(C,T)
 %CPLEQ2     Evaluate Equation 2 to Table 2-153 in Green & Perry, 8th ed. (2007).
@@ -2268,26 +2290,3 @@ function mul = mullatini(C,T)
 Tr = T / C(3);
 mul = ( C(1) .* ( 1 ./ ( C(2) - Tr ) - 1 ) ).^-1 .* 1e-3;
 end
-
-function kl = klbaroncini(A, T)
-% thermal conductivity of the liquid in W/(m*K)
-% A = [Tc M]
-Tr = T./A(1);
-kl = 0.494*((A(1).^(1/6))./(A(2).^(1/2))).*((1-Tr).^0.38)./(Tr.^(1/6));
-end
-
-function kl = kl2020(C, T)
-% thermal conductivity of the liquid in W/(m*K)
-% C = [Tc a b c exp]
-kl = T;
-Tr = T;
-for i = 1:length(T)
-    Tr(i) = T(i)./C(1);
-    kl(i) = (C(2) + C(3).*Tr(i)) / (C(4) + Tr(i)).^C(5);
-end
-end
-
-%function kls = klsousa(C, rho, kg, T)
-% kls in mW / m*K => / 1000 for W / m*K
-%dkl = C(1)+C(2).*(1e-2)*rho(T)+C(3).*(1e-4)*rho(T).^2+C(4).*(1e-7)*rho(T).^3;
-%kls = ( kg(T) + dkl ) .* 1e-3;
