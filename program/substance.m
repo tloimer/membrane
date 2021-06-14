@@ -1932,6 +1932,51 @@ y = C(6)*(T2.^4 -T1.^4)/(4*Tc^4) + (C(5) + 4*C(6))*(T1.^3 - T2.^3)/(3*Tc^3) ...
     + C(1)*log((T2.*(Tc-T1))./(T1.*(Tc-T2)));
 end
 
+function cpl = cpljchem(C, T)
+%CPLJCHEM   Specific isobaric heat capacity of the liquid [J/kgK].
+%  CPLJCHEM(CPLCOEFFS,T) returns the specific isobaric heat capacity of the
+%  liquid [Nakagawa et al., J. Chem. Eng. Data 38, p. 70-74, 1993].
+%  The correlation is based on measurements in the temperature range from 276 to
+%  350 K and for pressures from 1.0 to 3.0 MPa.
+%  Hence, for our purposes, evaluate cpl at 0.1 MPa. Dependence of cpl on
+%  pressure is shown in tests/cpl_R142b.pdf.
+
+% P in Pa
+% T in K
+p = 1e5;
+
+Pr = p./C(4);
+Tr = T./C(3);
+a = C(5) + C(6)./(1-Tr).^0.5 + C(7)./(1-Tr) + C(8)./(1-Tr).^3;
+b = C(9) + C(10)./(1-Tr).^0.5 + C(11)./(1-Tr).^1.5;
+c = C(12) + C(13)./(1-Tr).^1.5;
+
+cpl = (C(2)./C(1)).*(a + b.*Pr.^0.5 + c.*Pr);
+end
+
+function icpl = icpljchem(C, T0, T1)
+%IVDI08     Integrate VDI08.
+%ICPLJCHEM  Integrate CPLJCHEM, return enthalpy difference [J/kg].
+%  ICPLJCHEM(CPLCOEFFS, T0, T1) returns the different of the specific enthalpy
+%  of the liquid between T0 and T1, at a pressure of 1 bar.
+%
+%  See also CPLJCHEM.
+
+% P in Pa
+% T in K
+Pr = 1e5/C(4);
+A0 = (1 - T0./C(3));
+A1 = (1 - T1./C(3));
+Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0)^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0)^(-2) / (-2)));
+Ib0 = C(9).*(T0) - C(3).*(C(10).*((A0)^0.5 / 0.5) + C(11).*((A0)^(-0.5) / (-0.5)));
+Ic0 = C(12).*(T0) - C(3).*(C(13).*((A0)^(-0.5) / (-0.5)));
+Ia1 = C(5)*(T1) - C(3).*(C(6).*((A1)^0.5 / 0.5) + C(7).*(log(abs(A1))) + C(8).*((A1)^(-2) / (-2)));
+Ib1 = C(9).*(T1) - C(3).*(C(10).*((A1)^0.5 / 0.5) + C(11).*((A1)^(-0.5) / (-0.5)));
+Ic1 = C(12).*(T1) - C(3).*(C(13).*((A1)^(-0.5) / (-0.5)));
+
+icpl = (C(2)./C(1)).*((Ia1 + Ib1.*Pr.^0.5 + Ic1.*Pr)-(Ia0 + Ib0.*Pr.^0.5 + Ic0.*Pr));
+end
+
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
 %  SIGVDI(SIGCOEFFS,T) gives the surface tension after a correlation from
@@ -2196,47 +2241,6 @@ error(['NEWTONY not succesful. Increase RES or ITER. Type help newtony.\n' ...
   '  Function %s, initial guess x0: %g, last found value x: %g,\n' ...
   '  function value %s(x) = %g. Allowed residual: %g, Iterations: %u.'], ...
   funname,x0,x,funname,y0,res,iter)
-end
-
-function cpl = cpljchem(C, T)
-%CPLJCHEM   Specific isobaric heat capacity of the liquid [J/kgK].
-%  CPLJCHEM(CPLCOEFFS,T) returns the specific isobaric heat capacity of the
-%  liquid [Nakagawa et al., J. Chem. Eng. Data 38, p. 70-74, 1993].
-%  The correlation is based on measurements in the temperature range from 276 to
-%  350 K and for pressures from 1.0 to 3.0 MPa.
-%  Hence, for our purposes, evaluate cpl at 0.1 MPa. Dependence of cpl on
-%  pressure is shown in tests/cpl_R142b.pdf.
-
-% P in Pa
-% T in K
-p = 1e5;
-
-Pr = p./C(4);
-Tr = T./C(3);
-a = C(5) + C(6)./(1-Tr).^0.5 + C(7)./(1-Tr) + C(8)./(1-Tr).^3;
-b = C(9) + C(10)./(1-Tr).^0.5 + C(11)./(1-Tr).^1.5;
-c = C(12) + C(13)./(1-Tr).^1.5;
-
-cpl = (C(2)./C(1)).*(a + b.*Pr.^0.5 + c.*Pr);
-end
-
-function icpl = icpljchem(C, T0, T1)
-% calculation of the integral over T of cpl(p, T)
-% (according to J. Chem. Eng. Data 1993, 38, page 70-74)
-% P in Pa
-% T in K
-
-Pr = 1e5/C(4);
-A0 = (1 - T0./C(3));
-A1 = (1 - T1./C(3));
-Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0)^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0)^(-2) / (-2)));
-Ib0 = C(9).*(T0) - C(3).*(C(10).*((A0)^0.5 / 0.5) + C(11).*((A0)^(-0.5) / (-0.5)));
-Ic0 = C(12).*(T0) - C(3).*(C(13).*((A0)^(-0.5) / (-0.5)));
-Ia1 = C(5)*(T1) - C(3).*(C(6).*((A1)^0.5 / 0.5) + C(7).*(log(abs(A1))) + C(8).*((A1)^(-2) / (-2)));
-Ib1 = C(9).*(T1) - C(3).*(C(10).*((A1)^0.5 / 0.5) + C(11).*((A1)^(-0.5) / (-0.5)));
-Ic1 = C(12).*(T1) - C(3).*(C(13).*((A1)^(-0.5) / (-0.5)));
-
-icpl = (C(2)./C(1)).*((Ia1 + Ib1.*Pr.^0.5 + Ic1.*Pr)-(Ia0 + Ib0.*Pr.^0.5 + Ic0.*Pr));
 end
 
 function sigma = sigmacapillary(C, T)
