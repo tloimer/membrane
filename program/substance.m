@@ -863,7 +863,7 @@ virialfun = @pdiv3;
 % Data from DDBST GmbH, Oldenburg, Germany, www.ddbst.com
 % cpcoeffs = [A(1), A(2), A(3), A(4), A(5), M]
 % Range: 264 K < T < 600 K
-cpcoeffs = [62.0124 86.4561 661.782 899.826 3375.65, M];
+cpcoeffs = [62.0124 86.4561 661.782 899.826 3375.65 M];
 cpfun = @cpalylee;
 
 % MUL, dynamic viscosity of the liquid
@@ -1783,6 +1783,14 @@ end
 %dkl = C(1)+C(2).*(1e-2)*rho(T)+C(3).*(1e-4)*rho(T).^2+C(4).*(1e-7)*rho(T).^3;
 %kls = ( kg(T) + dkl ) .* 1e-3;
 
+function cpid = cpalylee(A, T)
+%CPALYLEE   Specific isobaric heat capacity in the ideal gas state [J/(kg K)].
+a3t = A(3)./T;
+a5t = A(5)./T;
+cpid = 1000.0 * ...
+    (A(1) + A(2) * (a3t./(sinh(a3t))).^2 + A(4) * (a5t./(cosh(a5t))).^2) / A(6);
+end
+
 function cpl = cpleq2(C,T)
 %CPLEQ2     Evaluate Equation 2 to Table 2-153 in Green & Perry, 8th ed. (2007).
 %  CPLEQ2(CPLCOEFFS,T) returns the specific heat capacity of the liquid
@@ -2188,15 +2196,6 @@ error(['NEWTONY not succesful. Increase RES or ITER. Type help newtony.\n' ...
   '  Function %s, initial guess x0: %g, last found value x: %g,\n' ...
   '  function value %s(x) = %g. Allowed residual: %g, Iterations: %u.'], ...
   funname,x0,x,funname,y0,res,iter)
-end
-
-function cpid = cpalylee(A, T)
-% Aly-Lee calculation model to calculate the ideal gas heat capacity
-% 
-
-a3t = A(3)./T;
-a5t = A(5)./T;
-cpid = 1000*(A(1) + A(2).*(a3t./(sinh(a3t))).^2 + A(4).*(a5t./(cosh(a5t))).^2)./A(6);
 end
 
 function cpl = cpljchem(C, T)
