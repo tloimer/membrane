@@ -1676,8 +1676,15 @@ function mul = mudaubertshort(C,T)
 mul = exp( C(1) + C(2)./T + C(3).*log(T) );
 end
 
+function mul = mullatini(C,T)
+%MULLATINI  Dynamic viscosity of the liquid [Pa s].
+% C = [A, C, Tc]
+Tr = T / C(3);
+mul = 1e-3 ./ (C(1) * (1 ./ (C(2) - Tr) - 1));
+end
+
 function mul = vdi02(C,T)
-%VDI02      Specific heat capacity at constant pressure in the ideal gas state.
+%VDI02      Dynamic viscosity of the liquid [Pa s].
 %  VDI02(MULCOEFFS,T) uses eq. 2 in VDI Wärmeatlas, 11th ed. (2013), D3.1
 %  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
 %  dynamic viscosity of the liquid. The equation states units of Pas, the
@@ -2285,11 +2292,4 @@ dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
     K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
     K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
     K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
-end
-
-function mul = mullatini(C,T)
-% dynamic viscosity of the liquid in Pas
-% C = [A, C, Tc]
-Tr = T / C(3);
-mul = ( C(1) .* ( 1 ./ ( C(2) - Tr ) - 1 ) ).^-1 .* 1e-3;
 end
