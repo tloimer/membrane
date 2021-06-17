@@ -2070,48 +2070,32 @@ function sigma = sigmacapillary(C, T)
 %  Schmidt and Moldover, J. Phys. Chem. 1990, 94, pages 8840-8845.
 
 % C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
+%
+% after doing the maths,
+% sigma = C2*C3^2*C7*C8*Tr^1.26*(1+C4*Tr)*(1+C5*sqrt(Tr)+C6*Tr)
 
-Tr = (C(1) - T)./C(1);
-a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
-drho0 = C(2).*C(7);
-rhol_rhov = 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
-sigma = a.^2 .* (rhol_rhov) .* C(8)./2;
+Tr = 1. - T/C(1);
+%a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
+%drho0 = C(2).*C(7);
+%rhol_rhov = 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
+%sigma = a.^2 .* (rhol_rhov) .* C(8)./2;
+sigma = C(2)*C(3)^2*C(7)*C(8)*Tr.^1.26.*(1+C(4)*Tr).*(1+C(5)*sqrt(Tr)+C(6)*Tr);
 end
 
 function [dsigma, sigma] = dsigmacapillary(C, T)
 %DSIGMACAPILLARY Derivative of the surface tension.
 %  [DSIG SIG] = DSIGMACAPILLARY(COEFFS, T) returns the derivative of the surface
-%  tension and the surface tension.
+%  tension divided by surface tension, and the surface tension.
 %
 %  See also SIGMACAPILLARY.
 % C = [Tc rhoc a0 a1 rho1 rho2 rho0c g]
 
-Tr = (C(1) - T)./C(1);
-a = sqrt(C(3).^2 .* Tr.^0.935 .* (1 + C(4).*Tr));
-drho0 = C(2).*C(7);
-rhov = C(5) - 2 .* drho0.*Tr.^0.325 .* (1 + C(5).*Tr.^0.5 + C(6).*Tr);
-sigma = a.^2 .* (C(5) - rhov) .* C(8)./2;
-
-K11 = C(8).* C(3).^2 .* drho0;
-K21 = K11.* C(5);
-K31 = K11.* C(6);
-K12 = K11.* C(4);
-K22 = K11.* C(5).* C(4);
-K32 = K11.* C(6).* C(4);
-
-e1 = 1.26;
-e2 = 1.76;
-e3 = 2.26;
-e4 = 2.26;
-e5 = 2.76;
-e6 = 3.26;
-
-dsigma = -K11 .* e1 ./ C(1) .* Tr.^(e1 - 1) + ...
-    K21 .* e2 ./ C(1) .* Tr.^(e2 - 1) + ...
-    K31 .* e3 ./ C(1) .* Tr.^(e3 - 1) - ...
-    K12 .* e4 ./ C(1) .* Tr.^(e4 - 1) + ...
-    K22 .* e5 ./ C(1) .* Tr.^(e5 - 1) + ...
-    K32 .* e6 ./ C(1) .* Tr.^(e6 - 1);
+Tr = 1. - T/C(1);
+Tr_2 = sqrt(Tr);
+a1 = 1 + C(4)*Tr;
+a2 = 1 + C(5)*Tr_2 + C(6)*Tr;
+sigma = C(2)*C(3)^2*C(7)*C(8)*Tr.^1.26 .* a1 .* a2;
+dsigma = -((1.26+2.26*C(4)*Tr)./a1 + (0.5*C(5)*Tr_2+C(6)*Tr)./a2) ./ (C(1).*Tr);
 end
 
 function jt = jt(V,cpid)
