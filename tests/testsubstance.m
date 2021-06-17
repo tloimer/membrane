@@ -415,6 +415,8 @@ nonarrayplot(s.ps,'Saturation pressure',first,last,...
 setfirstlast('rho');
 nonarrayplot(s.rho,'Density of the liquid',first,last,...
   allT,'T [K]',satdata(:,3));
+darrayplot(s.drho, 'Derivative of liquid densisty', first, last, allT,...
+  'T [K]', satdata(:,3));
 
 % enthalpy of vaporization
 setfirstlast('hvap');
@@ -448,6 +450,8 @@ arrayplot(s.cpl,'Specific isobaric heat capacity of the liquid',first,last,...
 % Surface tension
 setfirstlast('sigma');
 arrayplot(s.sigma,'Surface tension',first,last,allT,'T [K]',satdata(:,14));
+darrayplot(s.dsig, 'Derivative of surface tension', first, last, allT,...
+  'T [K]', satdata(:,14));
 
 % Dynamic viscosity of the liquid
 setfirstlast('reset');
@@ -533,6 +537,60 @@ xlabel(xname);
 
 if VERBOSE
   printtable(description,X(first:last),datanist(first:last),datam);
+end
+
+end %---------------------------------------------------------------------------
+
+
+function darrayplot(prop,description,first,last,X,xname,datanist) %-----------
+%DARRAYPLOT For a property that returns [dval val], where dval = 1/val dval/dT,
+%   plot numerically obtained derivatives from nist-data and the correlation,
+%   and the function value of dval. Also, plot the value versus.
+
+global VERBOSE;
+len = last - first + 1;
+datam = zeros(len,1);   % data value from matlab function
+% Evaluate the derivatives as central differences midway between grid points.
+Xmid = zeros(len-1, 1); % midway gridpoint
+derm = Xmid;            % numerical derivative from matlab function
+dm = Xmid;              % derivative from matlab function
+dern = Xmid;            % numerical derivative from nist data
+[dummy datam(1)] = prop(X(first));
+Xprevious = X(first);
+for i = 2:len
+  Xnext = X(first-1+i);
+  [dummy datam(i)] = prop(Xnext);
+  Xmid(i-1) = 0.5*(Xprevious + Xnext);
+  dern(i-1) = 2 * (datanist(i)-datanist(i-1)) /...
+                ((Xnext-Xprevious)*(datanist(i)+datanist(i-1)));
+  derm(i-1) = 2 * (datam(i)-datam(i-1)) /...
+                ((Xnext-Xprevious)*(datam(i)+datam(i-1)));
+  dm(i-1) = prop(Xmid(i-1));
+  Xprevious = Xnext;
+end
+
+% Plot and print the value...
+figure('Name',[description ', value'],'NumberTitle','Off');
+plot(X(first:last),100*(datam./datanist(first:last)-1),'k*');
+title(description);
+ylabel('100*(matlab - nist)/nist');
+xlabel(xname);
+
+if VERBOSE
+  printtable([description ', value'],X(first:last),datanist(first:last),datam);
+end
+
+% ...and the derivative
+figure('Name',description,'NumberTitle','Off');
+plot(Xmid,100*(derm./dern-1),'kx', Xmid,100*(dm./dern-1), 'b+');
+title(description);
+ylabel('100*(matlab - nist)/nist');
+xlabel(xname);
+legend({'numerical','expression'}, 'Location', 'best');
+legend('boxoff');
+
+if VERBOSE
+  printtable(description,Xmid,derm,dm);
 end
 
 end %---------------------------------------------------------------------------
