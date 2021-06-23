@@ -949,7 +949,7 @@ klfun = @klchen;
 % Range: 273.15 K < T < 350 K
 % cplcoeffs = [M R Tc Pc a1 a2 a3 a4 b1 b2 b3 c1 c2]
 cplcoeffs = [M R Tc pc 4.9634 7.9208 -1.2226 3.9879e-3 -1.3332 1.1047 -9.7184e-2 7.6852e-2 -6.1316e-2];
-cplfun = @cpljchem;
+cplfun = @cpljchemzero;
 
 % SIGMA, surface tension [N/m].
 % calculation of surface tension sigma(T) according to Chae, Schmidt and
@@ -1954,18 +1954,29 @@ function cpl = cpljchem(C, T)
 p = 1e5;
 
 Pr = p./C(4);
-Tr = T./C(3);
-a = C(5) + C(6)./(1-Tr).^0.5 + C(7)./(1-Tr) + C(8)./(1-Tr).^3;
-b = C(9) + C(10)./(1-Tr).^0.5 + C(11)./(1-Tr).^1.5;
-c = C(12) + C(13)./(1-Tr).^1.5;
+xi = 1 - T./C(3);
+a = C(5) + C(6)./sqrt(xi) + C(7)./xi + C(8)./xi.^3;
+b = C(9) + C(10)./sqrt(xi) + C(11)./xi.^1.5;
+c = C(12) + C(13)./xi.^1.5;
 
-cpl = (C(2)./C(1)).*(a + b.*Pr.^0.5 + c.*Pr);
+cpl = (C(2)./C(1)).*(a + b.*sqrt(Pr) + c.*Pr);
+end
+
+function cpl = cpljchemzero(C, T)
+%CPLJCHEMZERO   Specific isobaric heat capacity of the liquid [J/kgK].
+%  CPLJCHEM(CPLCOEFFS,T) returns the specific isobaric heat capacity of the
+%  liquid [Nakagawa et al., J. Chem. Eng. Data 38, p. 70-74, 1993] for the
+%  pressure set to zero.
+%
+%  See also CPLJCHEM.
+
+xi = 1 - T./C(3);
+cpl = (C(2)/C(1)) * (C(5) + C(6)./sqrt(xi) + C(7)./xi + C(8)./xi.^3);
 end
 
 function icpl = icpljchem(C, T0, T1)
-%IVDI08     Integrate VDI08.
 %ICPLJCHEM  Integrate CPLJCHEM, return enthalpy difference [J/kg].
-%  ICPLJCHEM(CPLCOEFFS, T0, T1) returns the different of the specific enthalpy
+%  ICPLJCHEM(CPLCOEFFS, T0, T1) returns the difference of the specific enthalpy
 %  of the liquid between T0 and T1, at a pressure of 1 bar.
 %
 %  See also CPLJCHEM.
@@ -1975,15 +1986,37 @@ function icpl = icpljchem(C, T0, T1)
 Pr = 1e5/C(4);
 A0 = (1 - T0./C(3));
 A1 = (1 - T1./C(3));
-Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0)^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0)^(-2) / (-2)));
-Ib0 = C(9).*(T0) - C(3).*(C(10).*((A0)^0.5 / 0.5) + C(11).*((A0)^(-0.5) / (-0.5)));
-Ic0 = C(12).*(T0) - C(3).*(C(13).*((A0)^(-0.5) / (-0.5)));
-Ia1 = C(5)*(T1) - C(3).*(C(6).*((A1)^0.5 / 0.5) + C(7).*(log(abs(A1))) + C(8).*((A1)^(-2) / (-2)));
-Ib1 = C(9).*(T1) - C(3).*(C(10).*((A1)^0.5 / 0.5) + C(11).*((A1)^(-0.5) / (-0.5)));
-Ic1 = C(12).*(T1) - C(3).*(C(13).*((A1)^(-0.5) / (-0.5)));
+Ia0 = C(5)*(T0) - C(3).*(C(6).*((A0).^0.5 / 0.5) + C(7).*(log(abs(A0))) + C(8).*((A0).^(-2) / (-2)));
+Ib0 = C(9).*(T0) - C(3).*(C(10).*((A0).^0.5 / 0.5) + C(11).*((A0).^(-0.5) / (-0.5)));
+Ic0 = C(12).*(T0) - C(3).*(C(13).*((A0).^(-0.5) / (-0.5)));
+Ia1 = C(5)*(T1) - C(3).*(C(6).*((A1).^0.5 / 0.5) + C(7).*(log(abs(A1))) + C(8).*((A1).^(-2) / (-2)));
+Ib1 = C(9).*(T1) - C(3).*(C(10).*((A1).^0.5 / 0.5) + C(11).*((A1).^(-0.5) / (-0.5)));
+Ic1 = C(12).*(T1) - C(3).*(C(13).*((A1).^(-0.5) / (-0.5)));
 
 icpl = (C(2)./C(1)).*((Ia1 + Ib1.*Pr.^0.5 + Ic1.*Pr)-(Ia0 + Ib0.*Pr.^0.5 + Ic0.*Pr));
 end
+
+function icpl = icpljchemzero(C, T0, T1)
+%ICPLJCHEMZERO  Integrate CPLJCHEMZERO, return enthalpy difference [J/kg].
+%  ICPLJCHEMZERO(CPLCOEFFS, T0, T1) returns the difference of the specific
+%  enthalpy of the liquid between T0 and T1 at zero pressure.
+%
+%  See also CPlJCHEM, CPLJCHEMZERO.
+
+A0 = 1 - T0/C(3);
+A1 = 1 - T1/C(3);
+Ia = C(5)*(T1 - T0) - C(3)*( C(6)*2*(sqrt(A1)-sqrt(A0)) + ...
+			C(7)*log(A1./A0) - 0.5*C(8)*(A1.^(-2)-A0.^(-2)));
+icpl = (C(2)/C(1))*Ia;
+end
+
+% For the difference of the specific entropy of the liquid,
+% Int cpl/T dT would be nesessary;
+% From Bronstein-Semendjajew, with X = ax + b, b = 1, a = -1/Tc,
+%
+%  Int 1/(x X^3) dx = -ln(X/x + 2ax/X - a^2x^2/(2X^2)),
+%
+%  Int 1/(x sqrt(X)) dx = -ln((sqrt(X)-1)/(sqrt(X)+1))
 
 function sig = sigvdi(sigcoeffs,T)
 %SIGVDI     Surface tension [N/m].
