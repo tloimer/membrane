@@ -93,8 +93,7 @@ Tmin = T2ad - max((T1 - T2ad)/10., 0.1);
 if p1 == p2
     h1_T1p2 = 0;
 else
-    [~, h1_T1p2] = ode45(@(p,h) s.dhdp(T1,p), [p2 p1], 0);
-    h1_T1p2 = h1_T1p2(end);
+    h1_T1p2 = integral(@(p) s.dhdp(T1,p), p2, p1);
 end
 hT1p2_h2 = ode45(@(T,h) -s.cpg(T,p2), [T1 Tmin], 0);
 

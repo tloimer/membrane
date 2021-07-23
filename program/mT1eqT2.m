@@ -51,8 +51,7 @@ ms = ms.writeflowsetups(T1,T2,s,ms);
 if p1 == p2
     h12 = 0;
 else
-    [~, h12] = ode45(@(p,h) s.dhdp(T1,p), [p2 p1], 0);
-    h12 = h12(end);
+    h12 = integral(@(p) s.dhdp(T1,p), p2, p1);
 end
 
 % Find an interval for m where the residual pressure, p1sol - p1, changes sign.
