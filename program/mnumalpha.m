@@ -4,10 +4,11 @@ function [m,ms] = mnumalpha(alpha,T1,p1,p2,s,ms,accuracy)
 %  adiabatic flow of SUBSTANCE through a stack of layered membranes MS. At the
 %  downstream side of the struct, a heat transfer coefficent applies,
 %
-%    q2 = ALPHA * (T1 - T2),
+%    q2 = -ALPHA * (T1 - T2),
 %
-%  where q2 is the downstream heat flux, T1 the upstream and T2 the downstream
-%  temperature. The membrane struct MS is constructed with MSTACKSTRUCT.
+%  where q2 is the heat flux density at the downstream location in the
+%  downstream direction, T1 is the upstream and T2 the downstream temperature.
+%  The membrane struct MS is constructed with MSTACKSTRUCT.
 %
 %  MNUMALPHA(ALPHA,T1,P1,P2,SUBSTANCE,MS,'crude') sets crude solver tolerances.
 %
@@ -15,7 +16,7 @@ function [m,ms] = mnumalpha(alpha,T1,p1,p2,s,ms,accuracy)
 %
 %  Calls ASYM.
 %
-%  See also ASYM, MNUMADIABAT, MNUMDIABAT, MNUMISO, MSTACKSTRUCT, SUBSTANCE.
+%  See also ASYM, MNUMADIABAT, MT1EQT2, MNUMISO, MSTACKSTRUCT, SUBSTANCE.
 
 % Some input sanitizing.
 if s.ps(T1) < p1
@@ -49,10 +50,24 @@ T2ad = s.intjt(T1,p1,p2);
 % writeflowsetups() by itself adds a considerable range above T1
 ms = ms.writeflowsetups(T1,T2ad,s,ms);
 
+% From the global energy balance,
+%
+%   m h1 + q1 = m h2 + q2
+%
+% state 2 and the heat flux q2 are not independent,
+%
+%   h2 = f(m,h1,q2)   if q1 = 0.
+%
+% Therefore, given q2, or alpha, the downstream state must be determined,
+% depending on the mass flux density m.
+%
+% Construct a function h12(T) that gives the enthalpy difference
+% h(T1,p1) - h(T,p2).
+%
 % Consider a T-s diagram,
-%        h(T1,p1)
-%                        p = const
-%      ^               .
+%     T
+%      ^                 p = const
+%      | h(T1,p1)      .
 %  T1 -|- +----------+ h(T1, p2)
 %      |   `       .
 %      |     `   .   anywhere between: h(T, p2)
@@ -82,9 +97,6 @@ else
     h1_T1p2 = h1_T1p2(end);
 end
 hT1p2_h2 = ode45(@(T,h) -s.cpg(T,p2), [T1 Tmin], 0);
-
-%fprintf('Check: h1_T1p2 = %g, deval(hT1p2_h2, T2ad) = %g\n',...
-%	h1_T1p2, deval(hT1p2_h2, T2ad));
 
 h12 = @(T) h1_T1p2 + deval(hT1p2_h2, T);
 
@@ -124,4 +136,4 @@ function pres = presiduum(m) %---------------------------------------- presiduum
 	pres = asym(m, state2, ms, solver) - p1;
 end %------------------------------------------------------------- end presiduum
 
-end %%% END MT1EQT2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MT1EQT2 %%%
+end %%% END MNUMALPHA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MNUMALPHA %%%
