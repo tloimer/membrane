@@ -22,7 +22,7 @@ if isscalar(mguess)
   % Now look, in which direction we have to search for pres =  0.
   if fa(1) > 0, fac = 0.5; else fac = 1.4; end
 
-  for i = 2:6
+  for i = 2:10
     old = i - 1;
     a(i) = a(old)*fac;
     fa(i) = presiduum(a(i));
