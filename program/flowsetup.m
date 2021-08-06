@@ -50,7 +50,7 @@ if nargin == 1
   isfreespace = true;
   issupercritical = false; % No error checks here for free space.
 else
-  issupercritical = ~isfinite(s.ps(T2));
+  issupercritical = T2 > s.Tc;
   isfreespace = strcmp(mem.tname,'free');
 end
 
@@ -140,11 +140,11 @@ flsetup.qminqmax = @qminqmax;
 inttol = 1e-6;
 stepT = 0.4;
 
-% do an integer number of steps
-intTrange = ceil((Tmax-T2)/stepT)*stepT;
+% do an integer number of steps; expand the range to twice the necessary size
+intTrange = floor(2*(Tmax-T2)/stepT)*stepT;
 % the large interval is probably needed for the shooting-iteration
 if intTrange > 4
-  intTrange = [T2 T2+2*intTrange]; %DEBUG use 2 for normal use
+  intTrange = [T2 min(T2+intTrange,s.Tc-0.1)];
 else
   intTrange = [T2 T2+10];
 end
@@ -168,6 +168,10 @@ end
 % Instead, solhgK returns h(T).
 
 % options stay the same as before
+% the temperature must stay below Tc
+%if intTrange(2) > s.Tc - 0.1
+%  intTrange(2) = s.Tc - 0.1;
+%end
 soldhdps = ode45(@intdhdpdpsdT,intTrange,0,options);
 function dh = intdhdpdpsdT(T,h)
   % calculate the term
