@@ -19,18 +19,18 @@ function [m,ms] = mnumheatflux(negq2,T1,p1,p2,s,ms,accuracy)
 
 % Some input sanitizing.
 if s.ps(T1) < p1
-  error([upper(mfilename)...
+    error([upper(mfilename)...
 	': The upstream state is a liquid. This is not implemented.']);
 elseif p2 < 0.
-  error([upper(mfilename)...
+    error([upper(mfilename)...
 	': The downstream pressure is negative. That is not possible.']);
 elseif T1 < 0.
-  error([upper(mfilename)...
+    error([upper(mfilename)...
 	': The upstream temperature is below absolute zero. Impossible.']);
 end
 
 if nargin < 7
-  accuracy = 'accurate';
+    accuracy = 'accurate';
 end
 
 % Set the downstream state, downstreamstate(T2,p2,a2,q2,s,m)
@@ -42,30 +42,78 @@ ms.p1in = p1;
 ms.p2 = p2;
 ms.a2 = state2.a;
 
-% Calculate and set flowsetup-structure. That needes the full range of possible
-% temperatures of the process, hence provide a minimum and maximum temperature.
-% For q2 smaller than zero, i.e., heat flux in upstream direction, the maximum
-% temperature occurs at zero mass flux and is given by heat conduction. For q2
-% equal zero or larger than zero, the maximum temperature is T1. As minimum
-% temperature, set the downstream temperature for adiabatic flow, i.e., q2 = 0.
-% For q2 larger than zero, simply subtract the temperature difference according
-% to heat conduction.
-Tmin = s.intjt(T1,p1,p2);
-% Quick and dirty, heat conduction for a membrane consisting of one layer.
-deltaTcond = negq2 * ms.membrane(1).layer(1).matrix.L / ...
-    ms.membrane(1).layer(1).fmodel.kmgas(...
-                ms.membrane(1).layer(1).matrix.epsilon,...
-                ms.membrane(1).layer(1).matrix.km,...
-                s.kl(T1));
-if negq2 > 0    % heat flux in upstream direction
-    Tmax = T1 + deltaTcond;
+% An estimate of the lower bound of the mass flux
+% For R142b and isobutane, 25 nm pores, the liquid mass flux is smaller than
+% the gaseous mass flux. For larger pores, the reverse becomes true.
+if isfield(ms,'mguess') && isscalar(ms.mguess) && ~isempty(ms.mguess)
+    mguess = ms.mguess;
+elseif isinf(s.ps(T1)) % above the critical temperature
+    mguess = ms.mfluxknudsen(T1,p1,p2,s,ms) + ms.mfluxviscous(T1,p1,p2,s,ms);
 else
-    Tmax = T1;
-    Tmin = Tmin + deltaTcond;   % deltaTcond < 0
+    mvapor = ms.mfluxknudsen(T1,p1,p2,s,ms) + ms.mfluxviscous(T1,p1,p2,s,ms);
+    mguess = min(ms.mfluxliquid(T1,p1,p2,s,ms), mvapor);
 end
 
-% writeflowsetups() by itself adds a considerable range above T1
+% The downstram temperature under adiabatic conditions
+T2ad = s.intjt(T1,p1,p2);
+
+% Calculate and set flowsetup-structure. That needs the full range of possible
+% temperatures of the process, hence provide a minimum and maximum temperature.
+
+% With an estimate for the mass flux, define qdia, the heat flux necessary to
+% force T1 = T2, which is given by
+%   qdia = m (h(T1,p1) - h(T1,p2)).
+% Define h1_3 = h(T1,p1) - h(T1,p2), hence  qdia = m * h1_3.  Note, qdia < 0.
+% Estimate the temperature difference by taking cpg constant,
+%   q2 = m (h(T1,p1) - h(T2,p2)) = m (h(T1,p1) - h(T1,p2) + h(T1,p2) - h(T2,p2))
+%   q2 = qdia + m cpg (T1 - T2).
+% For q2 < qdia follows T2 > T1.
+%   -negq2 = m h1_3 - m cpg (T2-T1).
+% Otherwise, for q2 > 0, i.e., cooling from downstreams,
+%   q2 = m cpg (T2ad - T2),
+%   -negq2 = m cpg (T2ad - T2)
+
+if p1 == p2
+    h1_3 = 0;
+    qdia = 0;
+else
+    h1_3 = integral(@(p) s.dhdp(T1,p), p2, p1);
+    qdia = mguess * h1_3;   % qdia < 0
+end
+
+% Add some safety margin to the minimal temperature.
+% Since writeflowsetups() anyhow doubles to requested temperature range,
+% extending beyond the maximum temperature, Tmax does not need to be extended.
+if negq2 < 0    % heat flux in downstream direction = cooling from downstreams
+    Tmax = T1;
+    Tmin = T2ad + negq2 / (mguess * s.cpg(T2ad,p2));
+elseif negq2 < -qdia   % a bit of heating from downstreams
+    Tmax = T1 + (T1 - T2ad);
+    Tmin = T2ad - 0.1 * (T1 - T2ad);
+else % negq2 > -qdia, a lot of heating from downstreams
+    Tmax = T1 + (h1_3 + negq2/mguess) / s.cpg(T1,p2);
+    Tmin = T2ad - 0.1 * (T1 - T2ad);
+end
+
+% Otherwise, a temperature difference given by heat conduction would be, for
+% a membrane consisting of one layer,
+%deltaTcond = negq2 * ms.membrane(1).layer(1).matrix.L / ...
+%    ms.membrane(1).layer(1).fmodel.kmgas(...
+%                ms.membrane(1).layer(1).matrix.epsilon,...
+%                ms.membrane(1).layer(1).matrix.km,...
+%                s.kg(T1));
+% OR, even worse, compute (large) temperature difference for heat conduction
+% through the gas, which presumably has the worst thermal conductivity,
+%deltaTcond = negq2 * ms.membrane(1).layer(1).matrix.L / s.kg(T1);
+% However, this corresponds to q1 = q2 and does not fulfil the boundary
+% condition q1 = 0. Also, the energy equation, q1 + m h1 = q2 + m h2, is only
+% fulfilled for  m = 0, or h1 = h2.
+
+% writeflowsetups() by itself adds a considerable range above T1,
 ms = ms.writeflowsetups(Tmax,Tmin,s,ms);
+
+% For computing the enthalpy below, now extend the maximum temperature.
+Tmax = Tmax + (Tmax - Tmin);
 
 % From the global energy balance,
 %
@@ -75,69 +123,57 @@ ms = ms.writeflowsetups(Tmax,Tmin,s,ms);
 %
 %   h2 = f(m,h1,q2)   if q1 = 0.
 %
-% Therefore, given q2, or alpha, the downstream state must be determined,
+% Therefore, given q2, the downstream state must be determined,
 % depending on the mass flux density m.
 %
-% Construct a function h12(T) that gives the enthalpy difference
-% h(T1,p1) - h(T,p2).
+% Construct a function h1_2(T2) that gives the enthalpy difference h1 - h2,
+% h(T1,p1) - h(T2,p2).
 %
 % Consider a T-s diagram,
-%     T
-%      ^                 p = const
-%      | h(T1,p1)      .
-%  T1 -|- +----------+ h(T1, p2)
+%     T                          . p = const
+%      ^                       .
+% Tmax-|-                    . -- hmax
+%      |                   .
+%      |                 .  anywhere between: h(T,p2) = h2
+%      | h(T1,p1) = h1 .
+%  T1 -|- +----------+ h(T1,p2) = h3
 %      |   `       .
-%      |     `   .   anywhere between: h(T, p2)
-%  T2 -|-      `
+%      |     `   .
+%  T2 -|-      `  h(T2,p2) = h4
 %      |        isenthalpic line
 %      +--------------> s
 %
 %
 % Use the following symbols,
 %
-%   h1_T1p2  = h(T1, p1) - h(T1, p2) = int_p2^p1 dhdp(T1,p') dp' ,
+%   h1 = h(T1,p1),  h3 = h(T1,p2),  h4 = h(T2,p2),  h2 = h(T,p2)
+%   h1_3  = h(T1,p1) - h(T1,p2) = int_p2^p1 dhdp(T1,p) dp,
+%   h3_4 = h(T1,p2) - h(T2,p2) = int_T2^T1 cp(T,p2) dT,
+%   h4_2 = h(T2,p2) - h(T,p2) = -int_T2^T cp(T',p2) dT',
 %
-%   hT1p2_h2 = h(T1, p2) - h(T, p2) = -int_T1^T cp(T',p2) dT' ,
-%
-%   h12 = h1 - h2 = h1_T1p2 + hT1p2_h2 .
-%
-% Note, h1_T1p2 < 0, hT1p2_h2 > 0. Also, dhdp < 0, cp > 0.
-%
+% Note, h1_3 < 0, h3_4 > 0. Also, dhdp < 0, cp > 0.
+% Really, below use Tmin instead of T2.
+% h1_3 is evaluated further above.
 
-if p1 == p2
-    h1_T1p2 = 0;
-else
-    h1_T1p2 = integral(@(p) s.dhdp(T1,p), p2, p1);
-end
+h3_4 = integral(@(T) s.cpg(T,p2), Tmin, T1);
 
-%  int_T1^Tmin  -s.cpg dT = int_Tmax^Tmin -s.cpg dT  - int_Tmax^T1 -scpg dT
+h3_2 = ode45(@(T,h) -s.cpg(T,p2), [Tmin Tmax], h3_4);
 
-if Tmax > T1
-    hmax = integral(@(T) -s.cpg(T,p2), T1, Tmax);
-else    % Tmax = T1
-    hmax = 0;
-end
+h1_2 = @(T) h1_3 + deval(h3_2, T);
 
-hT1p2_h2 = ode45(@(T,h) hmax - s.cpg(T,p2), [Tmax Tmin], 0);
-
-h12 = @(T) h1_T1p2 + deval(hT1p2_h2, T);
-
-
-% Find an interval for m where the residual pressure, p1sol - p1, changes sign.
 solver = solverstruct(accuracy);
-
-% findinterval.m uses m = 0 as one point, hence rather err towards large mass
-% flows - but then, the achieved temperatures might be too high, out of range
-if isfield(ms,'mguess') && isscalar(ms.mguess) && ~isempty(ms.mguess)
-  mguess = ms.mguess;
-elseif isinf(s.ps(T1)) % above the critical temperature
-  mguess = ms.mfluxknudsen(T1,p1,p2,s,ms) + ms.mfluxviscous(T1,p1,p2,s,ms);
-else
-  mguess = ms.mfluxliquid(T1,p1,p2,s,ms);
+try
+    m = findzero(@presiduum,mguess,(p1-p2)/1000);
+catch ME
+    if strcmp(ME.identifier, 'MATLAB:fzero:ValuesAtEndPtsSameSign')
+        error(['No interval: mguess = %.3g, mvapor = %.3g, q = %.0f,' ...
+                ' T = [%.2f %.2f], m*h1_2[max, min] = [%.2g %.2g]\n'], ...
+                mguess, mvapor, negq2, Tmax-273.15, Tmin-273.15, ...
+                mguess*h1_2(Tmax), mguess*h1_2(Tmin));
+    else
+        rethrow(ME);
+    end
 end
-
-[minterval,pinterval] = findinterval(@presiduum,mguess,p2-p1);
-m = findzero(@presiduum,[minterval; pinterval],(p1-p2)/1000);
 
 % Now write the solution
 ms.m = m;
@@ -148,17 +184,14 @@ solver.fullsolution = true;
 [p1,ms] = asym(m,state2,ms,solver);
 ms.p1sol = p1;
 
+
 %--- nested functions ------------------------------------- nested functions ---
 
 function pres = presiduum(m) %---------------------------------------- presiduum
-    if m == 0
-        T2 = T1 + deltaTcond;
-    else
-        % m h1 + q1 = m h2 + q2, q1 = 0  ->  q2 = m (h1 - h2)
-        T2 = fzero(@(T) negq2 + m*h12(T), [Tmax Tmin]);
-    end
-        state2.T = T2;
-        pres = asym(m, state2, ms, solver) - p1;
+    % m h1 + q1 = m h2 + q2, q1 = 0  ->  q2 = m (h1 - h2)
+    T2 = fzero(@(T) negq2 + m * h1_2(T), [Tmax Tmin]);
+    state2.T = T2;
+    pres = asym(m, state2, ms, solver) - p1;
 end %------------------------------------------------------------- end presiduum
 
 end %%% END MNUMHEATFLUX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% END MNUMHEATFLUX %%%
