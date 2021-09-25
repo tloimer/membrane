@@ -578,58 +578,58 @@ for i = 1:nmembranes
     first = [1 2];
     nflow = length(ms.membrane(i).flow);
     sp = subplot(1,nlayers(i),first);
-    plot(ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).p/1e5,...
+    plot(sp,ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).p/1e5,...
 	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
-    xlim([ms.membrane(i).flow(nflow).z(end)/L 1]);
-    ylim(plim/1e5);
+    xlim(sp, [ms.membrane(i).flow(nflow).z(end)/L 1]);
+    ylim(sp, plim/1e5);
     figure(ht);
     st = subplot(1,nlayers(i),first);
-    plot(ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).T,...
+    plot(st, ms.membrane(i).flow(nflow).z/L,ms.membrane(i).flow(nflow).T,...
 	 'Color',ms.membrane(i).flow(nflow).color,'LineStyle','-','Marker',mark);
-    xlim([ms.membrane(i).flow(nflow).z(end)/L 1]);
-    ylim(Tlim);
+    xlim(st, [ms.membrane(i).flow(nflow).z(end)/L 1]);
+    ylim(st, Tlim);
     for k = nflow-1:-1:1
-      line(ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).T,...
+      line(st, ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).T,...
 	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
     end
-    figure(hp);
-    subplot(sp);
+    %figure(hp);
+    %subplot(sp);
     for k = nflow-1:-1:1
-      line(ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).p/1e5,...
+      line(sp, ms.membrane(i).flow(k).z/L,ms.membrane(i).flow(k).p/1e5,...
 	   'Color',ms.membrane(i).flow(k).color,'LineStyle','-','Marker',mark);
     end
     % The first line in the layer.
     nflow = length(jl.flow);
-    line(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
+    line(sp, jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
 	 'LineStyle','-','Marker',mark);
-    figure(ht);
-    subplot(st);
-    line(jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
+    %figure(ht);
+    %subplot(st);
+    line(st, jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
 	 'LineStyle','-','Marker',mark);
   else
     first = 1;
     nflow = length(jl.flow);
     sp = subplot(1,nlayers(i),first);
-    plot(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
+    plot(sp, jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,'Color',jl.flow(nflow).color,...
 	 'LineStyle','-','Marker',mark);
-    ylim(plim/1e5);
-    xlim([0 1]);
+    ylim(sp, plim/1e5);
+    xlim(sp, [0 1]);
     figure(ht);
     st = subplot(1,nlayers(i),first);
-    plot(jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
+    plot(st, jl.flow(nflow).z/L,jl.flow(nflow).T,'Color',jl.flow(nflow).color,...
 	 'LineStyle','-','Marker',mark);
-    ylim(Tlim);
-    xlim([0 1]);
+    ylim(st, Tlim);
+    xlim(st, [0 1]);
   end
 
   % Put the remaining flow elements in the first layer into the existing plot.
   for k = nflow-1:-1:1
-    line(jl.flow(k).z/L,jl.flow(k).T,'Color',jl.flow(k).color,...
+    line(st, jl.flow(k).z/L,jl.flow(k).T,'Color',jl.flow(k).color,...
 	 'LineStyle','-','Marker',mark);
   end
-  subplot(sp);
+  %subplot(sp);
   for k = nflow-1:-1:1
-    line(jl.flow(k).z/L,jl.flow(k).p/1e5,'Color',jl.flow(k).color,...
+    line(sp, jl.flow(k).z/L,jl.flow(k).p/1e5,'Color',jl.flow(k).color,...
 	 'LineStyle','-','Marker',mark);
   end
 
@@ -643,25 +643,25 @@ for i = 1:nmembranes
     nflow = length(jl.flow);
     figure(ht);
     st = subplot(1,nlayers(i),first(end)+j-1);
-    plot(jl.flow(nflow).z/L,jl.flow(nflow).T,...
+    plot(st, jl.flow(nflow).z/L,jl.flow(nflow).T,...
 	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
-    ylim(Tlim);
-    xlim([0 1]);
+    ylim(st, Tlim);
+    xlim(st, [0 1]);
     figure(hp);
     sp = subplot(1,nlayers(i),first(end)+j-1);
-    plot(jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,...
+    plot(sp, jl.flow(nflow).z/L,jl.flow(nflow).p/1e5,...
 	 'Color',jl.flow(nflow).color,'LineStyle','-','Marker',mark);
-    ylim(plim/1e5);
-    xlim([0 1]);
+    ylim(sp, plim/1e5);
+    xlim(sp, [0 1]);
     if nflow > 1
       for k = nflow-1:-1:1
-	line(jl.flow(k).z/L,jl.flow(k).p/1e5,...
+	line(sp, jl.flow(k).z/L,jl.flow(k).p/1e5,...
 	     'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
       end
-      figure(ht);
-      subplot(st);
+      %figure(ht);
+      %subplot(st);
       for k = nflow-1:-1:1
-	line(jl.flow(k).z/L,jl.flow(k).T,...
+	line(st, jl.flow(k).z/L,jl.flow(k).T,...
 	     'Color',jl.flow(k).color,'LineStyle','-','Marker',mark);
       end
     end
