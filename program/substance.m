@@ -83,8 +83,8 @@ s = struct('name',name,'R',[],'M',[],'Tc',[],'ps',[],'Ts',[],'rho',[],'v',[],...
   'kelveq',[],'jt',[],'dhdp',[],'dhcpg',[],'drho',[],'dsig',[],'intjt',[],...
   'intcpl',[],'nul',[],'nug',[]);
 
-% universal gas constant
-R = 8314.4; % J/kmolK
+% universal gas constant, since 2019 exactly 8314.46261815324 J/molK
+R = 8314.4626; % J/kmolK
 
 % The data. Data might contain only the correlation coefficients, or the
 % coefficients and a function handle to a correlation function. The first case
