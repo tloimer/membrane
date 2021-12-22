@@ -439,6 +439,11 @@ sigfun = @sigstephan23;
 case 'nitrogen'
 % Nitrogen. CAS 7727-37-9.
 
+% Critical constants: VDI Wärmeatlas 2019,
+% Roland Span, D2.3, Thermophysikalische Stoffwerte von Stickstoff
+% https://doi.org/10.1007/978-3-662-52989-8_14
+% M = 28.01348 g/mol, Tc = 126.192 K, pc = 33.958 bar, rhoc = 313.3 kg/m3
+
 % PS, saturation pressure, coefficients for the Antoine eq.
 % See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
 % Vapor Pressure of Chemicals, vol. 20C: J. Dykyj, J. Svoboda, R.C. Wilhoit,
@@ -448,7 +453,11 @@ case 'nitrogen'
 % extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
 Acoeffs =  zeros(2,10);
 Acoeffs(1,1:5) = [80 136931.93 8.69633 265.684 -5.366];
-Acoeffs(2,:) = [126.2 6069220.85 Acoeffs(1,3:5) 80 126.2 0.434294 15.32 -15.5];
+% Manually corrected coefficient n of extended Antoine eq.,
+% chic = (126.192 - 80)/126.192
+% print log((log10(3.3958e6) - 8.69633 + 265.684/(-5.366 + 126.192) \
+%			- 15.32*chic**8 + 15.5*chic**12)/0.43429)/log(chic)
+Acoeffs(2,:) = [126.192 3.3958e6 Acoeffs(1,3:5) 80 126.192 2.70464 15.32 -15.5];
 
 % RHO, liquid density at saturation
 % Range: 63.15 K (31.036 mol/dm³) < T < 126.2 K (11.217 mol/dm³)
@@ -459,8 +468,8 @@ Acoeffs(2,:) = [126.2 6069220.85 Acoeffs(1,3:5) 80 126.2 0.434294 15.32 -15.5];
 % R.L. Rowley, W.V. Wilding, J.L. Oscarson, Y. Yang, N.A. Zundel, T.E. Daubert,
 % R.P. Danner, DIPPR® Data Compilation of Pure Chemical Properties, Design
 % Institute for Physical Properties, AIChe, New York (2007).
-M = 28.013;  % also in VDI-Wärmeatlas, see critical constants below
-rhocoeffs = [126.2 3.2091*M 0.2861 126.2 0.2966];
+M = 28.01348;  % also in VDI-Wärmeatlas, see critical constants above
+rhocoeffs = [126.2 3.2091*M 0.2861 126.192 0.2966];
 rhofun{1} = @rhoperry;
 
 % V, specific volume of the gas
@@ -500,10 +509,10 @@ mulfun = @vdi02;
 % MUG, dynamic viscosity of the vapor
 % See VDI Wärmeatlas, 9th ed. (2002). A correlation by Lucas, also reported by
 % Reid, Prausnitz and Poling, 4th ed. (1987) or by Perry, 7th ed. (1997) is
-% used. Critical constants are taken from VDI Wärmeatlas, pages Da 6 - Da 15.
+% used. Critical constants see above.
 % mugcoeffs = [M Tc pc Zc dipol];
 %  Tc [K], pc [Pa] public; mugcoeffs = [Zc, dipol [debye]];
-Tc = 126.2; pc = 3.39e6;
+Tc = 126.192; pc = 3.3958e6;
 mugcoeffs = [0.29 0 R M Tc pc];
 mugfun = @mulucas;
 
@@ -522,10 +531,10 @@ klcoeffs = [.2629 -1.545e-3 -9.45e-7];
 klfun = @poly2;
 
 % CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
-% See Perry, 7th ed. (1997), Table 2-196.
-% Range: 159.05 K < T < 390 K
-cplcoeffs = [1.0264e5 -139.63 -3.0341e-2 2.0386e-3]/M;
-cplfun = @poly3;
+% VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber, Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+cplcoeffs = [[0.4786 5.6086 -1.1144 2.1294 5.8166 -8.5275]*R/M Tc];
+cplfun = @vdi08;
 
 % SIGMA, surface tension [N/m].
 % A correlation from VDI-Wärmeatlas, eq. (91), p. Da 37, is fit to one data
