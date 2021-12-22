@@ -1,9 +1,7 @@
-function twosubstances()
-%TWOSUBSTANCES Compare propane with propaneperry, with respect to nist.
-%  TWOSUBSTANCEs() creates a number of figures which show the difference in
-%  the values of properties for propane and propaneperry, commit 87546e1.
-%  Data retrieved on 30 Sep. and 20. Okt. 2014 from the National Institute of
-%  Standards website, http://webbook.nist.gov/chemistry/fluid.
+function twosubstances(name1, name2)
+%TWOSUBSTANCES Compare substance NAME1 and NAME2, with respect to nist.
+%  TWOSUBSTANCES(NAME1, NAME2) creates a number of figures which show the
+%  difference in the values of properties for two substances.
 %
 %  See also TESTSUBSTANCE
 
@@ -20,8 +18,14 @@ function twosubstances()
 % 25 Therm. Cond. (v, W/m*K)
 
 
-%Tc = 369.82;
+switch name1
+case {'propane', 'propaneperry'}
 
+% Propane, propaneperry, from commit 87546e1.
+% Data retrieved on 30 Sep. and 20. Okt. 2014 from the National Institute of
+% Standards website, http://webbook.nist.gov/chemistry/fluid.
+
+%Tc = 369.82;
 % Saturation properties - temperature increments.
 % Data retrieved 2014-09-30
 % Simply export data to tab delimited data
@@ -86,7 +90,6 @@ p1Pa = ...
 340	1e-6	1.5598e-05	64109.	642.89	707.00	5.2559	1.6705	1.8590	267.11	11.238	9.2579e-06	0.023106; ... vapor
 350	1e-6	1.5153e-05	65994.	659.82	725.82	5.3104	1.7163	1.9049	270.64	10.362	9.5190e-06	0.024333]; %	vapor
 
-
 % Saturation pressure - psat < 80 Pa for T < 150
 N.ps.Tfirst = 140;
 N.v.Tlast = 330;
@@ -95,8 +98,12 @@ N.jt.Tlast = N.v.Tlast;
 N.cpg.Tlast = 310;
 N.nug.Tlast = N.v.Tlast;
 
-s = substance('propane');
-p = substance('propaneperry');
+otherwise
+error('Substance %s not known', name1);
+end
+
+s = substance(name1);
+p = substance(name2);
 allT = satdata(:,1);
 len = size(allT,1);
 first = 1;
@@ -191,8 +198,6 @@ else
 end
 end %---------------------- end nested function ---------
 
-end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end testsubstance %%%
-
 
 function nonarrayplot(prop,qroq,description,first,last,X,xname,datanist) %------
 
@@ -248,7 +253,7 @@ datan = qroq(X(first:last),P(first:last));
 figure('Name',description,'NumberTitle','Off');
 plot(X(first:last),100*(datam./datanist(first:last)-1),'ko',...
      X(first:last),100*(datan./datanist(first:last)-1),'kx');
-legend('propane','propaneperry');
+legend(name1, name2);
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
@@ -273,7 +278,7 @@ end
 figure('Name',description,'NumberTitle','Off');
 plot(X(first:last),100*(datam./datanist(first:last)-1),'ko',...
      X(first:last),100*(datan./datanist(first:last)-1),'kx');
-legend('propane','propaneperry');
+legend(name1, name2);
 title(description);
 ylabel('100*(matlab - nist)/nist');
 xlabel(xname);
@@ -284,6 +289,8 @@ end
 
 end %---------------------------------------------------------------------------
 
+
+end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end testsubstance %%%
 
 function printtable(description,X,datanist,datam,P) %---------------------------
 
