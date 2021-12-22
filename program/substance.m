@@ -682,7 +682,8 @@ cplfun = @vdi08;
 % For two coefficients, eq. 6 is identical to SIGSTEPHAN22.
 % Vectorizes!
 %			Tc = 369.82;
-sigcoeffs = [0.05094 1.22051 369.82];
+Tc = 369.82;
+sigcoeffs = [0.05094 1.22051 Tc];
 sigfun = @sigstephan22;
 
 % Joule-Thomson coefficient
@@ -1100,7 +1101,7 @@ at2 =at.^2;
 cpid = C(8).*( C(2) + (C(3)-C(2)).*at2.*(1.0-(C(1)./(C(1)+T)).*...
        (C(4) + C(5).*at + C(6).*at2 + C(7).*at2.*at)));
 end
-   
+
 function cpg = cpgas(cpid,cpg_cpid)
 %CPGAS      Specific heat capacity at constant pressure of the vapor  [J/kgK].
 %  CPGAS(CPID,CPG_CPID) calculates the specific heat capacity at constant
