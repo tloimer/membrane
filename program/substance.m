@@ -974,16 +974,107 @@ a0 = sqrt(7.5)*10^-3;
 sigcoeffs = [Tc 449 a0 -0.09 0.351 -0.493 1.774 9.807];
 sigfun = @sigmacapillary;
 
-otherwise
-error('No substance of this name.')
-% water
+case 'water'
+% Critical constants, from VDI Wärmeatlas (2019), D2.1:
+% M = 18,015 275 kg/kmol, R = 0,461 526 kJ/kgK,
+% Tc = 647.096 K, pc = 220.64 bar, rhoc = 322 kg/m3
+M = 18.015; % kg/kmol
+Tc = 647.096; % K
+rhoc = 322; % kg/m3
+
+% PS, saturation pressure, coefficients for the Antoine eq.
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20B: J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M.  Frenkel, K.R. Hall (2000).
+% 2 Inorganic Compounds; Organic Compounds, C1 to C57. Part1, pp. 14 - 110..
+% water: 2.1 Inorganic Compounds; p. 16
+% Range: 273 K < T < 647.096 K
+
+% classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
+Acoeffs =  zeros(4,10);
+Acoeffs(1,1:5) = [318.08 9555.0 10.31549 1794.88 -34.764];
+Acoeffs(2,1:5) = [394 204045.49 10.11048 1680.59 -43.932];
+Acoeffs(3,1:5) = [433 614772.78 10.09938 1681 -43.037];
+Acoeffs(4,:) = [647.096 22064004 Acoeffs(3,3:5) 433 647.096 ...
+						2.89035 66.2879 -75.628];
+
+% RHO, liquid density at saturation
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Range: 20 °C < T < 250 °C
+% rhocoeffs:  [Tmax A B C D Tc rhoc]
+rhocoeffs = [Tc 1094.0233 -1813.2295 3863.9557 -2479.8130 Tc rhoc];
+rhofun{1} = @rhovdi19;
+
+% V, specific volume of the gas
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Virial Coefficients of Pure Gases and Mixtures, vol. 21A: J H. Dymond, K.N.
+% Marsh, R.C. Wilhoit and K.C. Wong, Virial Coefficients of Pure Gases and
+% Mixtures (2002)
+vcoeffs = [[158.83 -3.0107e5 1.8189e8 -5.6932e10]/1e3 R M];
+virialfun = @pdiv3;
+
+% CPID, specific heat capacity in the ideal gas state at constant pressure
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 6, eq. (5)
+% Range: -50 °C < T < 500 °C
+cpcoeffs = [706.3032 5.1703 -6.0865 -6.6011 36.2723 -63.0965 46.2085 R/M];
+cpfun = @vdi10;
+
 % MUL, dynamic viscosity of the liquid
-% See Viswanath et al., chap. 4.3.1.3c in Viscosity of Liquids (2007).
-% Report correlations by Daubert and Danner, Physical and Thermodynamic Proper-
-% ties of Pure Chemicals -- Data Compilation, Design Institute for Physical
-% Properties Data, AIChE, Taylor and Francis, Washington DC (1989-1994).
-% Range: 273.15 K < T < 643.15 K
-%mulcoeffs = [-51.964 3670.6 5.7331 -5.349e-29 10];
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 7, eq. (6)
+% Range: 20 °C < T < 250 °C
+mulcoeffs = [0.45047 1.39753 613.181 63.697 6.896e-5];
+mulfun = @vdi02;
+
+% MUG, dynamic viscosity of the vapor
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 8
+% Range: 0 °C < T < 500 °C
+mugcoeffs = [0.64966e-5 -0.15102e-7 1.15935e-10 -0.1008e-12 0.031e-15];
+mugfun = @poly4;
+
+% KG, thermal conductivity of the vapor at approx. 1 bar [W/mK].
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 10
+% Range: 25 °C < T < 500 °C
+kgcoeffs = [13.918e-3 -0.04699e-3 0.258066e-6 -0.183149e-9 0.055092e-12];
+kgfun = @poly4;
+
+% KL, thermal conductivity of the liquid [W/mK]
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 9
+% Range: 0 °C < T < 200 °C
+klcoeffs = [-2.4149 2.45165e-2 -0.73121e-4 0.99492e-7 -0.53730e-10];
+klfun = @poly4;
+
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 5, eq. (4)
+% Range: 0 °C < T < 250 °C
+cplcoeffs = [[0.2399 12.8647 -33.6392 104.7686 -155.4709 92.3726]*R/M Tc];
+cplfun = @vdi08;
+
+% SIGMA, surface tension [N/m].
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 11, eq. (10)
+% Range: 0 °C < T < 200 °C
+%  [A B C D E Tc]
+sigcoeffs = [0.15488 1.64129 -0.75986 -0.85291 1.14113 Tc];
+sigfun = @sigmavdi19;
+
+otherwise
+
+error('No substance of this name.')
 end
 %end case name
 % These functions are the same for all substances.
@@ -1090,11 +1181,11 @@ end
 function cpid = vdi10(C,T)
 %VDI10      Specific heat capacity at constant pressure in the ideal gas state.
 %  VDI10(CPCOEFFS,T) uses eq. 10 in VDI Wärmeatlas, 11th ed. (2013), D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
-%  specific heat capacity at constant pressure in the ideal gas state in
-%  units of J/kgK. Coefficients are already scaled to return J/kgK. The
-%  caption to Tabelle 6 claims to return J/gK, but really J/kgK are
-%  returned.
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, equal to eq. (5) in
+%  VDI Wärmeatlas, 12th ed. (2019), to return the specific heat capacity at
+%  constant pressure in the ideal gas state in units of J/kgK. Coefficients are
+%  already scaled to return J/kgK. The caption to Tabelle 6 claims to return
+%  J/gK, but really J/kgK are returned.
 
 at = T./(C(1) + T);
 at2 =at.^2;
@@ -1633,7 +1724,7 @@ end
 
 function [drho, rho] = drholandolt(coeffs,T)
 %DRHOLANDOLT Derivative of liquid density, (1/rho) drho/dT [1/K].
-%  [DRHO RHO] = DROLANDOLT(C,T) returns the first derivative of the liquid
+%  [DRHO RHO] = DRHOLANDOLT(C,T) returns the first derivative of the liquid
 %  density, DRHO = (1/RHO) (DRHO/DT), and the density.
 [A, B, C, D, Tc, rhoc] ...
   = deal(coeffs(1),coeffs(2),coeffs(3),coeffs(4),coeffs(5),coeffs(6));
@@ -1642,6 +1733,29 @@ rho = rholandolt(coeffs,T);
 drho = (1+1.75.*chi.^(1/3)+0.75.*chi).*(-A -2*B.*phi-3*C.*phi.^2-4*D.*phi.^3)...
 -(7./(12*Tc.*chi.^(2/3))+0.75./Tc).*(rhoc+A.*phi+B.*phi.^2+C.*phi.^3+D.*phi.^4);
 drho = drho./rho;
+end
+
+function rho = rhovdi19(C,T)
+%RHOVDI19   Liquid density [kg/m3].
+%  RHOVDI19(C,T) returns the liquid density [kg/m3]. See Michael Kleiber and
+%  Ralph Joh, D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten
+%  und Gase, In: VDI Wärmeatlas, 12th ed. (2019). Flüssigkeitsdichte, eq. (1).
+% [A B C D Tc rhoc]
+% [1 2 3 4 5  C(6)
+chi = 1 - T./C(5);
+rho= C(6) + C(1).*chi.^0.35 + C(2).*chi.^(2/3.) + C(3).*chi + C(4).*chi.^(4/3.);
+end
+
+function [drho, rho] = drhovdi19(C,T)
+%DRHOVDI19  Derivative of liquid density, (1/rho) drho/dT [1/K].
+%  [DRHO RHO] = DRHOVDI19(C,T) returns the first derivative of the liquid
+%  density, DRHO = (1/RHO) (DRHO/DT), and the density.
+%
+%  See also SUBSTANCE>RHOVDI19.
+chi = 1 - T./C(5);
+rho = rhovdi19(C,T);
+drho = (-1./(C(5).*rho)).*(0.35*C(1)./chi.^0.65 + (2/3.)*C(2)./chi.^(1/3.) + ...
+		C(3) + (4/3.)*C(4).*chi.^(1/3.));
 end
 
 function rho = rhoperry(C,T)
@@ -1699,9 +1813,10 @@ end
 function mul = vdi02(C,T)
 %VDI02      Dynamic viscosity of the liquid [Pa s].
 %  VDI02(MULCOEFFS,T) uses eq. 2 in VDI Wärmeatlas, 11th ed. (2013), D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
-%  dynamic viscosity of the liquid. The equation states units of Pas, the
-%  caption of Tabelle 7 refers to mPas. The latter is wrong.
+%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh.
+%  Equal to eq. (6) in 12 ed., VDI Wärmeatlas (2019), D3.1.
+%  The equation states units of Pas, the caption of Tabelle 7 refers to mPas.
+%  The latter is wrong.
 cdt = (C(3) - T)./(T - C(4));
 mul = C(5).*exp(nthroot(cdt,3).*(C(1) + C(2).*cdt));
 end
@@ -1901,9 +2016,9 @@ function cpl = vdi08(C,T)
 %VDI08      Specific isobaric heat capacity of the liquid [J/kgK].
 %  VDI08(C,T) applies eq. 8 from VDI Wärmeatlas, 11th ed. (2013). D3.1
 %  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the
-%  specific isobaric heat capacity of the liquid in units of J/kgK. VDI08
-%  expects coefficients C(1) to C(6), A to F in eq. 8, to already be
-%  multiplied with R/M.
+%  specific isobaric heat capacity of the liquid in units of J/kgK. Equal to
+%  eq. (4) from 12th ed. of VDI Wärmeatlas (2019). VDI08 expects coefficients
+%  C(1) to C(6), A to F in eq. (8), to already be multiplied with R/M.
 
 % Tc = C(7);
 xi = (1-T./C(7));
@@ -2103,12 +2218,6 @@ sig = sigcoeffs(1).*th.^sigcoeffs(2).*(1+sigcoeffs(3).*th);
 dsig = (-sigcoeffs(2) - 1./(1+1./(sigcoeffs(3).*th)))./(th.*sigcoeffs(4));
 end
 
-%function sig = vdi06(C,T)
-%VDI06     Surface tension [N/m].
-%  VDI06(C,T) applies eq. 6 from VDI Wärmeatlas, 11th ed. (2013). D3.1
-%  Flüssigkeiten und Gase: Michael Kleiber und Ralph Joh, to return the surface
-%  tension. For two coefficients, equivalent to SIGSTEPHAN22.
-
 function sigma = sigmacapillary(C, T)
 %SIGMACAPILLARY Surface tension [N/m].
 %  SGIMACAPILLARY(COEFFS, T) returns the surface tension according to Chae,
@@ -2141,6 +2250,30 @@ a1 = 1 + C(4)*Tr;
 a2 = 1 + C(5)*Tr_2 + C(6)*Tr;
 sigma = C(2)*C(3)^2*C(7)*C(8)*Tr.^1.26 .* a1 .* a2;
 dsigma = -((1.26+2.26*C(4)*Tr)./a1 + (0.5*C(5)*Tr_2+C(6)*Tr)./a2) ./ (C(1).*Tr);
+end
+
+function sigma = sigmavdi19(C, T)
+%SIGMAVDI19 Surface tension [N/m].
+%  SIGMAVDI19(COEFFS, T) returns the surface tension according to eq. (10) in
+%  Michael Kleiber and Ralph Joh, D3.1 Thermophysikalische Stoffwerte sonstiger
+%  reiner Flüssigkeiten und Gase, In: VDI Wärmeatlas, 12th ed. (2019).
+%  [A B C D E Tc]
+%   1 2 3 4 5 C(6)
+tc = T/C(6);
+sigma = C(1) * (1.0-tc) .^ (C(2) + C(3)*tc + C(4)*tc.^2 + C(5)*tc.^3);
+end
+
+function [dsigma, sigma] = dsigmavdi19(C, T)
+%DSIGMAVDI19 Derivative of the surface tension, 1/sigma dsigma/dT.
+%  [DSIG SIG] = DSIGMAVDI19(COEFFS, T) returns the derivative of the surface
+%  tension divided by surface tension, and the surface tension.
+%  [A B C D E Tc]
+%   1 2 3 4 5 C(6)
+tc = T/C(6);
+poly = C(2) + C(3)*tc + C(4)*tc.^2 + C(5)*tc.^3;
+dsigma = (1.0/C(6))*(C(3) + 2*C(4)*tc + 3*C(5)*tc.^2).*log(1-tc) - ...
+	poly./(C(6) - T);
+sigma = C(1) * (1.0-tc) .^ poly;
 end
 
 function jt = jt(V,cpid)
