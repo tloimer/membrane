@@ -1064,13 +1064,12 @@ cplcoeffs = [[0.2399 12.8647 -33.6392 104.7686 -155.4709 92.3726]*R/M Tc];
 cplfun = @vdi08;
 
 % SIGMA, surface tension [N/m].
-% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
-% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
-% Table 11, eq. (10)
-% Range: 0 °C < T < 200 °C
-%  [A B C D E Tc]
-sigcoeffs = [0.15488 1.64129 -0.75986 -0.85291 1.14113 Tc];
-sigfun = @sigmavdi19;
+% From R1-76(2014): Revised Release on the Surface Tension of Ordinary Water
+% Substance (2014). From www.iapws.org/release.html, retrieved 2021-12-27.
+% The correlation equation is identical to sigstephan23, where
+% [B mu b Tc]  corresponds to [a1 a2 a3 Tc];
+sigcoeffs = [0.2358 1.256 -0.625 Tc];
+sigfun = @sigstephan23;
 
 case 'waterharvey'
 % Critical constants, from VDI Wärmeatlas (2019), D2.1:
@@ -1161,12 +1160,13 @@ cplcoeffs = [[0.2399 12.8647 -33.6392 104.7686 -155.4709 92.3726]*R/M Tc];
 cplfun = @vdi08;
 
 % SIGMA, surface tension [N/m].
-% From R1-76(2014): Revised Release on the Surface Tension of Ordinary Water
-% Substance (2014). From www.iapws.org/release.html, retrieved 2021-12-27.
-% The correlation equation is identical to sigstephan23, where
-% [B mu b Tc]  corresponds to [a1 a2 a3 Tc];
-sigcoeffs = [0.2358 1.256 -0.625 Tc];
-sigfun = @sigstephan23;
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 11, eq. (10)
+% Range: 0 °C < T < 200 °C
+%  [A B C D E Tc]
+sigcoeffs = [0.15488 1.64129 -0.75986 -0.85291 1.14113 Tc];
+sigfun = @sigmavdi19;
 
 otherwise
 
