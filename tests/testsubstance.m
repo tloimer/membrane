@@ -462,8 +462,7 @@ last = len;
 % remains, do: ff = get(gcf,'ExportsetupWindow'); ff.style
 % Write the variable "hsetup" into (!) the base workspace
 %  instead of "hsetup = struct('Version',... - in the base workspace
-assignin('base', 'hsetup',...
-	struct('Version',1,'Format','pdf','Preview','none','Width',450,...
+lsetup = struct('Version',1,'Format','pdf','Preview','none','Width',450,...
         'Height',300,'Units','points','Color','bw','Background','w',...
         'FixedFontSize',8,'ScaledFontSize','auto','FontMode','fixed',...
         'FontSizeMin',8,'FixedLineWidth',.5,'ScaledLineWidth','100',...
@@ -472,7 +471,8 @@ assignin('base', 'hsetup',...
         'PSLevel',3,'Renderer','auto','Resolution','auto',...
         'LineStyleMap','none','ApplyStyle',0,'Bounds','tight',...
         'LockAxes','on','LockAxesTicks','off','ShowUI','on',...
-        'SeparateText','off'));
+        'SeparateText','off');
+assignin('base', 'hsetup', lsetup);
 
 fprintf('Substance %s, critical temperature: %.1f K.\n',name,s.Tc);
 
@@ -486,11 +486,13 @@ fprintf(...
 setfirstlast('ps');
 nonarrayplot(s.ps,'Saturation pressure',first,last,...
   allT,'T [K]',satdata(:,2)*1e6);
+myexport('psat');
 
 % Liquid density
 setfirstlast('rho');
 nonarrayplot(s.rho,'Density of the liquid',first,last,...
   allT,'T [K]',satdata(:,3));
+myexport('rhol');
 darrayplot(s.drho, 'Derivative of liquid density', first, last, allT,...
   'T [K]', satdata(:,3));
 
@@ -498,40 +500,48 @@ darrayplot(s.drho, 'Derivative of liquid density', first, last, allT,...
 setfirstlast('hvap');
 nonarrayplot(s.hvap,'Enthalpy of vaporization',first,last,...
   allT,'T [K]',(satdata(:,18)-satdata(:,6))*1e3);
+myexport('hvap');
 
 % Specific volume of the vapor
 setfirstlast('v');
 pplot(s.v,'Specific volume of the vapor',first,last,...
   allT,satdata(:,2)*1e6,'T [K]',satdata(:,16));
+myexport('v');
 
 % Joule-Thomson coefficient
 setfirstlast('jt');
 pplot(s.jt,'Joule-Thomson coefficient',first,last,...
   allT,satdata(:,2)*1e6,'T [K]',satdata(:,23)*1e-6);
+myexport('jt');
 
 % Specific isobaric heat capacity of the vapor
 setfirstlast('cpg');
 pplot(s.cpg,'Specific isobaric heat capacity of the vapor',first,last,...
   allT,satdata(:,2)*1e6,'T [K]',satdata(:,21)*1e3);
+myexport('cpg');
 
 % Specific isobaric heat capacity in the ideal gas state
 setfirstlast('reset');
 pplot(s.cpg,'Isobaric heat capacity, ideal gas state',1,size(p1Pa,1),...
   p1Pa(:,1),p1Pa(:,2)*1e6,'T [K]',p1Pa(:,9)*1e3);
+myexport('cpid');
 
 % Specific isobaric heat capacity of the liquid
 arrayplot(s.cpl,'Specific isobaric heat capacity of the liquid',first,last,...
   allT,'T [K]',satdata(:,9)*1e3);
+myexport('cpl');
 
 % Specific enthalpy difference of the liquid, from integration of heat capacity.
 
 h_diff = @(T) s.intcpl(allT(1)*ones(size(allT)), T);
 arrayplot(h_diff,'Enthalpy difference of the liquid',first,last,...
   allT,'T [K]',(satdata(:,6) - satdata(first,6))*1000);
+myexport('hliq');
 
 % Surface tension
 setfirstlast('sigma');
 arrayplot(s.sigma,'Surface tension',first,last,allT,'T [K]',satdata(:,14));
+myexport('sigma');
 darrayplot(s.dsig, 'Derivative of surface tension', first, last, allT,...
   'T [K]', satdata(:,14));
 
@@ -539,20 +549,24 @@ darrayplot(s.dsig, 'Derivative of surface tension', first, last, allT,...
 setfirstlast('reset');
 arrayplot(s.mul,'Dynamic viscosity of the liquid',first,last,...
   allT,'T [K]',satdata(:,12));
+myexport('mul');
 
 % Dynamic viscosity of the vapor
 arrayplot(s.mug,'Dynamic viscosity of the vapor',first,last,...
   allT,'T [K]',satdata(:,24));
+myexport('mug');
 
 % Thermal conductivity of the vapor
 setfirstlast('kg');
 arrayplot(s.kg,'Thermal conductivity of the vapor',first,last,...
   allT,'T [K]',satdata(:,25));
+myexport('kg');
 
 % Thermal conductivity of the liquid
 setfirstlast('reset');
 arrayplot(s.kl,'Thermal conductivity of the liquid',first,last,...
   allT,'T [K]',satdata(:,13));
+myexport('kl');
 
 % Kinematic viscosity of the vapor
 setfirstlast('nug');
@@ -564,7 +578,16 @@ setfirstlast('reset');
 nonarrayplot(s.nul,'Kinematic viscosity of the liquid',first,last,...
   allT,'T [K]',satdata(:,12).*satdata(:,4));
 
-function setfirstlast(var) %---- nested function --------
+function myexport(name) % ------- nested function ------
+    global EXPORT;
+    if EXPORT
+	set(gcf, 'PaperUnits','points', 'PaperSize',[450 300],...
+		'PaperPosition', [0 0 450 300]);
+	hgexport(gcf, name, lsetup);
+    end
+end % ----------------------- end nested function -------
+
+function setfirstlast(var) % ---- nested function --------
 if isfield(N,var)
   if isfield(N.(var),'Tfirst')
     first = find(allT>N.(var).Tfirst,1);
