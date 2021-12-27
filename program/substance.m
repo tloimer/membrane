@@ -1072,6 +1072,102 @@ cplfun = @vdi08;
 sigcoeffs = [0.15488 1.64129 -0.75986 -0.85291 1.14113 Tc];
 sigfun = @sigmavdi19;
 
+case 'waterharvey'
+% Critical constants, from VDI Wärmeatlas (2019), D2.1:
+% M = 18,015 275 kg/kmol, R = 0,461 526 kJ/kgK,
+% Tc = 647.096 K, pc = 220.64 bar, rhoc = 322 kg/m3
+M = 18.015; % kg/kmol
+Tc = 647.096; % K
+rhoc = 322; % kg/m3
+
+% PS, saturation pressure, coefficients for the Antoine eq.
+% See Landolt-Börnstein, New Series, Group IV: Physical Chemistry.
+% Vapor Pressure of Chemicals, vol. 20B: J. Dykyj, J. Svoboda, R.C. Wilhoit,
+% M.  Frenkel, K.R. Hall (2000).
+% 2 Inorganic Compounds; Organic Compounds, C1 to C57. Part1, pp. 14 - 110..
+% water: 2.1 Inorganic Compounds; p. 16
+% Range: 273 K < T < 647.096 K
+
+% classical Antoine eq.:      [ Tmax pmax A B C 0 0 0 0 0 ]
+% extended Antoine eq.:       [ Tmax pmax A B C T0 Tc n E F ]
+Acoeffs =  zeros(4,10);
+Acoeffs(1,1:5) = [318.08 9555.0 10.31549 1794.88 -34.764];
+Acoeffs(2,1:5) = [394 204045.49 10.11048 1680.59 -43.932];
+Acoeffs(3,1:5) = [433 614772.78 10.09938 1681 -43.037];
+Acoeffs(4,:) = [647.096 22064004 Acoeffs(3,3:5) 433 647.096 ...
+						2.89035 66.2879 -75.628];
+
+% RHO, liquid density at saturation
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Range: 20 °C < T < 250 °C
+% rhocoeffs:  [Tmax A B C D Tc rhoc]
+rhocoeffs = [Tc 1094.0233 -1813.2295 3863.9557 -2479.8130 Tc rhoc];
+rhofun{1} = @rhovdi19;
+
+% V, specific volume of the gas
+% See A. H. Harvey and E. W. Lemmon, Correlation for the second virial
+% coefficient of water, J. Phys. Chem. Ref. Data 33, Art. 1 (2004). doi:
+% 10.1063/1.1587731.
+vcoeffs = [R M];
+virialfun = @harvey04;
+
+% CPID, specific heat capacity in the ideal gas state at constant pressure
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 6, eq. (5)
+% Range: -50 °C < T < 500 °C
+cpcoeffs = [706.3032 5.1703 -6.0865 -6.6011 36.2723 -63.0965 46.2085 R/M];
+cpfun = @vdi10;
+
+% MUL, dynamic viscosity of the liquid
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 7, eq. (6)
+% Range: 20 °C < T < 250 °C
+mulcoeffs = [0.45047 1.39753 613.181 63.697 6.896e-5];
+mulfun = @vdi02;
+
+% MUG, dynamic viscosity of the vapor
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 8
+% Range: 0 °C < T < 500 °C
+mugcoeffs = [0.64966e-5 -0.15102e-7 1.15935e-10 -0.1008e-12 0.031e-15];
+mugfun = @poly4;
+
+% KG, thermal conductivity of the vapor at approx. 1 bar [W/mK].
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 10
+% Range: 25 °C < T < 500 °C
+kgcoeffs = [13.918e-3 -0.04699e-3 0.258066e-6 -0.183149e-9 0.055092e-12];
+kgfun = @poly4;
+
+% KL, thermal conductivity of the liquid [W/mK]
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 9
+% Range: 0 °C < T < 200 °C
+klcoeffs = [-2.4149 2.45165e-2 -0.73121e-4 0.99492e-7 -0.53730e-10];
+klfun = @poly4;
+
+% CPL, specific heat capacity at constant pressure of the liquid [J/kgK].
+% See VDI Wärmeatlas, 12 ed. (2019).  Michael Kleiber and Ralph Joh,
+% D3.1 Thermophysikalische Stoffwerte sonstiger reiner Flüssigkeiten und Gase
+% Table 5, eq. (4)
+% Range: 0 °C < T < 250 °C
+cplcoeffs = [[0.2399 12.8647 -33.6392 104.7686 -155.4709 92.3726]*R/M Tc];
+cplfun = @vdi08;
+
+% SIGMA, surface tension [N/m].
+% From R1-76(2014): Revised Release on the Surface Tension of Ordinary Water
+% Substance (2014). From www.iapws.org/release.html, retrieved 2021-12-27.
+% The correlation equation is identical to sigstephan23, where
+% [B mu b Tc]  corresponds to [a1 a2 a3 Tc];
+sigcoeffs = [0.2358 1.256 -0.625 Tc];
+sigfun = @sigstephan23;
+
 otherwise
 
 error('No substance of this name.')
@@ -2417,6 +2513,26 @@ y = C(1) + C(2)./x + C(3)./x.^2 + C(4)./x.^3 + C(5)./x.^4;
 if nargout > 1
   y1 =  -C(2)./x - 2*C(3)./x.^2 - 3*C(4)./x.^3 - 4*C(5)./x.^4;
   y2 =  2*C(2)./x + 6*C(3)./x.^2 + 12*C(4)./x.^3 + 20*C(5)./x.^4;
+end
+end
+
+function [y, y1, y2] = harvey04(~,T)
+%HARVEY04   Return the second virial coefficient, and the first two derivatives.
+%   HARVEY04(~,T) returns the second virial coefficient computed from a
+%   correlation given by A. H. Harvey and E. W. Lemmon, Correlation for the
+%   second virial coefficient of water, J. Phys. Chem. Ref. Data 33, Art. 1
+%   (2004). doi: 10.1063/1.1587731.
+x = T/100.;
+a1 = 0.34404;	b1 = -0.5;
+a2 = -0.75826;	b2 = -0.8;
+a3 = -24.219;	b3 = -3.35;
+a4 = -3978.2;	b4 = -8.3;
+y = a1*x.^b1 + a2*x.^b2 + a3*x.^b3 + a4*x.^b4;
+if nargout > 1
+  y1 = 1e-2 * (b1*a1*x.^(b1-1) + b2*a2*x.^(b2-1) + b3*a3*x.^(b3-1) + ...
+		b4*a4*x.^(b4-1));
+  y2 = 1e-4 * ((b1-1)*b1*a1*x.^(b1-2) + (b2-1)*b2*a2*x.^(b2-2) + ...
+		(b3-1)*b3*a3*x.^(b3-2) + (b4-1)*b4*a4*x.^(b4-2));
 end
 end
 
