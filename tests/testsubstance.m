@@ -462,7 +462,7 @@ last = len;
 % remains, do: ff = get(gcf,'ExportsetupWindow'); ff.style
 % Write the variable "hsetup" into (!) the base workspace
 %  instead of "hsetup = struct('Version',... - in the base workspace
-lsetup = struct('Version',1,'Format','pdf','Preview','none','Width',450,...
+hsetup = struct('Version',1,'Format','pdf','Preview','none','Width',450,...
         'Height',300,'Units','points','Color','bw','Background','w',...
         'FixedFontSize',8,'ScaledFontSize','auto','FontMode','fixed',...
         'FontSizeMin',8,'FixedLineWidth',.5,'ScaledLineWidth','100',...
@@ -472,7 +472,8 @@ lsetup = struct('Version',1,'Format','pdf','Preview','none','Width',450,...
         'LineStyleMap','none','ApplyStyle',0,'Bounds','tight',...
         'LockAxes','on','LockAxesTicks','off','ShowUI','on',...
         'SeparateText','off');
-assignin('base', 'hsetup', lsetup);
+assignin('base', 'hsetup', hsetup);
+assignin('base', 'myexport', @doexport);
 
 fprintf('Substance %s, critical temperature: %.1f K.\n',name,s.Tc);
 
@@ -492,7 +493,7 @@ myexport('psat');
 setfirstlast('rho');
 nonarrayplot(s.rho,'Density of the liquid',first,last,...
   allT,'T [K]',satdata(:,3));
-myexport('rhol');
+myexport('rho');
 darrayplot(s.drho, 'Derivative of liquid density', first, last, allT,...
   'T [K]', satdata(:,3));
 
@@ -578,12 +579,16 @@ setfirstlast('reset');
 nonarrayplot(s.nul,'Kinematic viscosity of the liquid',first,last,...
   allT,'T [K]',satdata(:,12).*satdata(:,4));
 
+function doexport(name)
+set(gcf, 'PaperUnits','points', 'PaperSize',[450 300],...
+	'PaperPosition', [0 0 450 300]);
+hgexport(gcf, name, hsetup);
+end
+
 function myexport(name) % ------- nested function ------
     global EXPORT;
     if EXPORT
-	set(gcf, 'PaperUnits','points', 'PaperSize',[450 300],...
-		'PaperPosition', [0 0 450 300]);
-	hgexport(gcf, name, lsetup);
+	doexport(name);
     end
 end % ----------------------- end nested function -------
 
