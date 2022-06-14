@@ -63,11 +63,24 @@ function ms = mstackstruct(theta,mem,f)
 %           MSTACKSTRUCT>MFLUXKNUDSEN, MSTACKSTRUCT>PRINTSETUP,
 %           MSTACKSTRUCT>PRINTSOLUTION, MSTACKSTRUCT>PLOTSOLUTION,
 %           MSTACKSTRUCT>PLOTT.
-
+%
 %  To plot the upstream boundary layer, for the z-coordinate use the
 %  transformation (from FLOW12.m)
-%    z3 = FL.flow(-FL.sol.len).z(1),  zscale = FL.sol.zscale,
-%    z = z3 + zscale * log( (Fl.flow(-FL.sol.len).z-z3)/zscale + 1 ).
+%
+%    z3 = MS.MEMBRANE.flow(end).z(1),  zscale = MS.MEMBRANE.zscale,
+%    z_lin = z3 + zscale * log( (Fl.flow(end).z-z3)/zscale + 1 ).
+%
+%  Here, z3 is the start of the upstream boundary layer, usually the upstream
+%  membrane surface (z3 = 0) or the liquid film thickness. The physical space
+%  z_lin extends from minus infinity to z3, z is the logarithmic coordinate
+%  extending (approximately) from z3 - zscale to z3
+%
+%  If the temperature distribution shows linear on the logarithmic scale,
+%    T = T3 - (T1-T3) * (z - z3)/zscale,    (z - z3 < 0)
+%  with (zlin - z3)/zscale = log((z - z3)/zscale + 1),
+%  the temperature distribution in the physical space is given by
+%
+%    T = T3 + (T1-T3) * (1 - exp((z_lin-z3)/zscale)).
 
 % expand mem to cell vector of cell vector (yes, cell vector of cell vector)
 % f is expanded below
